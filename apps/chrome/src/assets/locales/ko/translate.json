@@ -28,7 +28,6 @@
     "customLinkSetting": "빠른 링크 설정"
   },
   "customLinkSetting": {
-    "saveSuccess": "사용자 정의 링크 저장 성공",
     "linkSetting": "링크 설정",
     "usedForQuickOpen": "사이드바 빠른 열기용 링크",
     "link": "링크",
@@ -40,7 +39,6 @@
     "addLink": "링크 추가"
   },
   "customPromptSetting": {
-    "saveSuccess": "사용자 정의 프롬프트 저장 성공",
     "promptSetting": "프롬프트 설정",
     "usedForQuickOpen": "/ 입력으로 프롬프트 선택",
     "prompt": "프롬프트",
@@ -72,7 +70,8 @@
     "add": "추가",
     "delete": "삭제",
     "save": "저장",
-    "clear": "지우기"
+    "clear": "지우기",
+    "saveSuccess": "성공적으로 저장되었습니다"
   },
   "prompt": {
     "aiTranslateSelected": {

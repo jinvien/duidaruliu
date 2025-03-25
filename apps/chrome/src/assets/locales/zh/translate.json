@@ -28,7 +28,6 @@
     "customLinkSetting": "快捷入口设置"
   },
   "customLinkSetting": {
-    "saveSuccess": "自定义链接保存成功",
     "linkSetting": "链接设置",
     "usedForQuickOpen": "自定义链接用于在侧边栏快速打开",
     "link": "链接",
@@ -40,7 +39,6 @@
     "addLink": "新增链接"
   },
   "customPromptSetting": {
-    "saveSuccess": "自定义提示词保存成功",
     "promptSetting": "提示词设置",
     "usedForQuickOpen": "在对话框输入 / 即可快速选取提示词",
     "prompt": "提示词",
@@ -72,7 +70,8 @@
     "add": "添加",
     "delete": "删除",
     "save": "保存",
-    "clear": "清空"
+    "clear": "清空",
+    "saveSuccess":"保存成功"
   },
   "prompt": {
     "aiTranslateSelected": {

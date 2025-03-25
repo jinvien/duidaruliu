@@ -29,7 +29,7 @@ const CustomPrompt: React.FC = () => {
     await chrome.storage.sync.set({
       customPrompts: values.prompts,
     });
-    antdMessage.success(t('customPromptSetting.saveSuccess'));
+    antdMessage.success(t('formAction.saveSuccess'));
   };
 
   const onReset = () => {

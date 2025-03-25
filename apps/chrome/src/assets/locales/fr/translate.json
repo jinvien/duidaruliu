@@ -28,7 +28,6 @@
     "customLinkSetting": "Paramètres d'accès rapide"
   },
   "customLinkSetting": {
-    "saveSuccess": "Liens personnalisés enregistrés",
     "linkSetting": "Paramètres des liens",
     "usedForQuickOpen": "Liens personnalisés dans la barre latérale",
     "link": "Lien",
@@ -40,7 +39,6 @@
     "addLink": "Ajouter un lien"
   },
   "customPromptSetting": {
-    "saveSuccess": "Invites personnalisées enregistrées",
     "promptSetting": "Paramètres d'invite",
     "usedForQuickOpen": "Tapez / pour sélectionner des invites",
     "prompt": "Invite",
@@ -72,7 +70,8 @@
     "add": "Ajouter",
     "delete": "Supprimer",
     "save": "Enregistrer",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "saveSuccess":"Enregistré avec succès"
   },
   "prompt": {
     "aiTranslateSelected": {

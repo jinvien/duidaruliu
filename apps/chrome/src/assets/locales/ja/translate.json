@@ -28,7 +28,6 @@
     "customLinkSetting": "クイックリンク設定"
   },
   "customLinkSetting": {
-    "saveSuccess": "カスタムリンクを保存しました",
     "linkSetting": "リンク設定",
     "usedForQuickOpen": "サイドバーでのクイックアクセス用",
     "link": "リンク",
@@ -40,7 +39,6 @@
     "addLink": "リンクを追加"
   },
   "customPromptSetting": {
-    "saveSuccess": "カスタムプロンプトを保存しました",
     "promptSetting": "プロンプト設定",
     "usedForQuickOpen": "/ 入力でプロンプトを選択",
     "prompt": "プロンプト",
@@ -72,7 +70,9 @@
     "add": "追加",
     "delete": "削除",
     "save": "保存",
-    "clear": "クリア"
+    "clear": "クリア",
+    "saveSuccess": "正常に保存されました"
+
   },
   "prompt": {
     "aiTranslateSelected": {

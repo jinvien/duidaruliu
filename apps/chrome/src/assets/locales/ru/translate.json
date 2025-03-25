@@ -28,7 +28,6 @@
     "customLinkSetting": "Быстрые ссылки"
   },
   "customLinkSetting": {
-    "saveSuccess": "Ссылки сохранены",
     "linkSetting": "Настройки ссылок",
     "usedForQuickOpen": "Пользовательские ссылки в боковой панели",
     "link": "Ссылка",
@@ -40,7 +39,6 @@
     "addLink": "Добавить ссылку"
   },
   "customPromptSetting": {
-    "saveSuccess": "Подсказки сохранены",
     "promptSetting": "Настройки подсказок",
     "usedForQuickOpen": "Введите / для выбора подсказок",
     "prompt": "Подсказка",
@@ -72,7 +70,9 @@
     "add": "Добавить",
     "delete": "Удалить",
     "save": "Сохранить",
-    "clear": "Очистить"
+    "clear": "Очистить",
+    "saveSuccess": "Успешно сохранено"
+
   },
   "prompt": {
     "extraText": "К вашим услугам",

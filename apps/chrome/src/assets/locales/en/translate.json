@@ -28,7 +28,6 @@
     "customLinkSetting": "Quick Access Settings"
   },
   "customLinkSetting": {
-    "saveSuccess": "Custom links saved successfully",
     "linkSetting": "Link Settings",
     "usedForQuickOpen": "Custom links for quick access in sidebar",
     "link": "Link",
@@ -40,7 +39,6 @@
     "addLink": "Add Link"
   },
   "customPromptSetting": {
-    "saveSuccess": "Custom prompts saved successfully",
     "promptSetting": "Prompt Settings",
     "usedForQuickOpen": "Type / in dialog to select prompts",
     "prompt": "Prompt",
@@ -73,7 +71,8 @@
     "add": "Add",
     "delete": "Delete",
     "save": "Save",
-    "clear": "Clear"
+    "clear": "Clear",
+    "saveSuccess": "Saved successfully"
   },
   "prompt": {
     "aiTranslateSelected": {
