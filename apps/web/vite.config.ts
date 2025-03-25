@@ -23,6 +23,6 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: path.resolve(__dirname, '../../doc'),
+    outDir: path.resolve(__dirname, '../../docs'),
   }
 });
