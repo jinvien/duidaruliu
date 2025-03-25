@@ -1,0 +1,14 @@
+{
+  "name": {
+    "message": "对答如流 - 你的本地 AI 助手"
+  },
+  "description": {
+    "message": "侧边栏友好的 AI 对话助手，可以方便地与 Ollama API 进行对话"
+  },
+  "openDDRL": {
+    "message": "唤起对答如流"
+  },
+  "translateSelected": {
+    "message": "翻译所选内容"
+  }
+}

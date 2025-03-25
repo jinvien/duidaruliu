@@ -1,0 +1,90 @@
+{
+  "chat": {
+    "think": "思考中...",
+    "codeCopy": "コードをコピーしました",
+    "renderError": "レンダリングエラー",
+    "messageCopy": "メッセージをコピーしました",
+    "waitingForEnd": "現在の会話が終了するまでお待ちください",
+    "isLatest": "最新の会話です",
+    "serverNotStart": "Ollamaサービスが起動していません",
+    "newChat": "新しいチャット",
+    "openSideMenu": "サイドメニューを開く",
+    "openSettingPanel": "設定パネルを開く",
+    "toggleTheme": "テーマを切り替え",
+    "toggleLang": "言語を切り替え",
+    "uploadSuccess": "チャット履歴のインポートに成功しました",
+    "fileExtFailed": "無効なファイル形式です",
+    "chatHistoryFailed": "チャット履歴の形式が無効です",
+    "uploadConversation": "会話履歴をアップロード",
+    "exportConversation": "会話履歴をエクスポート",
+    "exportSuccess": "エクスポート成功"
+  },
+  "links": {
+    "shortCut": "クイックリンク"
+  },
+  "settingMenu": {
+    "ollamaSetting": "Ollama設定",
+    "customPromptSetting": "カスタムプロンプト",
+    "customLinkSetting": "クイックリンク設定"
+  },
+  "customLinkSetting": {
+    "saveSuccess": "カスタムリンクを保存しました",
+    "linkSetting": "リンク設定",
+    "usedForQuickOpen": "サイドバーでのクイックアクセス用",
+    "link": "リンク",
+    "inputTitle": "タイトルを入力",
+    "inputTitlePlaceholder": "タイトル（4文字以内推奨）",
+    "inputWebSite": "URLを入力",
+    "inputWebSitePlaceholder": "有効なURLを入力してください",
+    "linkAddress": "リンクアドレス",
+    "addLink": "リンクを追加"
+  },
+  "customPromptSetting": {
+    "saveSuccess": "カスタムプロンプトを保存しました",
+    "promptSetting": "プロンプト設定",
+    "usedForQuickOpen": "/ 入力でプロンプトを選択",
+    "prompt": "プロンプト",
+    "inputLabelTip": "短縮名必須",
+    "inputLabelPlaceholder": "短縮名（簡潔に）",
+    "inputValueTip": "プロンプト内容必須",
+    "inputValuePlaceholder": "完全なプロンプトを入力",
+    "linkAddress": "リンクアドレス",
+    "addPrompt": "プロンプトを追加"
+  },
+  "ollamaSetting": {
+    "ollamaSettingSuccess": "Ollama設定を保存しました",
+    "modelSettingSuccess": "モデル設定を保存しました",
+    "baseSetting": "基本設定",
+    "reset": "デフォルトに戻す",
+    "modelParamsTip": "モデルパラメータ設定",
+    "modelParamsTip1": "Ollamaモデルパラメータ設定。参照:",
+    "keepAliveLabel": "メモリ保持時間（keep_alive）",
+    "keepAliveExtra": "リクエスト後のモデルメモリ保持時間（デフォルト:5分）",
+    "temperatureLabel": "温度（temperature）",
+    "temperatureExtra": "応答の創造性を制御（デフォルト:0.8）",
+    "numCtxLabel": "コンテキストウィンドウサイズ（num_ctx）",
+    "numCtxExtra": "トークン生成用のコンテキストサイズ（デフォルト:2048）",
+    "numPredictLabel": "最大トークン数（num_predict）",
+    "numPredictExtra": "生成テキストの最大トークン数（デフォルト:-1=無制限）",
+    "moreParams": "追加パラメータ設定"
+  },
+  "formAction": {
+    "add": "追加",
+    "delete": "削除",
+    "save": "保存",
+    "clear": "クリア"
+  },
+  "prompt": {
+    "aiTranslateSelected": {
+      "welcome": "翻訳者",
+      "systemPrompt": "あなたは多くの言語に精通した高度なスキルを持つ翻訳者です。私が提供するテキストの言語を識別し、指定されたターゲット言語に正確に翻訳するのがあなたの任務です。元のテキストの意味、トーン、ニュアンスを保ちつつ、文法、スペル、句読点を正しく維持してください。",
+      "postfix": "上記の内容を次の言語に翻訳してください:"
+    }
+  },
+  "utils": {
+    "today": "今日",
+    "lastDay": "昨日",
+    "last7Day": "過去7日間",
+    "last30Day": "過去30日間"
+  }
+}

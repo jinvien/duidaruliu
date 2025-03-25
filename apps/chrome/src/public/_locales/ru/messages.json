@@ -1,0 +1,14 @@
+{
+  "name": {
+    "message": "Fluently Respond - Ваш локальный ИИ-ассистент"
+  },
+  "description": {
+    "message": "ИИ-ассистент для общения, совместимый с боковой панелью Chrome, обеспечивающий удобное взаимодействие с API Ollama"
+  },
+  "openDDRL": {
+    "message": "Открыть Fluently Respond"
+  },
+  "translateSelected": {
+    "message": "Перевести выделенный текст"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "chat": {
+    "think": "思考中...",
+    "codeCopy": "代码复制成功",
+    "renderError": "渲染出错",
+    "messageCopy": "消息复制成功",
+    "waitingForEnd": "请等待当前对话结束",
+    "isLatest": "已是最新的对话",
+    "serverNotStart": "ollama 服务未启动",
+    "newChat": "新建对话",
+    "openSideMenu": "打开侧栏",
+    "openSettingPanel": "打开设置面板",
+    "toggleTheme": "切换主题",
+    "toggleLang": "切换语言",
+    "uploadSuccess": "聊天记录导入成功",
+    "fileExtFailed": "文件格式不正确",
+    "chatHistoryFailed": "聊天记录格式不正确",
+    "uploadConversation": "上传对话记录",
+    "exportConversation": "导出对话记录",
+    "exportSuccess": "导出成功"
+  },
+  "links": {
+    "shortCut": "快捷入口"
+  },
+  "settingMenu": {
+    "ollamaSetting": "Ollama 设置",
+    "customPromptSetting": "自定义提示词",
+    "customLinkSetting": "快捷入口设置"
+  },
+  "customLinkSetting": {
+    "saveSuccess": "自定义链接保存成功",
+    "linkSetting": "链接设置",
+    "usedForQuickOpen": "自定义链接用于在侧边栏快速打开",
+    "link": "链接",
+    "inputTitle": "请输入标题",
+    "inputTitlePlaceholder": "标题，建议不超过四个字",
+    "inputWebSite": "请输入网址",
+    "inputWebSitePlaceholder": "请输入正确的网址",
+    "linkAddress": "链接地址",
+    "addLink": "新增链接"
+  },
+  "customPromptSetting": {
+    "saveSuccess": "自定义提示词保存成功",
+    "promptSetting": "提示词设置",
+    "usedForQuickOpen": "在对话框输入 / 即可快速选取提示词",
+    "prompt": "提示词",
+    "inputLabelTip": "提示词简称必填",
+    "inputLabelPlaceholder": "提示词简称，尽量简短",
+    "inputValueTip": "提示词内容必填",
+    "inputValuePlaceholder": "请输入完整提示词",
+    "linkAddress": "链接地址",
+    "addPrompt": "新增提示词"
+  },
+  "ollamaSetting": {
+    "ollamaSettingSuccess": "Ollama 配置保存成功",
+    "modelSettingSuccess": "模型配置保存成功",
+    "baseSetting": "基本设置",
+    "reset": "恢复默认",
+    "modelParamsTip": "模型参数设置",
+    "modelParamsTip1": "Ollama 模型参数设置，参考：",
+    "keepAliveLabel": "保留时间(keep_alive)",
+    "keepAliveExtra": "控制模型在请求后内存中存活的时间（默认为5分钟）。",
+    "temperatureLabel": "温度(temperature)",
+    "temperatureExtra": "模型温度。提高温度会使模型的回答更具创造性。（默认值：0.8）",
+    "numCtxLabel": "上下文窗口大小(num_ctx)",
+    "numCtxExtra": "设置用于生成下一个令牌的上下文窗口大小（默认值为2048）。",
+    "numPredictLabel": "最大令牌数(num_predict)",
+    "numPredictExtra": "生成文本时预测的最大令牌数。（默认值：-1，表示无限制生成）",
+    "moreParams": "更多参数设置"
+  },
+  "formAction": {
+    "add": "添加",
+    "delete": "删除",
+    "save": "保存",
+    "clear": "清空"
+  },
+  "prompt": {
+    "aiTranslateSelected": {
+      "welcome": "翻译助手",
+      "systemPrompt": "你是一位精通多种语言的高级翻译专家。你的任务是识别我提供的文本的语言,并将其准确翻译成指定的目标语言,同时保持原文的含义、语气和细微差别。请在翻译版本中保持正确的语法、拼写和标点符号。",
+      "postfix": "请将上方内容翻译成"
+    }
+  },
+  "utils": {
+    "today": "今天",
+    "lastDay": "昨天",
+    "last7Day": "最近7天",
+    "last30Day": "过去30天"
+  }
+}

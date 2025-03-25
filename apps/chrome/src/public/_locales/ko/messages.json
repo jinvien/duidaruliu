@@ -1,0 +1,14 @@
+{
+  "name": {
+    "message": "플루언트 리스폰스 - 로컬 AI 어시스턴트"
+  },
+  "description": {
+    "message": "Chrome에서 Ollama API와 쉽게 상호작용할 수 있는 사이드패널 친화적 AI 대화 어시스턴트"
+  },
+  "openDDRL": {
+    "message": "플루언트 리스폰스 열기"
+  },
+  "translateSelected": {
+    "message": "선택한 텍스트 번역"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": {
+    "message": "Fluently Respond - Your Local AI Assistant"
+  },
+  "description": {
+    "message": "Sidepanel-friendly AI conversation assistant that allows easy interaction with Ollama API in Chrome"
+  },
+  "openDDRL": {
+    "message": "Open Fluently Respond"
+  },
+  "translateSelected": {
+    "message": "Translate Selected Text"
+  }
+}

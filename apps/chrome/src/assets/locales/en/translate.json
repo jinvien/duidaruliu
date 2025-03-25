@@ -1,0 +1,91 @@
+{
+  "chat": {
+    "think": "Thinking...",
+    "codeCopy": "Code copied",
+    "renderError": "Rendering error",
+    "messageCopy": "Message copied",
+    "waitingForEnd": "Please wait for the current conversation to end",
+    "isLatest": "Already the latest conversation",
+    "serverNotStart": "Ollama service not started",
+    "newChat": "New chat",
+    "openSideMenu": "Open side menu",
+    "openSettingPanel": "Open settings panel",
+    "toggleTheme": "Toggle theme",
+    "toggleLang": "Toggle language",
+    "uploadSuccess": "Chat history imported successfully",
+    "fileExtFailed": "Invalid file format",
+    "chatHistoryFailed": "Invalid chat history format",
+    "uploadConversation": "Upload conversation history",
+    "exportConversation": "Export conversation history",
+    "exportSuccess": "Export successful"
+  },
+  "links": {
+    "shortCut": "Quick links"
+  },
+  "settingMenu": {
+    "ollamaSetting": "Ollama Settings",
+    "customPromptSetting": "Custom Prompts",
+    "customLinkSetting": "Quick Access Settings"
+  },
+  "customLinkSetting": {
+    "saveSuccess": "Custom links saved successfully",
+    "linkSetting": "Link Settings",
+    "usedForQuickOpen": "Custom links for quick access in sidebar",
+    "link": "Link",
+    "inputTitle": "Enter title",
+    "inputTitlePlaceholder": "Title (recommended ≤4 characters)",
+    "inputWebSite": "Enter website URL",
+    "inputWebSitePlaceholder": "Enter valid URL",
+    "linkAddress": "Link Address",
+    "addLink": "Add Link"
+  },
+  "customPromptSetting": {
+    "saveSuccess": "Custom prompts saved successfully",
+    "promptSetting": "Prompt Settings",
+    "usedForQuickOpen": "Type / in dialog to select prompts",
+    "prompt": "Prompt",
+    "inputLabelTip": "Short name required",
+    "inputLabelPlaceholder": "Short name (keep it brief)",
+    "inputValueTip": "Prompt content required",
+    "inputValuePlaceholder": "Enter complete prompt",
+    "linkAddress": "Link Address",
+    "systemPrompt": "System Prompt",
+    "quickPrompt": "Quick Prompt"
+  },
+  "ollamaSetting": {
+    "ollamaSettingSuccess": "Ollama configuration saved successfully",
+    "modelSettingSuccess": "Model configuration saved successfully",
+    "baseSetting": "Basic settings",
+    "reset": "Restore defaults",
+    "modelParamsTip": "Model parameter settings",
+    "modelParamsTip1": "Ollama model parameter settings. Reference:",
+    "keepAliveLabel": "Keep alive duration (keep_alive)",
+    "keepAliveExtra": "Controls how long the model stays in memory after a request (default: 5 minutes).",
+    "temperatureLabel": "Temperature",
+    "temperatureExtra": "Model temperature. Increasing temperature makes responses more creative (default: 0.8).",
+    "numCtxLabel": "Context window size (num_ctx)",
+    "numCtxExtra": "Sets the context window size for generating the next token (default: 2048).",
+    "numPredictLabel": "Max tokens (num_predict)",
+    "numPredictExtra": "Maximum tokens to predict when generating text (default: -1 means unlimited generation).",
+    "moreParams": "More parameter settings"
+  },
+  "formAction": {
+    "add": "Add",
+    "delete": "Delete",
+    "save": "Save",
+    "clear": "Clear"
+  },
+  "prompt": {
+    "aiTranslateSelected": {
+      "welcome": "Translator",
+      "systemPrompt": "You are a highly skilled translator with expertise in many languages. Your task is to identify the language of the text I provide and accurately translate it into the specified target language while preserving the meaning, tone, and nuance of the original text. Please maintain proper grammar, spelling, and punctuation in the translated version.",
+      "postfix": "Please translate the content above into"
+    }
+  },
+  "utils": {
+    "today": "Today",
+    "lastDay": "Yesterday",
+    "last7Day": "Last 7 days",
+    "last30Day": "Past 30 days"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "chat": {
+    "think": "생각 중...",
+    "codeCopy": "코드 복사됨",
+    "renderError": "렌더링 오류",
+    "messageCopy": "메시지 복사됨",
+    "waitingForEnd": "현재 대화가 끝날 때까지 기다려주세요",
+    "isLatest": "이미 최신 대화입니다",
+    "serverNotStart": "Ollama 서비스가 시작되지 않았습니다",
+    "newChat": "새 채팅",
+    "openSideMenu": "사이드 메뉴 열기",
+    "openSettingPanel": "설정 패널 열기",
+    "toggleTheme": "테마 전환",
+    "toggleLang": "언어 전환",
+    "uploadSuccess": "채팅 기록이 성공적으로 가져와졌습니다",
+    "fileExtFailed": "잘못된 파일 형식입니다",
+    "chatHistoryFailed": "잘못된 채팅 기록 형식입니다",
+    "uploadConversation": "대화 기록 업로드",
+    "exportConversation": "대화 기록 내보내기",
+    "exportSuccess": "내보내기 성공"
+  },
+  "links": {
+    "shortCut": "빠른 링크"
+  },
+  "settingMenu": {
+    "ollamaSetting": "Ollama 설정",
+    "customPromptSetting": "사용자 정의 프롬프트",
+    "customLinkSetting": "빠른 링크 설정"
+  },
+  "customLinkSetting": {
+    "saveSuccess": "사용자 정의 링크 저장 성공",
+    "linkSetting": "링크 설정",
+    "usedForQuickOpen": "사이드바 빠른 열기용 링크",
+    "link": "링크",
+    "inputTitle": "제목 입력",
+    "inputTitlePlaceholder": "제목 (4자 이내 권장)",
+    "inputWebSite": "웹사이트 주소 입력",
+    "inputWebSitePlaceholder": "올바른 URL을 입력하세요",
+    "linkAddress": "링크 주소",
+    "addLink": "링크 추가"
+  },
+  "customPromptSetting": {
+    "saveSuccess": "사용자 정의 프롬프트 저장 성공",
+    "promptSetting": "프롬프트 설정",
+    "usedForQuickOpen": "/ 입력으로 프롬프트 선택",
+    "prompt": "프롬프트",
+    "inputLabelTip": "프롬프트 약칭 필수",
+    "inputLabelPlaceholder": "짧은 약칭 입력",
+    "inputValueTip": "프롬프트 내용 필수",
+    "inputValuePlaceholder": "전체 프롬프트 입력",
+    "linkAddress": "링크 주소",
+    "addPrompt": "프롬프트 추가"
+  },
+  "ollamaSetting": {
+    "ollamaSettingSuccess": "Ollama 설정이 성공적으로 저장되었습니다",
+    "modelSettingSuccess": "모델 설정이 성공적으로 저장되었습니다",
+    "baseSetting": "기본 설정",
+    "reset": "기본값 복원",
+    "modelParamsTip": "모델 파라미터 설정",
+    "modelParamsTip1": "Ollama 모델 파라미터 설정. 참조:",
+    "keepAliveLabel": "유지 시간 (keep_alive)",
+    "keepAliveExtra": "요청 후 모델이 메모리에 유지되는 시간 제어 (기본값: 5분).",
+    "temperatureLabel": "온도",
+    "temperatureExtra": "모델의 창의성 조절. 값이 높을수록 응답이 더 창의적임 (기본값: 0.8).",
+    "numCtxLabel": "컨텍스트 창 크기 (num_ctx)",
+    "numCtxExtra": "다음 토큰 생성 시 컨텍스트 창 크기 설정 (기본값: 2048).",
+    "numPredictLabel": "최대 토큰 (num_predict)",
+    "numPredictExtra": "생성 시 예측할 최대 토큰 수 (기본값: -1은 무제한 생성).",
+    "moreParams": "추가 파라미터 설정"
+  },
+  "formAction": {
+    "add": "추가",
+    "delete": "삭제",
+    "save": "저장",
+    "clear": "지우기"
+  },
+  "prompt": {
+    "aiTranslateSelected": {
+      "welcome": "번역기",
+      "systemPrompt": "당신은 다양한 언어에 능숙한 전문 번역가입니다. 제공된 텍스트의 언어를 식별하고 원문의 의미, 어조, 뉘앙스를 보존하면서 지정된 대상 언어로 정확하게 번역하는 것이 임무입니다. 번역된 버전에서 올바른 문법, 맞춤법 및 문장 부호를 유지해 주세요.",
+      "postfix": "위 내용을 다음 언어로 번역해 주세요:"
+    }
+  },
+  "utils": {
+    "today": "오늘",
+    "lastDay": "어제",
+    "last7Day": "지난 7일",
+    "last30Day": "지난 30일"
+  }
+}

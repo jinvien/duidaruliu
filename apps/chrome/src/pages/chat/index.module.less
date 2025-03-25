@@ -1,0 +1,61 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.header {
+  padding: var(--ant-padding-sm);
+  border-bottom: 1px solid var(--ant-color-border);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  .middle {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.content {
+  flex: 1;
+  padding: 0 var(--ant-padding-sm);
+  .bubbleList {
+    padding: var(--ant-padding-sm) 0;
+  }
+}
+.userContentPre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+// 代码块复制按钮
+.codeBlock {
+  position: relative;
+  .codeBlockCopy {
+    position: absolute;
+    top: var(--ant-padding-xs);
+    right: var(--ant-padding-xs);
+    display: none;
+  }
+  &:hover {
+    .codeBlockCopy {
+      display: block;
+    }
+  }
+}
+
+.messageRender {
+  p {
+    margin: var(--ant-padding-xs) 0;
+  }
+}
+
+.footer {
+  padding: var(--ant-padding-sm);
+  border-top: 1px solid var(--ant-color-border);
+  z-index: 1;
+  background-color: var(--ant-color-bg-elevated);
+}

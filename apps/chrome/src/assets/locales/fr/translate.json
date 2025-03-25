@@ -1,0 +1,90 @@
+{
+  "chat": {
+    "think": "Réflexion...",
+    "codeCopy": "Code copié",
+    "renderError": "Erreur de rendu",
+    "messageCopy": "Message copié",
+    "waitingForEnd": "Veuillez attendre la fin de la conversation en cours",
+    "isLatest": "Déjà la conversation la plus récente",
+    "serverNotStart": "Service Ollama non démarré",
+    "newChat": "Nouvelle conversation",
+    "openSideMenu": "Ouvrir le menu latéral",
+    "openSettingPanel": "Ouvrir le panneau des paramètres",
+    "toggleTheme": "Changer le thème",
+    "toggleLang": "Changer la langue",
+    "uploadSuccess": "Historique des discussions importé avec succès",
+    "fileExtFailed": "Format de fichier invalide",
+    "chatHistoryFailed": "Format d'historique de discussion invalide",
+    "uploadConversation": "Importer l'historique des conversations",
+    "exportConversation": "Exporter l'historique des conversations",
+    "exportSuccess": "Exportation réussie"
+  },
+  "links": {
+    "shortCut": "Liens rapides"
+  },
+  "settingMenu": {
+    "ollamaSetting": "Paramètres Ollama",
+    "customPromptSetting": "Invites personnalisées",
+    "customLinkSetting": "Paramètres d'accès rapide"
+  },
+  "customLinkSetting": {
+    "saveSuccess": "Liens personnalisés enregistrés",
+    "linkSetting": "Paramètres des liens",
+    "usedForQuickOpen": "Liens personnalisés dans la barre latérale",
+    "link": "Lien",
+    "inputTitle": "Entrez un titre",
+    "inputTitlePlaceholder": "Titre (4 caractères max recommandés)",
+    "inputWebSite": "Entrez une URL",
+    "inputWebSitePlaceholder": "URL valide requise",
+    "linkAddress": "Adresse du lien",
+    "addLink": "Ajouter un lien"
+  },
+  "customPromptSetting": {
+    "saveSuccess": "Invites personnalisées enregistrées",
+    "promptSetting": "Paramètres d'invite",
+    "usedForQuickOpen": "Tapez / pour sélectionner des invites",
+    "prompt": "Invite",
+    "inputLabelTip": "Nom court requis",
+    "inputLabelPlaceholder": "Nom court (soyez concis)",
+    "inputValueTip": "Contenu d'invite requis",
+    "inputValuePlaceholder": "Invite complète",
+    "linkAddress": "Adresse du lien",
+    "addPrompt": "Ajouter une invite"
+  },
+  "ollamaSetting": {
+    "ollamaSettingSuccess": "Configuration Ollama enregistrée avec succès",
+    "modelSettingSuccess": "Configuration du modèle enregistrée avec succès",
+    "baseSetting": "Paramètres de base",
+    "reset": "Restaurer les valeurs par défaut",
+    "modelParamsTip": "Paramètres des modèles",
+    "modelParamsTip1": "Paramètres des modèles Ollama. Référence :",
+    "keepAliveLabel": "Durée de maintien en vie (keep_alive)",
+    "keepAliveExtra": "Contrôle la durée pendant laquelle le modèle reste en mémoire après une requête (par défaut : 5 minutes).",
+    "temperatureLabel": "Température",
+    "temperatureExtra": "Température du modèle. Une augmentation rend les réponses plus créatives (par défaut : 0.8).",
+    "numCtxLabel": "Taille de la fenêtre de contexte (num_ctx)",
+    "numCtxExtra": "Définit la taille de la fenêtre de contexte pour générer le prochain jeton (par défaut : 2048).",
+    "numPredictLabel": "Tokens maximum (num_predict)",
+    "numPredictExtra": "Nombre maximum de tokens à prédire lors de la génération de texte (par défaut : -1 signifie une génération illimitée).",
+    "moreParams": "Plus de paramètres"
+  },
+  "formAction": {
+    "add": "Ajouter",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "clear": "Effacer"
+  },
+  "prompt": {
+    "aiTranslateSelected": {
+      "welcome": "Traducteur",
+      "systemPrompt": "Vous êtes un traducteur hautement qualifié, expert en plusieurs langues. Votre tâche est d'identifier la langue du texte que je fournis et de le traduire avec précision dans la langue cible spécifiée, en préservant le sens, le ton et les nuances du texte original. Veillez à maintenir une grammaire, une orthographe et une ponctuation correctes dans la version traduite.",
+      "postfix": "Veuillez traduire le contenu ci-dessus en"
+    }
+  },
+  "utils": {
+    "today": "Aujourd'hui",
+    "lastDay": "Hier",
+    "last7Day": "7 derniers jours",
+    "last30Day": "30 derniers jours"
+  }
+}

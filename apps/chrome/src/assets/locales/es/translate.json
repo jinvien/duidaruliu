@@ -1,0 +1,90 @@
+{
+  "chat": {
+    "think": "Pensando...",
+    "codeCopy": "Código copiado",
+    "renderError": "Error de renderización",
+    "messageCopy": "Mensaje copiado",
+    "waitingForEnd": "Por favor, espera a que termine la conversación actual",
+    "isLatest": "Ya estás en la conversación más reciente",
+    "serverNotStart": "Servicio Ollama no iniciado",
+    "newChat": "Nuevo chat",
+    "openSideMenu": "Abrir menú lateral",
+    "openSettingPanel": "Abrir panel de configuración",
+    "toggleTheme": "Alternar tema",
+    "toggleLang": "Alternar idioma",
+    "uploadSuccess": "Historial de chat importado exitosamente",
+    "fileExtFailed": "Formato de archivo inválido",
+    "chatHistoryFailed": "Formato de historial de chat inválido",
+    "uploadConversation": "Subir historial de conversación",
+    "exportConversation": "Exportar historial de conversación",
+    "exportSuccess": "Exportación exitosa"
+  },
+  "links": {
+    "shortCut": "Enlaces rápidos"
+  },
+  "settingMenu": {
+    "ollamaSetting": "Configuración Ollama",
+    "customPromptSetting": "Comandos personalizados",
+    "customLinkSetting": "Configuración de acceso rápido"
+  },
+  "customLinkSetting": {
+    "saveSuccess": "Enlaces guardados",
+    "linkSetting": "Configuración de enlaces",
+    "usedForQuickOpen": "Enlaces personalizados en barra lateral",
+    "link": "Enlace",
+    "inputTitle": "Ingrese título",
+    "inputTitlePlaceholder": "Título (máx. 4 caracteres)",
+    "inputWebSite": "Ingrese URL",
+    "inputWebSitePlaceholder": "URL válida requerida",
+    "linkAddress": "Dirección del enlace",
+    "addLink": "Añadir enlace"
+  },
+  "customPromptSetting": {
+    "saveSuccess": "Comandos guardados",
+    "promptSetting": "Configuración de comandos",
+    "usedForQuickOpen": "Escriba / para seleccionar comandos",
+    "prompt": "Comando",
+    "inputLabelTip": "Nombre corto requerido",
+    "inputLabelPlaceholder": "Nombre corto (breve)",
+    "inputValueTip": "Contenido requerido",
+    "inputValuePlaceholder": "Escriba comando completo",
+    "linkAddress": "Dirección del enlace",
+    "addPrompt": "Añadir comando"
+  },
+  "ollamaSetting": {
+    "ollamaSettingSuccess": "Configuración de Ollama guardada exitosamente",
+    "modelSettingSuccess": "Configuración del modelo guardada exitosamente",
+    "baseSetting": "Configuración básica",
+    "reset": "Restaurar valores predeterminados",
+    "modelParamsTip": "Configuración de parámetros del modelo",
+    "modelParamsTip1": "Configuración de parámetros del modelo Ollama. Referencia:",
+    "keepAliveLabel": "Duración de mantenimiento activo (keep_alive)",
+    "keepAliveExtra": "Controla cuánto tiempo el modelo permanece en memoria tras una solicitud (predeterminado: 5 minutos).",
+    "temperatureLabel": "Temperatura",
+    "temperatureExtra": "La temperatura del modelo. Aumentar la temperatura hace que las respuestas sean más creativas (predeterminado: 0.8).",
+    "numCtxLabel": "Tamaño de ventana de contexto (num_ctx)",
+    "numCtxExtra": "Establece el tamaño de la ventana de contexto para generar el siguiente token (predeterminado: 2048).",
+    "numPredictLabel": "Tokens máximos (num_predict)",
+    "numPredictExtra": "Máximo de tokens a predecir al generar texto (predeterminado: -1 significa generación ilimitada).",
+    "moreParams": "Más configuraciones de parámetros"
+  },
+  "formAction": {
+    "add": "Agregar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "clear": "Limpiar"
+  },
+  "prompt": {
+    "aiTranslateSelected": {
+      "welcome": "Traductor",
+      "systemPrompt": "Eres un traductor altamente capacitado con experiencia en muchos idiomas. Tu tarea es identificar el idioma del texto que proporciono y traducirlo con precisión al idioma objetivo especificado, preservando el significado, el tono y los matices del texto original. Mantén una gramática, ortografía y puntuación adecuadas en la versión traducida.",
+      "postfix": "Traduce el contenido anterior a"
+    }
+  },
+  "utils": {
+    "today": "Hoy",
+    "lastDay": "Ayer",
+    "last7Day": "Últimos 7 días",
+    "last30Day": "Últimos 30 días"
+  }
+}

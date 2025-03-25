@@ -1,0 +1,14 @@
+{
+  "name": {
+    "message": "フルーエント・レスポンス - ローカルAIアシスタント"
+  },
+  "description": {
+    "message": "ChromeでOllama APIと簡単に連携できるサイドパネル対応AI会話アシスタント"
+  },
+  "openDDRL": {
+    "message": "フルーエント・レスポンスを開く"
+  },
+  "translateSelected": {
+    "message": "選択したテキストを翻訳"
+  }
+}

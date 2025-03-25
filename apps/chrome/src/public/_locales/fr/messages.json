@@ -1,0 +1,14 @@
+{
+  "name": {
+    "message": "Réponse Fluide - Votre Assistant IA Local"
+  },
+  "description": {
+    "message": "Assistant de conversation IA compatible avec les panneaux latéraux, permettant une interaction facile avec l'API Ollama dans Chrome"
+  },
+  "openDDRL": {
+    "message": "Ouvrir Réponse Fluide"
+  },
+  "translateSelected": {
+    "message": "Traduire le texte sélectionné"
+  }
+}
