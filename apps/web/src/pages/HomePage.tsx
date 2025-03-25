@@ -143,7 +143,7 @@ export default function HomePage() {
                 <p className="text-gray-600 text-sm">
                   系统语言、深浅模式、自定义提示词等通过 &nbsp;
                   <a
-                    class="underline"
+                    className="underline"
                     href="https://developer.chrome.com/docs/extensions/reference/api/storage#property-sync"
                     target="_blank"
                   >
