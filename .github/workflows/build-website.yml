@@ -3,21 +3,25 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main # 触发分支
+      - main
     paths:
       - 'apps/web/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          ref: main # 明确检出源分支
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,27 +37,11 @@ jobs:
       - name: Build project
         run: pnpm run build --filter=web
 
-      - name: Checkout target branch
-        uses: actions/checkout@v4
+      - name: Upload to Pages
+        uses: actions/upload-pages@v3
         with:
-          ref: gh-pages
-          path: gh-pages
+          path: 'apps/web/dist'
 
-      - name: Sync docs
-        run: |
-          # 删除旧文件（保留 CNAME）
-          rsync -av --delete --exclude='CNAME' docs/ gh-pages/
-          # 同步构建结果到部署分支
-          cp -a gh-pages/. .
-
-      - name: Commit changes
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          if git diff --quiet --exit-code; then
-            echo "No changes to commit"
-          else
-            git commit -m "Deploy: $(date '+%Y-%m-%d %H:%M:%S')"
-            git push origin gh-pages
-          fi
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
