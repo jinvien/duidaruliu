@@ -1,9 +1,9 @@
-name: Build and Deploy Website
+name: Build and Deploy
 
 on:
   push:
     branches:
-      - main # 根据你的实际分支名称修改
+      - main # 触发分支
     paths:
       - 'apps/web/**'
 
@@ -11,18 +11,18 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 赋予工作流提交代码的权限
+      contents: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 获取完整提交历史
+          ref: main # 明确检出源分支
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # 使用你需要的 Node.js 版本
+          node-version: 20
 
       - name: Install pnpm
         run: npm install -g pnpm@latest
@@ -30,21 +30,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build web project
+      - name: Build project
         run: pnpm run build --filter=web
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
 
-      - name: Commit and push changes
+      - name: Sync docs
         run: |
-          # 检查是否有文件变更
-          if git diff --quiet --exit-code -- docs; then
+          # 删除旧文件（保留 CNAME）
+          rsync -av --delete --exclude='CNAME' docs/ gh-pages/
+          # 同步构建结果到部署分支
+          cp -a gh-pages/. .
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          if git diff --quiet --exit-code; then
             echo "No changes to commit"
           else
-            git add docs/
-            git commit -m "website build"
-            git push
+            git commit -m "Deploy: $(date '+%Y-%m-%d %H:%M:%S')"
+            git push origin gh-pages
           fi

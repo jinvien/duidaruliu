@@ -140,7 +140,7 @@ export default function HomePage() {
           </div>
         </section>
         <section id="more-features" className="py-20 ">
-          <h2 className="text-3xl font-bold text-center mb-12">更多能力</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">更多特性</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
