@@ -161,12 +161,12 @@ export default function HomePage() {
               {
                 icon: <MobileShortcutIcon size={36} />,
                 title: '快捷入口',
-                desc: '在侧边栏快速访问自定义网址',
+                desc: '侧边栏集成自定义网页快捷访问能力，支持用户自定义添加网址',
               },
               {
                 icon: <FileDownloadIcon size={36} />,
                 title: '对话记录管理',
-                desc: '支持随时将对话记录导出为 json 文件，同样支持记录的导入',
+                desc: '支持将聊天记录导出为本地文件进行备份，同时提供从本地文件导入恢复会话的功能',
               },
               {
                 icon: <DeviceIcon size={36} />,
