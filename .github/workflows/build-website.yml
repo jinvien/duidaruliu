@@ -48,8 +48,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 修改为上传构建后的目录
-          path: 'app/web/dist'
+          path: 'apps/web/dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
