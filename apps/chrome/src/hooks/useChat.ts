@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 import { streamingFetch } from '@/utils/streamFetch';
 import { PROMPTS } from '@/constants/prompt';
 import i18n from '@/i18n';
+import { App as AntdApp } from 'antd';
 
 import { modelHasVision } from '@/utils/modelCapability';
 import { toOllamaWireMessage } from '@/utils/ollamaMessage';
@@ -18,9 +19,25 @@ let abortControl: () => void;
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
+  const { message: antdMessage } = AntdApp.useApp();
 
   const { ollamaModelParams, ollamaUrl, listedModels } = useAppSelector((state) => state.ollama);
   const { lang } = useAppSelector((state) => state.app);
+
+  const reportChatError = (error: unknown) => {
+    if (error instanceof DOMException && error.name === 'AbortError') return;
+    const detail = error instanceof Error ? error.message.trim() : '';
+    const statusOnly = detail.match(/^HTTP (\d+)$/);
+    if (statusOnly) {
+      antdMessage.error(i18n.t('chat.requestFailedStatus', { status: statusOnly[1] }));
+      return;
+    }
+    if (!detail || /failed to fetch|networkerror|load failed/i.test(detail)) {
+      antdMessage.error(i18n.t('chat.requestFailed'));
+      return;
+    }
+    antdMessage.error(i18n.t('chat.requestFailedDetail', { detail }));
+  };
 
   const sendMessage = async (tempOllamaParams?: OllamaModelParams) => {
     loadingTimer = setTimeout(() => {
@@ -111,9 +128,8 @@ export const useChat = () => {
           onError: (error) => {
             clearTimeout(loadingTimer);
             console.error('onChatError', error);
-            if (error instanceof DOMException && error.name === 'AbortError') {
-              dispatch(setResponseStatus('end'));
-            }
+            dispatch(setResponseStatus('end'));
+            reportChatError(error);
           },
         }
       );
@@ -121,6 +137,7 @@ export const useChat = () => {
       clearTimeout(loadingTimer);
       console.error('onChatError', error);
       dispatch(setResponseStatus('end'));
+      reportChatError(error);
     }
   };
 

@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { message } from 'antd';
 import { normalizeStoredMessage } from '@/utils/chatImage';
+import i18n from '@/i18n';
 import type { Message } from '@/store/chatSlice';
 
 export type Conversation = {
@@ -24,21 +26,28 @@ export const storeCurrentMessagesFunc = async (messages: Message[]) => {
   if (!messages.length) {
     return;
   }
-  const { historyConversations } = await chrome.storage.local.get('historyConversations');
-  const newHistoryConversations = [
-    {
-      messages,
-      lastUpdatedAt: Date.now(),
-      lastModel: messages[messages.length - 1]?.model,
-    },
-    ...historyConversations,
-  ];
+  try {
+    const { historyConversations } = await chrome.storage.local.get('historyConversations');
+    const stored = Array.isArray(historyConversations) ? historyConversations : [];
+    const newHistoryConversations = [
+      {
+        messages,
+        lastUpdatedAt: Date.now(),
+        lastModel: messages[messages.length - 1]?.model,
+      },
+      ...stored,
+    ];
 
-  await chrome.storage.local.set({
-    historyConversations: newHistoryConversations,
-  });
+    await chrome.storage.local.set({
+      historyConversations: newHistoryConversations,
+    });
 
-  return newHistoryConversations;
+    return newHistoryConversations;
+  } catch (error) {
+    console.error('store history failed', error);
+    message.error(i18n.t('chat.historySaveFailed'));
+    return undefined;
+  }
 };
 
 // 异步获取存储数据

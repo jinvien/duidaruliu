@@ -8,7 +8,7 @@ import { setIsViewHistoryMode } from '@/store/historySlice';
 import { addMessage } from '@/store/chatSlice';
 import { useChat } from '@/hooks/useChat';
 import { ChatImageError, MAX_CHAT_IMAGES, fileToChatImage } from '@/utils/chatImage';
-import { modelHasVision } from '@/utils/modelCapability';
+import { modelCapabilityMark, modelHasVision } from '@/utils/modelCapability';
 
 import Styles from '../index.module.less';
 
@@ -20,7 +20,7 @@ const ChatSender: FC = () => {
   const { message: antdMessage } = AntdApp.useApp();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const { ollamaIsRunning, ollamaModelParams, listedModels } = useAppSelector(
+  const { ollamaIsRunning, ollamaModelParams, listedModels, modelsStatus } = useAppSelector(
     (state) => state.ollama
   );
   const { responseStatus } = useAppSelector((state) => state.chat);
@@ -40,7 +40,15 @@ const ChatSender: FC = () => {
   const visionEnabledRef = useRef(false);
 
   const { sendMessage, abortControl } = useChat();
+  const capabilityMark = modelCapabilityMark(
+    listedModels,
+    ollamaModelParams.model,
+    modelsStatus === 'idle' ? 'loading' : modelsStatus
+  );
   const visionEnabled = ollamaIsRunning && modelHasVision(listedModels, ollamaModelParams.model);
+  const showAttach =
+    ollamaIsRunning &&
+    (visionEnabled || capabilityMark === 'pending' || capabilityMark === 'unknown');
   visionEnabledRef.current = visionEnabled;
 
   useEffect(() => {
@@ -120,9 +128,11 @@ const ChatSender: FC = () => {
   ]);
 
   const imageLimitReached = pendingImages.length >= MAX_CHAT_IMAGES;
-  const attachTitle = imageLimitReached
-    ? t('chat.imageLimit', { count: MAX_CHAT_IMAGES })
-    : t('chat.attachImage');
+  const attachTitle = !visionEnabled
+    ? t(capabilityMark === 'unknown' ? 'chat.visionUnknown' : 'chat.visionChecking')
+    : imageLimitReached
+      ? t('chat.imageLimit', { count: MAX_CHAT_IMAGES })
+      : t('chat.attachImage');
 
   return (
     <Flex vertical gap="small">
@@ -202,14 +212,14 @@ const ChatSender: FC = () => {
               submitType={submitType}
               value={userContent}
               prefix={
-                visionEnabled ? (
+                showAttach ? (
                   <Tooltip title={attachTitle}>
                     <Button
                       variant="text"
                       color="default"
                       aria-label={attachTitle}
                       icon={<ImageAddIcon />}
-                      disabled={imageLimitReached || responseStatus !== 'end' || !ollamaIsRunning}
+                      disabled={!visionEnabled || imageLimitReached || responseStatus !== 'end'}
                       onMouseDown={(event) => event.stopPropagation()}
                       onClick={() => fileInputRef.current?.click()}
                     />
@@ -217,12 +227,13 @@ const ChatSender: FC = () => {
                 ) : undefined
               }
               onPaste={(event) => {
-                if (!visionEnabled) return;
+                if (!visionEnabled || responseStatus !== 'end') return;
                 const files = Array.from(event.clipboardData?.files ?? []).filter((file) =>
                   file.type.startsWith('image/')
                 );
                 if (!files.length) return;
-                event.preventDefault();
+                const text = event.clipboardData?.getData('text') ?? '';
+                if (!text) event.preventDefault();
                 void addImageFiles(files);
               }}
               onChange={(nextVal) => {

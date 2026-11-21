@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { App as AntdApp, Flex, Button, Space, Badge, Collapse } from 'antd';
 import { Bubble } from '@ant-design/x';
 import { FileCopyIcon, RefreshIcon, Filter3Icon } from 'tdesign-icons-react';
@@ -34,6 +34,12 @@ const Highlighter = SyntaxHighlighter as unknown as React.ComponentType<{
   style?: { [key: string]: React.CSSProperties };
   children: string;
 }>;
+
+const ChatBubbleImage: React.FC<{ src: string }> = ({ src }) => {
+  const [visible, setVisible] = useState(true);
+  if (!visible) return null;
+  return <img src={src} alt="" className={Styles.userImage} onError={() => setVisible(false)} />;
+};
 
 const ChatContent: React.FC = () => {
   // tools
@@ -158,7 +164,7 @@ const ChatContent: React.FC = () => {
         {images?.length ? (
           <div className={Styles.userImages}>
             {images.map((image, index) => (
-              <img key={index} src={image.dataUrl} alt="" className={Styles.userImage} />
+              <ChatBubbleImage key={index} src={image.dataUrl} />
             ))}
           </div>
         ) : null}

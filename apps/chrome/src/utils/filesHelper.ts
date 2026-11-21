@@ -1,6 +1,7 @@
-import { isChatImage } from '@/utils/chatImage';
+import { normalizeStoredMessage } from '@/utils/chatImage';
 
 import type { Conversation } from '@/store/historySlice';
+import type { Message } from '@/store/chatSlice';
 
 export function exportJsonArrayToFile(jsonArray: any[], filename: string): void {
   const blob = new Blob([JSON.stringify(jsonArray, null, 2)], { type: 'application/json' });
@@ -24,8 +25,7 @@ const isValidStoredMessage = (msg: unknown): boolean => {
   if (typeof value.content !== 'string') return false;
   if (typeof value.createdAt !== 'number') return false;
   if (typeof value.role !== 'string') return false;
-  if (value.images === undefined) return true;
-  return Array.isArray(value.images) && value.images.every(isChatImage);
+  return true;
 };
 
 const isValidJsonArray = (data: unknown): data is Conversation[] => {
@@ -64,24 +64,33 @@ export const uploadHistoryMessages = ({
         const parsedData = JSON.parse(content as string) as Conversation;
         if (isValidJsonArray(parsedData)) {
           const nowTime = Date.now();
-          // 读取本地的 historyConversations
           const { historyConversations } = await chrome.storage.local.get('historyConversations');
-          parsedData.forEach((item) => (item.exportedAt = nowTime));
+          const stored = Array.isArray(historyConversations) ? historyConversations : [];
+          const imported = parsedData.flatMap((item) => {
+            const messages = item.messages
+              .map(normalizeStoredMessage)
+              .filter((message): message is Message => message !== null);
+            if (!messages.length) return [];
+            return [{ ...item, exportedAt: nowTime, messages }];
+          });
+          if (!imported.length) {
+            onValidFailed?.();
+            return;
+          }
 
-          // 将数据追加到本地的 historyConversations
           await chrome.storage.local.set({
-            historyConversations: [...historyConversations, ...parsedData].sort(
+            historyConversations: [...stored, ...imported].sort(
               (a, b) => b.lastUpdatedAt - a.lastUpdatedAt
             ),
           });
 
-          onSuccess();
+          onSuccess?.();
         } else {
-          onValidFailed();
+          onValidFailed?.();
         }
       }
     } catch (error) {
-      onError;
+      onError?.(error);
     }
   };
 

@@ -22,6 +22,29 @@ type StreamingFetchCallbacks = {
   onSuccess?: () => void;
 };
 
+async function errorFromResponse(response: Response): Promise<Error> {
+  let detail = '';
+  try {
+    const body = (await response.text()).trim();
+    if (body) {
+      try {
+        const parsed = JSON.parse(body) as { error?: unknown };
+        if (typeof parsed.error === 'string' && parsed.error.trim()) {
+          detail = parsed.error.trim();
+        } else {
+          detail = body;
+        }
+      } catch {
+        detail = body;
+      }
+    }
+  } catch {
+    detail = '';
+  }
+  if (detail.length > 180) detail = `${detail.slice(0, 180)}…`;
+  return new Error(detail || `HTTP ${response.status}`);
+}
+
 /**
  * 发送流式请求并处理数据块
  * @param options 请求配置
@@ -43,7 +66,7 @@ export async function streamingFetch(
     const response = await fetch(url, { method, headers, body, signal });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw await errorFromResponse(response);
     }
 
     if (!response.body) {

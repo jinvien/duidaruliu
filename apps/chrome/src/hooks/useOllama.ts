@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { isEmbeddingModel } from '@/utils/detectModel';
 import { parseCapabilities, type OllamaListedModel } from '@/utils/modelCapability';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
-import { setListedModels, setModelCapabilities } from '@/store/ollamaSlice';
+import { setListedModels, setModelCapabilities, setModelsStatus } from '@/store/ollamaSlice';
 
 export type OllamaModelOptions = {
   temperature?: number;
@@ -86,11 +86,26 @@ export const useOllamaTags = (ollamaUrl: string) => {
   useEffect(() => {
     if (!ollamaUrl) {
       dispatch(setListedModels([]));
+      dispatch(setModelsStatus('idle'));
       return;
     }
 
     const controller = new AbortController();
     let active = true;
+    dispatch(setListedModels([]));
+    dispatch(setModelsStatus('loading'));
+
+    const settleCapability = (name: string, capabilities: string[] | null) => {
+      if (!active) return;
+      dispatch(
+        setModelCapabilities({
+          name,
+          capabilities: capabilities ?? [],
+          // 空数组也是 show 的明确结果，表示已确认没有 vision。null 才是未知。
+          capabilityState: Array.isArray(capabilities) ? 'known' : 'unknown',
+        })
+      );
+    };
 
     const load = async () => {
       try {
@@ -105,13 +120,13 @@ export const useOllamaTags = (ollamaUrl: string) => {
           return {
             name: model.name,
             capabilities: parsed.capabilities,
-            capabilitiesKnown: parsed.capabilitiesKnown,
+            capabilityState: parsed.capabilitiesKnown ? 'known' : 'pending',
           };
         });
         if (!active) return;
         dispatch(setListedModels(models));
 
-        const unknown = models.filter((model) => !model.capabilitiesKnown);
+        const unknown = models.filter((model) => model.capabilityState === 'pending');
         await mapPool(unknown, 3, async (model) => {
           if (!active) return;
           try {
@@ -120,16 +135,18 @@ export const useOllamaTags = (ollamaUrl: string) => {
               model.name,
               controller.signal
             );
-            if (!active || !capabilities) return;
-            dispatch(setModelCapabilities({ name: model.name, capabilities }));
+            settleCapability(model.name, capabilities);
           } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') return;
+            settleCapability(model.name, null);
           }
         });
+        if (active) dispatch(setModelsStatus('ready'));
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
         if (!active) return;
         dispatch(setListedModels([]));
+        dispatch(setModelsStatus('error'));
       }
     };
 

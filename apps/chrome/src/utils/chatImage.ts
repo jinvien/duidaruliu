@@ -2,9 +2,10 @@ import type { Message, RoleType } from '@/store/chatSlice';
 
 export const MAX_CHAT_IMAGES = 4;
 
-const MAX_IMAGE_EDGE = 1600;
+const MAX_IMAGE_EDGE = 1280;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
-const KEEP_ORIGINAL_BYTES = Math.floor(1.2 * 1024 * 1024);
+/** 存进 historyConversations 的 data URL 大约控制在这个长度，约 200–400KB。 */
+const TARGET_DATA_URL_CHARS = 320 * 1024;
 const IMAGE_PREFIX = /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i;
 const ROLES = new Set<RoleType>(['user', 'assistant', 'system', 'tool']);
 
@@ -100,30 +101,44 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-async function maybeCompress(
-  dataUrl: string,
-  fileSize: number,
-  mediaType: string
-): Promise<string> {
-  const image = await loadImage(dataUrl);
-  const maxEdge = Math.max(image.width, image.height);
-  const tooWide = maxEdge > MAX_IMAGE_EDGE;
-  const needsRaster = mediaType === 'image/gif' || fileSize > KEEP_ORIGINAL_BYTES;
-  if (!needsRaster && !tooWide) return dataUrl;
-  if (!image.width || !image.height) {
-    throw new ChatImageError('readFailed');
-  }
-
-  const scale = tooWide ? MAX_IMAGE_EDGE / maxEdge : 1;
+function renderJpeg(image: HTMLImageElement, maxEdge: number, quality: number): string {
+  const longest = Math.max(image.width, image.height);
+  const scale = longest > maxEdge ? maxEdge / longest : 1;
   const width = Math.max(1, Math.round(image.width * scale));
   const height = Math.max(1, Math.round(image.height * scale));
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext('2d');
-  if (!context) return dataUrl;
+  if (!context) throw new ChatImageError('readFailed');
   context.drawImage(image, 0, 0, width, height);
-  return canvas.toDataURL('image/jpeg', 0.85);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+async function maybeCompress(dataUrl: string, mediaType: string): Promise<string> {
+  if (mediaType !== 'image/gif' && dataUrl.length <= TARGET_DATA_URL_CHARS) return dataUrl;
+
+  const image = await loadImage(dataUrl);
+  if (!image.width || !image.height) throw new ChatImageError('readFailed');
+
+  let edge = Math.min(MAX_IMAGE_EDGE, Math.max(image.width, image.height));
+  let quality = 0.8;
+  let best = renderJpeg(image, edge, quality);
+
+  for (let attempt = 0; attempt < 8 && best.length > TARGET_DATA_URL_CHARS; attempt += 1) {
+    if (quality > 0.5) {
+      quality = Math.round((quality - 0.12) * 100) / 100;
+    } else if (edge > 480) {
+      edge = Math.max(480, Math.round(edge * 0.75));
+    } else {
+      break;
+    }
+    const next = renderJpeg(image, edge, quality);
+    if (next.length < best.length) best = next;
+  }
+
+  if (mediaType !== 'image/gif' && dataUrl.length < best.length) return dataUrl;
+  return best;
 }
 
 export async function fileToChatImage(file: File): Promise<{ dataUrl: string }> {
@@ -139,7 +154,7 @@ export async function fileToChatImage(file: File): Promise<{ dataUrl: string }> 
   const dataUrl = IMAGE_PREFIX.test(raw)
     ? raw
     : `data:${mediaType};base64,${imageDataUrlToBase64(raw)}`;
-  const compressed = await maybeCompress(dataUrl, file.size, mediaType);
+  const compressed = await maybeCompress(dataUrl, mediaType);
   if (!isChatImage({ dataUrl: compressed })) {
     throw new ChatImageError('readFailed');
   }
