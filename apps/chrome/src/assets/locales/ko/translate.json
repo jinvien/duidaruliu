@@ -99,6 +99,10 @@
     "lastDay": "어제",
     "last7Day": "지난 7일",
     "last30Day": "지난 30일",
-    "earlier": "이전"
+    "earlier": "이전",
+    "justNow": "방금",
+    "minutesAgo": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전",
+    "daysAgo": "{{count}}일 전"
   }
 }

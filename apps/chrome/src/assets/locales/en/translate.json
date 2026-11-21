@@ -100,6 +100,13 @@
     "lastDay": "Yesterday",
     "last7Day": "Last 7 days",
     "last30Day": "Past 30 days",
-    "earlier": "Earlier"
+    "earlier": "Earlier",
+    "justNow": "Just now",
+    "minutesAgo_one": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo_one": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { App as AntdApp, Drawer, Upload, Button, Flex, Tooltip, Divider, Tag } from 'antd';
 import { Conversations as ConversationsPanel } from '@ant-design/x';
 import {
@@ -28,7 +28,7 @@ import { setMessages } from '@/store/chatSlice';
 import { toggleTheme } from '@/store/appSlice';
 
 // utils
-import { getTimeGroup } from '@/utils/date';
+import { getTimeGroup, classifyHistoryListTime } from '@/utils/date';
 import { exportJsonArrayToFile, uploadHistoryMessages } from '@/utils/filesHelper';
 import { queryCurrentTab } from '@/utils/tab';
 import { contentWithPromptTag } from '@/utils/promptHelper';
@@ -61,6 +61,13 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   const messages = useAppSelector((state) => state.chat.messages);
   const { ollamaModelParams } = useAppSelector((state) => state.ollama);
   const { isDarkMode, lang } = useAppSelector((state) => state.app);
+
+  const [listOpenedAt, setListOpenedAt] = useState(() => Date.now());
+  const [historyPanelWasOpen, setHistoryPanelWasOpen] = useState(isShowHistoryPanel);
+  if (isShowHistoryPanel !== historyPanelWasOpen) {
+    setHistoryPanelWasOpen(isShowHistoryPanel);
+    if (isShowHistoryPanel) setListOpenedAt(Date.now());
+  }
 
   useEffect(() => {
     if (!isShowHistoryPanel) {
@@ -99,6 +106,26 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     return '';
   };
 
+  const formatHistoryListTime = (timestamp: number) => {
+    const value = classifyHistoryListTime(timestamp, listOpenedAt);
+    if (!value) return '';
+    switch (value.type) {
+      case 'justNow':
+        return t('utils.justNow');
+      case 'minutes':
+        return t('utils.minutesAgo', { count: value.count });
+      case 'hours':
+        return t('utils.hoursAgo', { count: value.count });
+      case 'yesterday':
+        return `${t('utils.lastDay')} ${value.time}`;
+      case 'days':
+        return t('utils.daysAgo', { count: value.count });
+      case 'monthDay':
+      case 'full':
+        return value.text;
+    }
+  };
+
   const lastAnswerModel = (conversationMessages: Message[], lastModel?: string) => {
     for (let index = conversationMessages.length - 1; index >= 0; index -= 1) {
       const message = conversationMessages[index];
@@ -126,8 +153,7 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
       const questionText =
         role === 'system' ? previewSource(secondMessage) : previewSource(firstMessage);
       const modelName = lastAnswerModel(conversationMessages, lastModel);
-      const updatedAt = dayjs(lastUpdatedAt);
-      const timeText = updatedAt.isValid() ? updatedAt.format('YYYY-MM-DD HH:mm') : '';
+      const timeText = formatHistoryListTime(lastUpdatedAt);
       const groupKey = getTimeGroup(lastUpdatedAt);
       const label = (
         <span className={Styles.historyLabel}>

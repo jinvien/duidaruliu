@@ -99,6 +99,10 @@
     "lastDay": "昨天",
     "last7Day": "最近7天",
     "last30Day": "过去30天",
-    "earlier": "更早"
+    "earlier": "更早",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}} 分钟前",
+    "hoursAgo": "{{count}} 小时前",
+    "daysAgo": "{{count}} 天前"
   }
 }

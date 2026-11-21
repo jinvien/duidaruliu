@@ -100,6 +100,19 @@
     "lastDay": "Вчера",
     "last7Day": "Последние 7 дней",
     "last30Day": "Последние 30 дней",
-    "earlier": "Ранее"
+    "earlier": "Ранее",
+    "justNow": "Только что",
+    "minutesAgo_one": "{{count}} минуту назад",
+    "minutesAgo_few": "{{count}} минуты назад",
+    "minutesAgo_many": "{{count}} минут назад",
+    "minutesAgo_other": "{{count}} минут назад",
+    "hoursAgo_one": "{{count}} час назад",
+    "hoursAgo_few": "{{count}} часа назад",
+    "hoursAgo_many": "{{count}} часов назад",
+    "hoursAgo_other": "{{count}} часов назад",
+    "daysAgo_one": "{{count}} день назад",
+    "daysAgo_few": "{{count}} дня назад",
+    "daysAgo_many": "{{count}} дней назад",
+    "daysAgo_other": "{{count}} дней назад"
   }
 }
