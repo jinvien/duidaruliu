@@ -16,6 +16,9 @@ import { useChat } from '@/hooks/useChat';
 // import store
 import { setIsViewHistoryMode } from '@/store/historySlice';
 import { setMessages } from '@/store/chatSlice';
+import { foldAssistantText } from '@/agent/ollamaStream';
+import { dropLastAssistantTurn } from '@/utils/chatTurn';
+import { groupChatBlocks, readableToolName, type AssistantSegment } from '@/utils/chatView';
 
 // import utils
 import { copyToClipboard } from '@/utils/copyToClipboard';
@@ -53,6 +56,8 @@ const ChatContent: React.FC = () => {
 
   // store
   const messages = useAppSelector((state) => state.chat.messages);
+  const pendingTool = useAppSelector((state) => state.chat.pendingTool);
+  const selectedModel = useAppSelector((state) => state.ollama.ollamaModelParams.model);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const { isDarkMode } = useAppSelector((state) => state.app);
 
@@ -60,10 +65,10 @@ const ChatContent: React.FC = () => {
     dispatch(setIsViewHistoryMode(false));
     await dispatch(
       setMessages({
-        messages: messages.slice(0, -1),
+        messages: dropLastAssistantTurn(messages),
       })
     );
-    sendMessage();
+    await sendMessage();
   };
 
   const ThinkTag = ({ children }: any) => (
@@ -188,6 +193,11 @@ const ChatContent: React.FC = () => {
       shape: 'corner',
       messageRender: userContentRender,
     },
+    tool: {
+      placement: 'start',
+      shape: 'corner',
+      variant: 'borderless',
+    },
   };
 
   const renderPrompt = (systemPrompt: string) => (
@@ -198,6 +208,7 @@ const ChatContent: React.FC = () => {
 
   const renderHeader = (role: keyof typeof roles, model: string | undefined) => {
     if (role === 'assistant') {
+      if (!model || model === 'unknown') return null;
       return <strong>{model}</strong>;
     }
     if (role === 'system') {
@@ -212,45 +223,121 @@ const ChatContent: React.FC = () => {
         ref={listRef}
         style={{ maxHeight: '100%' }}
         roles={roles}
-        items={messages.map(({ role, content, model, images }, i) => {
-          return {
-            key: i,
-            role,
-            content:
-              role === 'system'
-                ? renderPrompt(content)
-                : role === 'user'
-                  ? { text: content, images }
-                  : content,
-            loadingRender: () => <Badge status="processing" className="loadingDot" />,
-            loading: i === messages.length - 1 && responseStatus === 'waiting',
-            header: role === 'user' ? null : renderHeader(role, model),
-            footer:
-              role === 'assistant' ? (
-                <Space>
-                  <Button
-                    color="default"
-                    variant="text"
-                    size="small"
-                    icon={<FileCopyIcon />}
-                    onClick={() => {
-                      copyToClipboard(content);
-                      antdMessage.success(t('chat.messageCopy'));
-                    }}
-                  />
-                  {i === messages.length - 1 && (
-                    <Button
-                      color="default"
-                      variant="text"
-                      size="small"
-                      icon={<RefreshIcon />}
-                      onClick={() => reGenerator()}
-                    />
-                  )}
-                </Space>
-              ) : null,
-          };
-        })}
+        items={groupChatBlocks(messages, selectedModel).flatMap(
+          (block, blockIndex, blocks): any => {
+            const isLast = blockIndex === blocks.length - 1;
+            if (block.kind === 'message') {
+              const { role, content, model, images } = block.message;
+              return [
+                {
+                  key: block.index,
+                  role,
+                  content: role === 'system' ? renderPrompt(content) : { text: content, images },
+                  loadingRender: () => <Badge status="processing" className="loadingDot" />,
+                  loading: false,
+                  header: role === 'user' ? null : renderHeader(role, model),
+                  footer: null,
+                },
+              ];
+            }
+            const waiting = isLast && responseStatus === 'waiting';
+            if (block.segments.length === 0 && !(pendingTool && isLast) && !waiting) return [];
+            const segments: AssistantSegment[] =
+              pendingTool && isLast
+                ? [
+                    ...block.segments,
+                    {
+                      type: 'tool',
+                      name:
+                        readableToolName(pendingTool.displayName, pendingTool.name) ||
+                        t('chat.toolResult'),
+                      content: '',
+                      pending: true,
+                    },
+                  ]
+                : block.segments;
+            const hasVisibleText = segments.some((segment) => segment.type === 'text');
+            return [
+              {
+                key: `assistant-${block.lastIndex}`,
+                role: 'assistant' as const,
+                content: (
+                  <div>
+                    {segments.map((segment, segmentIndex) =>
+                      segment.type === 'text' ? (
+                        <div key={segmentIndex}>
+                          {messageRender(foldAssistantText(segment.thinking ?? '', segment.text))}
+                        </div>
+                      ) : (
+                        <Collapse
+                          key={segmentIndex}
+                          bordered={false}
+                          style={{ marginTop: segmentIndex === 0 ? 0 : 8 }}
+                          items={[
+                            {
+                              key: 'tool',
+                              label: (
+                                <span
+                                  style={
+                                    segment.isError
+                                      ? { color: 'var(--ant-color-error)' }
+                                      : undefined
+                                  }
+                                >
+                                  {segment.pending ? <Badge status="processing" /> : null}{' '}
+                                  {segment.pending
+                                    ? t('chat.toolRunning', { name: segment.name })
+                                    : segment.name || t('chat.toolResult')}
+                                </span>
+                              ),
+                              children: segment.pending ? null : (
+                                <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                                  {segment.content.length > 1200
+                                    ? `${segment.content.slice(0, 1200)}…`
+                                    : segment.content}
+                                </pre>
+                              ),
+                            },
+                          ]}
+                        />
+                      )
+                    )}
+                  </div>
+                ),
+                messageRender: (content: React.ReactNode) => content,
+                loadingRender: () => <Badge status="processing" className="loadingDot" />,
+                loading: waiting && !hasVisibleText && !pendingTool,
+                header: renderHeader('assistant', block.model || selectedModel),
+                footer:
+                  block.copyText || (isLast && responseStatus === 'end') ? (
+                    <Space>
+                      {block.copyText ? (
+                        <Button
+                          color="default"
+                          variant="text"
+                          size="small"
+                          icon={<FileCopyIcon />}
+                          onClick={() => {
+                            copyToClipboard(block.copyText);
+                            antdMessage.success(t('chat.messageCopy'));
+                          }}
+                        />
+                      ) : null}
+                      {isLast && responseStatus === 'end' && (
+                        <Button
+                          color="default"
+                          variant="text"
+                          size="small"
+                          icon={<RefreshIcon />}
+                          onClick={() => reGenerator()}
+                        />
+                      )}
+                    </Space>
+                  ) : null,
+              },
+            ];
+          }
+        )}
       />
     </Flex>
   );

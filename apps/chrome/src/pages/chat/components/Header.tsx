@@ -1,15 +1,23 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { App as AntdApp, Button, Space, Select, Badge, Tooltip } from 'antd';
 import { MenuApplicationIcon, ChatAddIcon } from 'tdesign-icons-react';
 import { useTranslation } from 'react-i18next';
 
+import { agentIsStreaming, resetAgentTranscript } from '@/agent/runtime';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 import { setOllamaModelParams } from '@/store/ollamaSlice';
 import { setMessages } from '@/store/chatSlice';
 import { setIsShowHistoryPanel, setIsViewHistoryMode } from '@/store/historySlice';
 
 import { useOllamaTags } from '@/hooks/useOllama';
-import { modelCapabilityMark, type CapabilityMark } from '@/utils/modelCapability';
+import { getMcpRuntime, subscribeMcpRuntime } from '@/mcp/session';
+import { explainChatTools, modelToolCapability } from '@/mcp/toolGate';
+import {
+  modelCapabilityMark,
+  modelHasTools,
+  modelToolsMark,
+  type CapabilityMark,
+} from '@/utils/modelCapability';
 
 // import local styles
 import Styles from '../index.module.less';
@@ -25,6 +33,9 @@ const HeaderSection: React.FC = () => {
   const messages = useAppSelector((state) => state.chat.messages);
   const { isViewHistoryMode } = useAppSelector((state) => state.history);
   const { responseStatus } = useAppSelector((state) => state.chat);
+  const mcpToolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
+  const mcpServers = useAppSelector((state) => state.mcp.servers);
+  const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
 
   const { ollamaTags } = useOllamaTags(ollamaUrl);
 
@@ -38,7 +49,7 @@ const HeaderSection: React.FC = () => {
   }, [ollamaTags]);
 
   const createNewChat = async () => {
-    if (responseStatus !== 'end') {
+    if (agentIsStreaming() || responseStatus !== 'end') {
       antdMessage.warning(t('chat.waitingForEnd'));
       return;
     }
@@ -50,7 +61,7 @@ const HeaderSection: React.FC = () => {
     if (isViewHistoryMode) {
       dispatch(setIsViewHistoryMode(false));
     }
-    // 新增对话
+    if (!resetAgentTranscript()) return;
     dispatch(
       setMessages({
         messages: [],
@@ -59,25 +70,52 @@ const HeaderSection: React.FC = () => {
     );
   };
 
-  const markText = (mark: CapabilityMark | null) => {
+  const listState = modelsStatus === 'idle' ? 'loading' : modelsStatus;
+  const markText = (mark: CapabilityMark | null, kind: 'vision' | 'tools') => {
     if (mark === 'vision') return t('chat.vision');
-    if (mark === 'pending') return t('chat.visionChecking');
-    if (mark === 'unknown') return t('chat.visionUnknown');
+    if (mark === 'tools') return t('chat.tools');
+    if (mark === 'pending')
+      return t(kind === 'vision' ? 'chat.visionChecking' : 'chat.toolsChecking');
+    if (mark === 'unknown')
+      return t(kind === 'vision' ? 'chat.visionUnknown' : 'chat.toolsUnknown');
     return '';
   };
 
   const renderModelLabel = (name: string) => {
     if (!ollamaIsRunning) return name;
-    const text = markText(
-      modelCapabilityMark(ollamaTags, name, modelsStatus === 'idle' ? 'loading' : modelsStatus)
-    );
+    const vision = markText(modelCapabilityMark(ollamaTags, name, listState), 'vision');
+    const tools = markText(modelToolsMark(ollamaTags, name, listState), 'tools');
+    const gate = explainChatTools({
+      toolsEnabled: mcpToolsEnabled,
+      enabledServerCount: mcpServers.filter((server) => server.enabled).length,
+      connectedToolCount: mcpRuntime.reduce(
+        (count, server) => (server.status === 'connected' ? count + server.tools.length : count),
+        0
+      ),
+      capability: modelToolCapability({
+        hasTools: modelHasTools(ollamaTags, name),
+        mark: modelToolsMark(ollamaTags, name, listState),
+      }),
+    });
+    const unsupported =
+      gate.kind === 'modelUnsupported' ? t('chat.toolsGate.modelUnsupportedShort') : '';
     return (
       <span className={Styles.modelOption}>
         <span>{name}</span>
-        {text ? <span className={Styles.modelVision}>{text}</span> : null}
+        {vision ? <span className={Styles.modelVision}>{vision}</span> : null}
+        {tools ? <span className={Styles.modelVision}>{tools}</span> : null}
+        {unsupported ? <span className={Styles.modelVision}>{unsupported}</span> : null}
       </span>
     );
   };
+
+  const mcpDisconnected =
+    mcpToolsEnabled &&
+    mcpServers.some(
+      (server) =>
+        server.enabled &&
+        mcpRuntime.find((item) => item.name === server.name)?.status !== 'connected'
+    );
 
   return (
     <header className={Styles.header}>
@@ -95,6 +133,11 @@ const HeaderSection: React.FC = () => {
       </div>
       <div className={Styles.middle}>
         <Badge status={ollamaIsRunning ? 'success' : 'default'} />
+        {mcpDisconnected ? (
+          <Tooltip title={t('chat.mcpDisconnected')}>
+            <Badge status="warning" />
+          </Tooltip>
+        ) : null}
         <Select
           disabled={!ollamaIsRunning}
           variant="borderless"

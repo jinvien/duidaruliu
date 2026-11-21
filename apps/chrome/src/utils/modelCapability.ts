@@ -11,9 +11,10 @@ export type OllamaListedModel = {
   capabilityState: CapabilityState;
 };
 
-export type CapabilityMark = 'vision' | 'pending' | 'unknown';
+export type CapabilityMark = 'vision' | 'tools' | 'pending' | 'unknown';
 
 export const VISION_CAPABILITY = 'vision';
+export const TOOLS_CAPABILITY = 'tools';
 
 export function parseCapabilities(raw: unknown): {
   capabilities: string[];
@@ -39,6 +40,33 @@ export function modelHasVision(models: OllamaListedModel[], modelName?: string):
   return Boolean(
     found?.capabilityState === 'known' && found.capabilities.includes(VISION_CAPABILITY)
   );
+}
+
+/** 只有明确上报 tools 时才把 MCP 工具放进 /api/chat。检测中和未知都不发送。 */
+export function modelHasTools(models: OllamaListedModel[], modelName?: string): boolean {
+  const found = findListedModel(models, modelName);
+  return Boolean(
+    found?.capabilityState === 'known' && found.capabilities.includes(TOOLS_CAPABILITY)
+  );
+}
+
+/** 已确认没有 tools 时返回 null。检测中和未知要显示在模型旁边。 */
+export function modelToolsMark(
+  models: OllamaListedModel[],
+  modelName: string | undefined,
+  listState: 'loading' | 'ready' | 'error'
+): CapabilityMark | null {
+  const found = findListedModel(models, modelName);
+  if (!found) {
+    if (!modelName) return null;
+    if (listState === 'loading') return 'pending';
+    if (listState === 'error') return 'unknown';
+    return null;
+  }
+  if (found.capabilityState === 'pending') return 'pending';
+  if (found.capabilityState === 'unknown') return 'unknown';
+  if (found.capabilities.includes(TOOLS_CAPABILITY)) return 'tools';
+  return null;
 }
 
 /**

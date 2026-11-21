@@ -10,10 +10,20 @@ import Setting from '@/pages/setting';
 import { toggleTheme, updateAppSettings, initializeApp } from '@/store/appSlice';
 import { initializePrompts } from '@/store/promptSlice';
 import { initializeOllama, setOllamaModelParams, setOllamaUrl } from '@/store/ollamaSlice';
+import { initializeMcp, setMcpServers, setMcpToolsEnabled } from '@/store/mcpSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 
 // tools
-import { rewriteOrigin } from '@/utils/rewriteOrigin';
+import { refreshAgentTools } from '@/agent/runtime';
+import { MCP_RUNTIME_PUSH, MCP_RUNTIME_QUERY } from '@/mcp/bridge';
+import { mcpPageOwnsRuntime, readMcpLocalChange } from '@/mcp/page';
+import {
+  closeMcpSessions,
+  getMcpRuntime,
+  subscribeMcpRuntime,
+  syncMcpSessions,
+} from '@/mcp/session';
+import { clearMcpOriginRules, rewriteOrigin, syncMcpOriginRules } from '@/utils/rewriteOrigin';
 
 // constants
 import { SYNC_VALUE_CHANGED } from '@/constants/command';
@@ -108,7 +118,9 @@ const SidePanelMain: React.FC<SidePanelMainProps> = (props) => {
 };
 
 const App: React.FC = () => {
-  const [appMode, setAppMode] = useState<AppMode>('chat');
+  // 设置页用 ?appMode=setting 另开标签。只根据打开时的地址判断，页内切到 iframe 不交出连接。
+  const ownsMcp = mcpPageOwnsRuntime(getAppModeFromUrl());
+  const [appMode, setAppMode] = useState<AppMode>(() => getAppModeFromUrl() || 'chat');
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -120,9 +132,73 @@ const App: React.FC = () => {
 
     // 初始化提示词
     dispatch(initializePrompts());
-  }, [dispatch]);
+
+    dispatch(initializeMcp());
+    if (!ownsMcp) return;
+    return () => {
+      void (async () => {
+        await closeMcpSessions();
+        await clearMcpOriginRules();
+      })();
+    };
+  }, [dispatch, ownsMcp]);
 
   const { ollamaUrl } = useAppSelector((state) => state.ollama);
+  const mcpServers = useAppSelector((state) => state.mcp.servers);
+  const mcpLoaded = useAppSelector((state) => state.mcp.loaded);
+  const mcpToolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
+  const listedModels = useAppSelector((state) => state.ollama.listedModels);
+  const selectedModel = useAppSelector((state) => state.ollama.ollamaModelParams.model);
+
+  useEffect(() => {
+    if (!ownsMcp) return;
+    const onChanged = (changes: Record<string, { newValue?: unknown }>, area: string) => {
+      const next = readMcpLocalChange(area, changes);
+      if (!next) return;
+      if (next.servers) dispatch(setMcpServers(next.servers));
+      if (next.toolsEnabled !== undefined) dispatch(setMcpToolsEnabled(next.toolsEnabled));
+    };
+    chrome.storage.onChanged.addListener(onChanged);
+    return () => chrome.storage.onChanged.removeListener(onChanged);
+  }, [dispatch, ownsMcp]);
+
+  useEffect(() => {
+    if (!ownsMcp) return;
+    const push = () => {
+      const message = { type: MCP_RUNTIME_PUSH, runtime: getMcpRuntime() };
+      try {
+        void Promise.resolve(chrome.runtime.sendMessage(message)).catch(() => undefined);
+      } catch {
+        // 设置页没打开时没有接收方。
+      }
+    };
+    const unsubscribe = subscribeMcpRuntime(push);
+    const onMessage = (
+      message: { type?: string },
+      _sender: unknown,
+      sendResponse: (response: unknown) => void
+    ) => {
+      if (message?.type !== MCP_RUNTIME_QUERY) return;
+      sendResponse({ runtime: getMcpRuntime() });
+      return true;
+    };
+    chrome.runtime.onMessage.addListener(onMessage);
+    return () => {
+      unsubscribe();
+      chrome.runtime.onMessage.removeListener(onMessage);
+    };
+  }, [ownsMcp]);
+
+  useEffect(() => {
+    if (!ownsMcp || !mcpLoaded) return;
+    void syncMcpSessions(mcpServers).finally(() => refreshAgentTools());
+    void syncMcpOriginRules(mcpServers);
+  }, [ownsMcp, mcpLoaded, mcpServers]);
+
+  useEffect(() => {
+    if (!ownsMcp || !mcpLoaded) return;
+    refreshAgentTools();
+  }, [ownsMcp, mcpLoaded, mcpToolsEnabled, listedModels, selectedModel]);
   if (!ollamaUrl) {
     return null;
   }
