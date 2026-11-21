@@ -31,7 +31,17 @@
     "imageTooLarge": "Image trop volumineuse",
     "imageUnsupported": "Format d'image non pris en charge",
     "imageReadFailed": "Échec de la lecture de l'image",
-    "imageLimit": "{{count}} images maximum"
+    "imageLimit": "{{count}} images maximum",
+    "tools": "Outils",
+    "toolsChecking": "Vérification des outils",
+    "toolsUnknown": "Outils inconnus",
+    "toolAllowOnce": "Autoriser une fois",
+    "toolAllowSession": "Autoriser pour cette conversation",
+    "toolReject": "Refuser",
+    "toolParams": "Paramètres",
+    "toolResult": "Résultat de l'outil",
+    "toolRunning": "{{name}} en cours",
+    "mcpDisconnected": "Un serveur MCP est déconnecté"
   },
   "links": {
     "shortCut": "Liens rapides"
@@ -70,7 +80,10 @@
     "removeServer": "Supprimer",
     "saved": "Enregistré",
     "duplicateName": "Les noms doivent être uniques",
-    "invalid": "Configuration invalide : {{detail}}"
+    "invalid": "Configuration invalide : {{detail}}",
+    "toolsEnabled": "Donner les outils au modèle actuel",
+    "toolsEnabledExtra": "Si c'est désactivé, la requête n'inclut pas tools. Seul un modèle qui déclare explicitement la capacité tools les reçoit.",
+    "toolCap": "Plus de {{count}} outils sont connectés. Le modèle local ne voit que les {{count}} premiers."
   },
   "customLinkSetting": {
     "linkSetting": "Paramètres des liens",

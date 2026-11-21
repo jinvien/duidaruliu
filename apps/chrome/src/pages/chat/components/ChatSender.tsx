@@ -10,6 +10,8 @@ import { useChat } from '@/hooks/useChat';
 import { ChatImageError, MAX_CHAT_IMAGES, fileToChatImage } from '@/utils/chatImage';
 import { modelCapabilityMark, modelHasVision } from '@/utils/modelCapability';
 
+import ToolApprovalCard from './ToolApproval';
+
 import Styles from '../index.module.less';
 
 import type { ChatImage, Message } from '@/store/chatSlice';
@@ -190,6 +192,7 @@ const ChatSender: FC = () => {
         }}
       />
 
+      <ToolApprovalCard />
       <Suggestion
         items={prompts}
         onSelect={(prompt) => {
@@ -208,7 +211,7 @@ const ChatSender: FC = () => {
         {({ onTrigger, onKeyDown }) => {
           return (
             <Sender
-              loading={responseStatus === 'outputting'}
+              loading={responseStatus === 'outputting' || responseStatus === 'tool'}
               submitType={submitType}
               value={userContent}
               prefix={

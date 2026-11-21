@@ -5,16 +5,21 @@ import { normalizeStoredMcpServers, type McpServerRecord } from '@/mcp/types';
 type McpState = {
   servers: McpServerRecord[];
   loaded: boolean;
+  toolsEnabled: boolean;
 };
 
 const initialState: McpState = {
   servers: [],
   loaded: false,
+  toolsEnabled: false,
 };
 
 export const initializeMcp = createAsyncThunk('mcp/initialize', async () => {
-  const stored = await chrome.storage.local.get('mcpServers');
-  return normalizeStoredMcpServers(stored.mcpServers);
+  const stored = await chrome.storage.local.get(['mcpServers', 'mcpToolsEnabled']);
+  return {
+    servers: normalizeStoredMcpServers(stored.mcpServers),
+    toolsEnabled: stored.mcpToolsEnabled === true,
+  };
 });
 
 const mcpSlice = createSlice({
@@ -25,14 +30,18 @@ const mcpSlice = createSlice({
       state.servers = action.payload;
       state.loaded = true;
     },
+    setMcpToolsEnabled(state, action: PayloadAction<boolean>) {
+      state.toolsEnabled = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(initializeMcp.fulfilled, (state, action) => {
-      state.servers = action.payload;
+      state.servers = action.payload.servers;
+      state.toolsEnabled = action.payload.toolsEnabled;
       state.loaded = true;
     });
   },
 });
 
-export const { setMcpServers } = mcpSlice.actions;
+export const { setMcpServers, setMcpToolsEnabled } = mcpSlice.actions;
 export default mcpSlice;

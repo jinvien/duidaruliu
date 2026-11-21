@@ -1,4 +1,4 @@
-import type { Message, RoleType } from '@/store/chatSlice';
+import type { Message, RoleType, ToolCallRecord } from '@/store/chatSlice';
 
 export const MAX_CHAT_IMAGES = 4;
 
@@ -67,7 +67,26 @@ export function normalizeStoredMessage(raw: unknown): Message | null {
       message.images = images.map((image) => ({ dataUrl: image.dataUrl }));
     }
   }
+  if (typeof value.thinking === 'string' && value.thinking) message.thinking = value.thinking;
+  const toolCalls = normalizeToolCalls(value.toolCalls);
+  if (toolCalls) message.toolCalls = toolCalls;
+  if (typeof value.toolCallId === 'string') message.toolCallId = value.toolCallId;
+  if (typeof value.toolName === 'string') message.toolName = value.toolName;
+  if (typeof value.isError === 'boolean') message.isError = value.isError;
   return message;
+}
+
+function normalizeToolCalls(raw: unknown): ToolCallRecord[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const calls = raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const value = item as Record<string, unknown>;
+    if (typeof value.id !== 'string' || typeof value.name !== 'string') return [];
+    const args = value.arguments;
+    if (!args || typeof args !== 'object' || Array.isArray(args)) return [];
+    return [{ id: value.id, name: value.name, arguments: args as Record<string, unknown> }];
+  });
+  return calls.length ? calls : undefined;
 }
 
 function resolveImageType(file: File): string | null {

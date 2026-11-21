@@ -31,7 +31,17 @@
     "imageTooLarge": "이미지가 너무 큽니다",
     "imageUnsupported": "지원하지 않는 이미지 형식입니다",
     "imageReadFailed": "이미지를 읽지 못했습니다",
-    "imageLimit": "이미지는 최대 {{count}}장까지 추가할 수 있습니다"
+    "imageLimit": "이미지는 최대 {{count}}장까지 추가할 수 있습니다",
+    "tools": "도구",
+    "toolsChecking": "도구 확인 중",
+    "toolsUnknown": "도구 알 수 없음",
+    "toolAllowOnce": "한 번 허용",
+    "toolAllowSession": "이 대화에서 허용",
+    "toolReject": "거부",
+    "toolParams": "매개변수",
+    "toolResult": "도구 결과",
+    "toolRunning": "{{name}} 실행 중",
+    "mcpDisconnected": "연결되지 않은 MCP 서버가 있습니다"
   },
   "links": {
     "shortCut": "빠른 링크"
@@ -70,7 +80,10 @@
     "removeServer": "삭제",
     "saved": "저장됨",
     "duplicateName": "이름이 중복되었습니다",
-    "invalid": "구성이 올바르지 않습니다: {{detail}}"
+    "invalid": "구성이 올바르지 않습니다: {{detail}}",
+    "toolsEnabled": "도구를 현재 모델에 전달",
+    "toolsEnabledExtra": "끄면 요청에 tools가 없습니다. tools 능력을 명확히 보고한 모델만 도구를 받습니다.",
+    "toolCap": "연결된 도구가 {{count}}개를 넘습니다. 로컬 모델은 앞의 {{count}}개만 봅니다."
   },
   "customLinkSetting": {
     "linkSetting": "링크 설정",

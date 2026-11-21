@@ -14,6 +14,7 @@ import { initializeMcp } from '@/store/mcpSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 
 // tools
+import { refreshAgentTools } from '@/agent/runtime';
 import { closeMcpSessions, syncMcpSessions } from '@/mcp/session';
 import { clearMcpOriginRules, rewriteOrigin, syncMcpOriginRules } from '@/utils/rewriteOrigin';
 
@@ -135,12 +136,15 @@ const App: React.FC = () => {
   const { ollamaUrl } = useAppSelector((state) => state.ollama);
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpLoaded = useAppSelector((state) => state.mcp.loaded);
+  const mcpToolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
+  const listedModels = useAppSelector((state) => state.ollama.listedModels);
+  const selectedModel = useAppSelector((state) => state.ollama.ollamaModelParams.model);
 
   useEffect(() => {
     if (!mcpLoaded) return;
-    void syncMcpSessions(mcpServers);
+    void syncMcpSessions(mcpServers).finally(() => refreshAgentTools());
     void syncMcpOriginRules(mcpServers);
-  }, [mcpLoaded, mcpServers]);
+  }, [mcpLoaded, mcpServers, mcpToolsEnabled, listedModels, selectedModel]);
   if (!ollamaUrl) {
     return null;
   }

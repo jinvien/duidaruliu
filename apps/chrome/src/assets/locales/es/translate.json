@@ -31,7 +31,17 @@
     "imageTooLarge": "La imagen es demasiado grande",
     "imageUnsupported": "Formato de imagen no compatible",
     "imageReadFailed": "No se pudo leer la imagen",
-    "imageLimit": "Como máximo {{count}} imágenes"
+    "imageLimit": "Como máximo {{count}} imágenes",
+    "tools": "Herramientas",
+    "toolsChecking": "Comprobando herramientas",
+    "toolsUnknown": "Herramientas desconocidas",
+    "toolAllowOnce": "Permitir una vez",
+    "toolAllowSession": "Permitir en este chat",
+    "toolReject": "Rechazar",
+    "toolParams": "Parámetros",
+    "toolResult": "Resultado de la herramienta",
+    "toolRunning": "{{name}} en ejecución",
+    "mcpDisconnected": "Hay un servidor MCP desconectado"
   },
   "links": {
     "shortCut": "Enlaces rápidos"
@@ -70,7 +80,10 @@
     "removeServer": "Eliminar",
     "saved": "Guardado",
     "duplicateName": "Los nombres no pueden repetirse",
-    "invalid": "Configuración no válida: {{detail}}"
+    "invalid": "Configuración no válida: {{detail}}",
+    "toolsEnabled": "Entregar herramientas al modelo actual",
+    "toolsEnabledExtra": "Si está apagado, la solicitud no incluye tools. Solo un modelo que informe explícitamente la capacidad tools las recibe.",
+    "toolCap": "Hay más de {{count}} herramientas conectadas. El modelo local solo ve las primeras {{count}}."
   },
   "customLinkSetting": {
     "linkSetting": "Configuración de enlaces",

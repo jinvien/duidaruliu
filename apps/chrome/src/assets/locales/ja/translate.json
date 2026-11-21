@@ -31,7 +31,17 @@
     "imageTooLarge": "画像が大きすぎます",
     "imageUnsupported": "未対応の画像形式です",
     "imageReadFailed": "画像の読み込みに失敗しました",
-    "imageLimit": "画像は最大 {{count}} 枚までです"
+    "imageLimit": "画像は最大 {{count}} 枚までです",
+    "tools": "ツール",
+    "toolsChecking": "ツールを確認中",
+    "toolsUnknown": "ツール不明",
+    "toolAllowOnce": "一度だけ許可",
+    "toolAllowSession": "この会話では許可",
+    "toolReject": "拒否",
+    "toolParams": "パラメータ",
+    "toolResult": "ツールの結果",
+    "toolRunning": "{{name}} を実行中",
+    "mcpDisconnected": "接続されていない MCP サーバーがあります"
   },
   "links": {
     "shortCut": "クイックリンク"
@@ -70,7 +80,10 @@
     "removeServer": "削除",
     "saved": "保存しました",
     "duplicateName": "名前が重複しています",
-    "invalid": "設定が無効です：{{detail}}"
+    "invalid": "設定が無効です：{{detail}}",
+    "toolsEnabled": "ツールを現在のモデルに渡す",
+    "toolsEnabledExtra": "オフのとき、リクエストに tools は付きません。tools 能力を明示しているモデルだけがツールを受け取ります。",
+    "toolCap": "接続中のツールが {{count}} 個を超えています。ローカルモデルが見るのは先頭の {{count}} 個だけです。"
   },
   "customLinkSetting": {
     "linkSetting": "リンク設定",

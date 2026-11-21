@@ -22,11 +22,73 @@ export type McpServerRuntime = {
   tools: McpToolSummary[];
 };
 
+type StoredTool = {
+  name: string;
+  title?: string;
+  description?: string;
+  inputSchema: Record<string, unknown>;
+};
+
 type Session = {
   client: McpClient;
   signature: string;
   tools: McpToolSummary[];
+  definitions: StoredTool[];
 };
+
+export type CallableMcpTool = StoredTool & {
+  serverName: string;
+  call: (
+    args: Record<string, unknown>,
+    signal?: AbortSignal
+  ) => Promise<{
+    content?: unknown;
+    structuredContent?: unknown;
+    isError?: boolean;
+  }>;
+};
+
+let onToolsChanged: (() => void) | undefined;
+
+export function setMcpToolsChangedListener(listener: (() => void) | undefined) {
+  onToolsChanged = listener;
+}
+
+function definitionsFrom(
+  listed: {
+    name: string;
+    title?: string;
+    description?: string;
+    inputSchema: Record<string, unknown>;
+  }[]
+): StoredTool[] {
+  return listed.map((tool) => ({
+    name: tool.name,
+    ...(tool.title ? { title: tool.title } : {}),
+    ...(tool.description ? { description: tool.description } : {}),
+    inputSchema: tool.inputSchema,
+  }));
+}
+
+function summariesFrom(definitions: StoredTool[]): McpToolSummary[] {
+  return definitions.map((tool) => ({
+    name: tool.name,
+    ...(tool.description ? { description: tool.description } : {}),
+  }));
+}
+
+async function reloadServerTools(name: string, client: McpClient) {
+  const listed = await client.listTools();
+  const current = sessions.get(name);
+  if (!current || current.client !== client) return;
+  current.definitions = definitionsFrom(listed);
+  current.tools = summariesFrom(current.definitions);
+  snapshot = snapshot.map((item) =>
+    item.name === name ? { ...item, status: 'connected', tools: current.tools } : item
+  );
+  emit();
+  onToolsChanged?.();
+}
 
 const CLIENT_INFO = { name: 'duidaruliu', version: '0.0.4' };
 
@@ -46,6 +108,20 @@ export function subscribeMcpRuntime(listener: () => void) {
 
 export function getMcpRuntime(): McpServerRuntime[] {
   return snapshot;
+}
+
+export function listCallableMcpTools(): CallableMcpTool[] {
+  const callable: CallableMcpTool[] = [];
+  for (const [serverName, session] of sessions) {
+    for (const tool of session.definitions) {
+      callable.push({
+        ...tool,
+        serverName,
+        call: (args, signal) => session.client.callTool(tool.name, args, { signal }),
+      });
+    }
+  }
+  return callable;
 }
 
 function signature(server: McpServerRecord): string {
@@ -126,11 +202,12 @@ async function connectServer(
       await client.close().catch(() => {});
       return idleRuntime(server);
     }
-    const tools = listed.map((tool) => ({
-      name: tool.name,
-      ...(tool.description ? { description: tool.description } : {}),
-    }));
-    sessions.set(server.name, { client, signature: signature(server), tools });
+    const definitions = definitionsFrom(listed);
+    const tools = summariesFrom(definitions);
+    sessions.set(server.name, { client, signature: signature(server), tools, definitions });
+    client.onNotification('notifications/tools/list_changed', () => {
+      void reloadServerTools(server.name, client).catch(() => {});
+    });
     return { name: server.name, status: 'connected', tools };
   } catch (error) {
     await client.close().catch(() => {});

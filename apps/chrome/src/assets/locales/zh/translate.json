@@ -31,7 +31,17 @@
     "imageTooLarge": "图片过大",
     "imageUnsupported": "不支持的图片格式",
     "imageReadFailed": "图片读取失败",
-    "imageLimit": "最多添加 {{count}} 张图片"
+    "imageLimit": "最多添加 {{count}} 张图片",
+    "tools": "工具",
+    "toolsChecking": "工具检测中",
+    "toolsUnknown": "工具未知",
+    "toolAllowOnce": "允许一次",
+    "toolAllowSession": "本会话允许",
+    "toolReject": "拒绝",
+    "toolParams": "参数",
+    "toolResult": "工具结果",
+    "toolRunning": "{{name}} 执行中",
+    "mcpDisconnected": "有 MCP 服务器未连接"
   },
   "links": {
     "shortCut": "快捷入口"
@@ -70,7 +80,10 @@
     "removeServer": "删除",
     "saved": "已保存",
     "duplicateName": "名称不能重复",
-    "invalid": "配置无效：{{detail}}"
+    "invalid": "配置无效：{{detail}}",
+    "toolsEnabled": "把工具交给当前模型",
+    "toolsEnabledExtra": "关闭时请求不带 tools。只有明确具备 tools 能力的模型才会收到工具。",
+    "toolCap": "已连接的工具超过 {{count}} 个，本地模型只会看到前 {{count}} 个。"
   },
   "customLinkSetting": {
     "linkSetting": "链接设置",

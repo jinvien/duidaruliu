@@ -16,6 +16,7 @@ import { useChat } from '@/hooks/useChat';
 // import store
 import { setIsViewHistoryMode } from '@/store/historySlice';
 import { setMessages } from '@/store/chatSlice';
+import { dropLastAssistantTurn } from '@/utils/chatTurn';
 
 // import utils
 import { copyToClipboard } from '@/utils/copyToClipboard';
@@ -53,6 +54,7 @@ const ChatContent: React.FC = () => {
 
   // store
   const messages = useAppSelector((state) => state.chat.messages);
+  const pendingTool = useAppSelector((state) => state.chat.pendingTool);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const { isDarkMode } = useAppSelector((state) => state.app);
 
@@ -60,7 +62,7 @@ const ChatContent: React.FC = () => {
     dispatch(setIsViewHistoryMode(false));
     await dispatch(
       setMessages({
-        messages: messages.slice(0, -1),
+        messages: dropLastAssistantTurn(messages),
       })
     );
     await sendMessage();
@@ -188,6 +190,11 @@ const ChatContent: React.FC = () => {
       shape: 'corner',
       messageRender: userContentRender,
     },
+    tool: {
+      placement: 'start',
+      shape: 'corner',
+      variant: 'borderless',
+    },
   };
 
   const renderPrompt = (systemPrompt: string) => (
@@ -212,45 +219,94 @@ const ChatContent: React.FC = () => {
         ref={listRef}
         style={{ maxHeight: '100%' }}
         roles={roles}
-        items={messages.map(({ role, content, model, images }, i) => {
-          return {
-            key: i,
-            role,
-            content:
-              role === 'system'
-                ? renderPrompt(content)
-                : role === 'user'
-                  ? { text: content, images }
-                  : content,
-            loadingRender: () => <Badge status="processing" className="loadingDot" />,
-            loading: i === messages.length - 1 && responseStatus === 'waiting',
-            header: role === 'user' ? null : renderHeader(role, model),
-            footer:
-              role === 'assistant' ? (
-                <Space>
-                  <Button
-                    color="default"
-                    variant="text"
-                    size="small"
-                    icon={<FileCopyIcon />}
-                    onClick={() => {
-                      copyToClipboard(content);
-                      antdMessage.success(t('chat.messageCopy'));
-                    }}
-                  />
-                  {i === messages.length - 1 && (
-                    <Button
-                      color="default"
-                      variant="text"
-                      size="small"
-                      icon={<RefreshIcon />}
-                      onClick={() => reGenerator()}
-                    />
-                  )}
-                </Space>
-              ) : null,
-          };
-        })}
+        items={[
+          ...messages.flatMap((message, i) => {
+            const { role, content, model, images, toolCalls, toolName, isError } = message;
+            if (role === 'assistant' && !content.trim() && toolCalls?.length) return [];
+            const toolBody =
+              role === 'tool' ? (
+                <Collapse
+                  bordered={false}
+                  items={[
+                    {
+                      key: 'result',
+                      label: (
+                        <span style={isError ? { color: 'var(--ant-color-error)' } : undefined}>
+                          {toolName || t('chat.toolResult')}
+                        </span>
+                      ),
+                      children: (
+                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                          {content.length > 1200 ? `${content.slice(0, 1200)}…` : content}
+                        </pre>
+                      ),
+                    },
+                  ]}
+                />
+              ) : null;
+            return [
+              {
+                key: i,
+                role,
+                content:
+                  role === 'system'
+                    ? renderPrompt(content)
+                    : role === 'user'
+                      ? { text: content, images }
+                      : role === 'tool'
+                        ? toolBody
+                        : content,
+                loadingRender: () => <Badge status="processing" className="loadingDot" />,
+                loading: i === messages.length - 1 && responseStatus === 'waiting',
+                header: role === 'user' ? null : renderHeader(role, model),
+                footer:
+                  role === 'assistant' || (role === 'tool' && i === messages.length - 1) ? (
+                    <Space>
+                      {role === 'assistant' ? (
+                        <Button
+                          color="default"
+                          variant="text"
+                          size="small"
+                          icon={<FileCopyIcon />}
+                          onClick={() => {
+                            copyToClipboard(content);
+                            antdMessage.success(t('chat.messageCopy'));
+                          }}
+                        />
+                      ) : null}
+                      {i === messages.length - 1 && responseStatus === 'end' && (
+                        <Button
+                          color="default"
+                          variant="text"
+                          size="small"
+                          icon={<RefreshIcon />}
+                          onClick={() => reGenerator()}
+                        />
+                      )}
+                    </Space>
+                  ) : null,
+              },
+            ];
+          }),
+          ...(pendingTool
+            ? [
+                {
+                  key: -1,
+                  role: 'tool' as const,
+                  content: (
+                    <span>
+                      <Badge status="processing" />{' '}
+                      {t('chat.toolRunning', { name: pendingTool.name })}
+                    </span>
+                  ),
+                  loadingRender: () => <Badge status="processing" className="loadingDot" />,
+                  loading: true,
+                  header: undefined,
+                  footer: null,
+                },
+              ]
+            : []),
+        ]}
       />
     </Flex>
   );

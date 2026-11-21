@@ -5,7 +5,9 @@ import { AssistantMessageEventStream } from '@earendil-works/pi-ai/utils/event-s
 import type { OllamaModelParams } from '@/hooks/useOllama';
 import { streamingFetch } from '@/utils/streamFetch';
 import {
+  OLLAMA_TOOL_IMAGE_NOTE,
   toOllamaWireMessage,
+  type OllamaFunctionCall,
   type OllamaWireImage,
   type OllamaWireMessage,
 } from '@/utils/ollamaMessage';
@@ -20,6 +22,7 @@ import type {
   StopReason,
   TextContent,
   ThinkingContent,
+  ToolCall,
 } from '@earendil-works/pi-ai';
 
 const EMPTY_USAGE: AssistantMessage['usage'] = {
@@ -44,6 +47,8 @@ export type OllamaStreamRequest = {
   lang: string;
   translateSystemPrompt: string;
   translatePostfix: string;
+  /** 只有模型明确具备 tools 能力时才为 true。 */
+  includeTools?: boolean;
   fetchImpl?: typeof fetch;
 };
 
@@ -86,11 +91,6 @@ function stringField(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-function chunkHasToolCall(chunk: OllamaChunk): boolean {
-  const calls = chunk.message?.tool_calls;
-  return Array.isArray(calls) && calls.length > 0;
-}
-
 function userImages(message: Message): OllamaWireImage[] {
   if (message.role !== 'user' || typeof message.content === 'string') return [];
   return message.content
@@ -106,6 +106,8 @@ function wireMessage(
   if (message.role === 'system') {
     const text = contentText(message.content, '');
     activeSystem.text = text;
+    // 工具声明会插入空 system，不能把它写进 Ollama 消息。
+    if (!text) return null;
     return { role: 'system', content: text };
   }
 
@@ -121,11 +123,28 @@ function wireMessage(
   }
 
   if (message.role === 'assistant') {
-    return { role: 'assistant', content: contentText(message.content, '') };
+    const calls = message.content.filter((part): part is ToolCall => part.type === 'toolCall');
+    const wire: OllamaWireMessage = {
+      role: 'assistant',
+      content: contentText(message.content, ''),
+    };
+    if (calls.length) {
+      wire.tool_calls = calls.map(
+        (call): OllamaFunctionCall => ({
+          type: 'function',
+          function: { name: call.name, arguments: call.arguments },
+        })
+      );
+    }
+    return wire;
   }
 
   if (message.role === 'toolResult') {
-    return { role: 'tool', content: contentText(message.content, '') };
+    const content = message.content
+      .map((part) => (part.type === 'image' ? OLLAMA_TOOL_IMAGE_NOTE : part.text))
+      .filter((part) => part.length > 0)
+      .join('\n');
+    return { role: 'tool', tool_name: message.toolName, content };
   }
 
   return null;
@@ -138,16 +157,22 @@ function buildChatBody(messages: readonly Message[], request: OllamaStreamReques
     return next ? [next] : [];
   });
 
-  // "none" 把声明折进 requestTools。阶段一这份列表是空的，请求体因此没有 tools，也不带 think。
-  const toolNames = resolveTranscriptTools(messages, 'none').requestTools.map((tool) => tool.name);
-  if (toolNames.length > 0) {
-    console.warn(`ollama /api/chat omitted tools: ${toolNames.join(', ')}`);
-  }
-
-  return JSON.stringify({
+  const requestTools = resolveTranscriptTools(messages, 'none').requestTools;
+  const body: Record<string, unknown> = {
     messages: wire,
     ...request.modelParams,
-  });
+  };
+  if (request.includeTools && requestTools.length > 0) {
+    body.tools = requestTools.map((tool) => ({
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      },
+    }));
+  }
+  return JSON.stringify(body);
 }
 
 function createPartial(model: Model<Api>): AssistantMessage {
@@ -197,6 +222,14 @@ export function streamOllamaChat(
   let textIndex = -1;
   let thinkingIndex = -1;
   let sawToolCall = false;
+  const trackedCalls: {
+    contentIndex: number;
+    id: string;
+    name: string;
+    argumentsText: string;
+    arguments?: Record<string, unknown>;
+    closed: boolean;
+  }[] = [];
 
   const finish = (event: Parameters<AssistantMessageEventStream['push']>[0]) => {
     if (finished) return;
@@ -257,6 +290,76 @@ export function streamOllamaChat(
     });
   };
 
+  const closeToolCall = (call: (typeof trackedCalls)[number]) => {
+    if (call.closed) return;
+    let args: Record<string, unknown> = {};
+    if (call.arguments) args = call.arguments;
+    else if (call.argumentsText) {
+      try {
+        const parsed = JSON.parse(call.argumentsText) as unknown;
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          args = parsed as Record<string, unknown>;
+        }
+      } catch {
+        args = {};
+      }
+    }
+    const toolCall: ToolCall = {
+      type: 'toolCall',
+      id: call.id,
+      name: call.name,
+      arguments: args as ToolCall['arguments'],
+    };
+    partial.content[call.contentIndex] = toolCall;
+    stream.push({ type: 'toolcall_end', contentIndex: call.contentIndex, toolCall, partial });
+    call.closed = true;
+  };
+
+  const applyToolCalls = (raw: unknown) => {
+    if (!Array.isArray(raw) || !raw.length) return;
+    sawToolCall = true;
+    raw.forEach((item, index) => {
+      if (!item || typeof item !== 'object') return;
+      const entry = item as {
+        id?: unknown;
+        function?: { name?: unknown; arguments?: unknown };
+      };
+      let call = trackedCalls[index];
+      const name = typeof entry.function?.name === 'string' ? entry.function.name : '';
+      if (!call) {
+        const id = typeof entry.id === 'string' && entry.id ? entry.id : `ollama-tool-${index + 1}`;
+        partial.content.push({ type: 'toolCall', id, name, arguments: {} });
+        call = {
+          contentIndex: partial.content.length - 1,
+          id,
+          name,
+          argumentsText: '',
+          closed: false,
+        };
+        trackedCalls[index] = call;
+        stream.push({ type: 'toolcall_start', contentIndex: call.contentIndex, partial });
+      } else if (name && !call.name) {
+        call.name = name;
+        (partial.content[call.contentIndex] as ToolCall).name = name;
+      }
+      const args = entry.function?.arguments;
+      if (args && typeof args === 'object' && !Array.isArray(args)) {
+        call.arguments = args as Record<string, unknown>;
+        closeToolCall(call);
+        return;
+      }
+      if (typeof args === 'string' && args) {
+        call.argumentsText += args;
+        stream.push({
+          type: 'toolcall_delta',
+          contentIndex: call.contentIndex,
+          delta: args,
+          partial,
+        });
+      }
+    });
+  };
+
   const stopReason = (doneReason: unknown): Extract<StopReason, 'stop' | 'length' | 'toolUse'> => {
     if (sawToolCall) return 'toolUse';
     return doneReason === 'length' ? 'length' : 'stop';
@@ -284,10 +387,11 @@ export function streamOllamaChat(
     // 空 content 也要继续看同一片段上的 tool_calls，不能像旧实现那样直接 return。
     if (thinking) appendThinking(thinking);
     if (content) appendText(content);
-    if (chunkHasToolCall(chunk)) sawToolCall = true;
+    applyToolCalls(message?.tool_calls);
 
     if (chunk.done === true) {
       closeBlocks();
+      trackedCalls.forEach(closeToolCall);
       const reason = stopReason(chunk.done_reason);
       partial.stopReason = reason;
       finish({ type: 'done', reason, message: partial });
@@ -314,8 +418,10 @@ export function streamOllamaChat(
               stream.push({ type: 'start', partial });
             }
             closeBlocks();
-            partial.stopReason = 'stop';
-            finish({ type: 'done', reason: 'stop', message: partial });
+            trackedCalls.forEach(closeToolCall);
+            const reason = stopReason(undefined);
+            partial.stopReason = reason;
+            finish({ type: 'done', reason, message: partial });
           },
           onError: fail,
         }

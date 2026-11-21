@@ -14,9 +14,10 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { getMcpRuntime, inspectMcpServer, subscribeMcpRuntime } from '@/mcp/session';
+import { MCP_MODEL_TOOL_CAP } from '@/mcp/tools';
 import { mcpOriginRewriteDefault, type McpServerRecord } from '@/mcp/types';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
-import { setMcpServers } from '@/store/mcpSlice';
+import { setMcpServers, setMcpToolsEnabled } from '@/store/mcpSlice';
 
 import type { McpConnectionStatus } from '@/mcp/session';
 
@@ -26,6 +27,7 @@ const McpSetting: React.FC = () => {
   const dispatch = useAppDispatch();
   const servers = useAppSelector((state) => state.mcp.servers);
   const loaded = useAppSelector((state) => state.mcp.loaded);
+  const toolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
   const runtime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
   const [form] = Form.useForm<{ servers: McpServerRecord[] }>();
   const watched = Form.useWatch('servers', form) as McpServerRecord[] | undefined;
@@ -111,6 +113,23 @@ const McpSetting: React.FC = () => {
           message={t('mcpSetting.storageNotice')}
           style={{ marginBottom: 16 }}
         />
+        <Form.Item label={t('mcpSetting.toolsEnabled')} extra={t('mcpSetting.toolsEnabledExtra')}>
+          <Switch
+            checked={toolsEnabled}
+            onChange={(checked) => {
+              dispatch(setMcpToolsEnabled(checked));
+              void chrome.storage.local.set({ mcpToolsEnabled: checked });
+            }}
+          />
+        </Form.Item>
+        {runtime.reduce((count, item) => count + item.tools.length, 0) > MCP_MODEL_TOOL_CAP ? (
+          <Alert
+            type="warning"
+            showIcon
+            message={t('mcpSetting.toolCap', { count: MCP_MODEL_TOOL_CAP })}
+            style={{ marginBottom: 16 }}
+          />
+        ) : null}
         <Form.List name="servers">
           {(fields, { add, remove }) => (
             <>

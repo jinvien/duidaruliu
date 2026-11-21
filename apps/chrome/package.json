@@ -12,7 +12,7 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts",
+    "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts && tsx --tsconfig tsconfig.json test/stage3.test.ts",
     "postinstall": "wxt prepare"
   },
   "dependencies": {

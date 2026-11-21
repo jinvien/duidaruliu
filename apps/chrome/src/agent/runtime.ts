@@ -1,14 +1,27 @@
 import { Agent } from '@earendil-works/pi-agent-core';
 import i18n from '@/i18n';
 import store from '@/store';
-import { addMessage, setResponseStatus, updateLastMessage } from '@/store/chatSlice';
+import {
+  addMessage,
+  patchLastAssistant,
+  setPendingTool,
+  setResponseStatus,
+  updateLastMessage,
+} from '@/store/chatSlice';
 import { imageDataUrlToBase64 } from '@/utils/chatImage';
-import { modelHasVision } from '@/utils/modelCapability';
+import { modelHasTools, modelHasVision } from '@/utils/modelCapability';
+import {
+  clearSessionToolAllows,
+  isToolAllowedForSession,
+  requestToolApproval,
+} from '@/mcp/approval';
+import { listCallableMcpTools, setMcpToolsChangedListener } from '@/mcp/session';
+import { buildAgentTools, toolRejectedReason } from '@/mcp/tools';
 
 import { foldAssistantText, streamOllamaChat, type OllamaStreamRequest } from './ollamaStream';
 
-import type { AgentMessage } from '@earendil-works/pi-agent-core';
-import type { AssistantMessage, ImageContent, TextContent } from '@earendil-works/pi-ai';
+import type { AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
+import type { AssistantMessage, ImageContent, TextContent, ToolCall } from '@earendil-works/pi-ai';
 import type { OllamaModelParams } from '@/hooks/useOllama';
 import type { Message } from '@/store/chatSlice';
 
@@ -61,22 +74,34 @@ function toAgentMessages(messages: Message[]): AgentMessage[] {
     if (message.role === 'tool') {
       return {
         role: 'toolResult',
-        toolCallId: '',
-        toolName: '',
+        toolCallId: message.toolCallId || '',
+        toolName: message.toolName || '',
         content: [{ type: 'text', text: message.content }],
-        isError: false,
+        isError: message.isError === true,
         timestamp: message.createdAt,
       };
     }
 
+    const content: AssistantMessage['content'] = [];
+    if (message.thinking) content.push({ type: 'thinking', thinking: message.thinking });
+    if (message.content) content.push({ type: 'text', text: message.content });
+    for (const call of message.toolCalls ?? []) {
+      content.push({
+        type: 'toolCall',
+        id: call.id,
+        name: call.name,
+        arguments: call.arguments as ToolCall['arguments'],
+      });
+    }
+    if (!content.length) content.push({ type: 'text', text: '' });
     return {
       role: 'assistant',
-      content: [{ type: 'text', text: message.content }],
+      content,
       api: 'ollama',
       provider: 'ollama',
       model: message.model ?? '',
       usage: EMPTY_USAGE,
-      stopReason: 'stop',
+      stopReason: message.toolCalls?.length ? 'toolUse' : 'stop',
       timestamp: message.createdAt,
     };
   });
@@ -89,6 +114,8 @@ function currentRequest(): OllamaStreamRequest {
     url: `${ollamaUrl}/api/chat`,
     modelParams,
     includeImages: modelHasVision(listedModels, modelParams.model),
+    includeTools:
+      store.getState().mcp.toolsEnabled && modelHasTools(listedModels, modelParams.model),
     lang: store.getState().app.lang,
     translateSystemPrompt: i18n.t('prompt.aiTranslateSelected.systemPrompt'),
     translatePostfix: i18n.t('prompt.aiTranslateSelected.postfix'),
@@ -148,7 +175,51 @@ const agent = new Agent({
   toolExecution: 'sequential',
   streamFn: (model, context, options) =>
     streamOllamaChat(model, context, options, currentRequest()),
+  beforeToolCall: async ({ toolCall, args }, signal) => {
+    if (signal?.aborted || isToolAllowedForSession(toolCall.name)) return undefined;
+    const meta = toolLabels.get(toolCall.name);
+    const decision = await requestToolApproval(
+      {
+        id: toolCall.name,
+        displayName: meta?.displayName || toolCall.name,
+        serverName: meta?.serverName || '',
+        args,
+      },
+      signal ?? new AbortController().signal
+    );
+    if (decision === 'aborted' || signal?.aborted) return undefined;
+    if (decision === 'once' || decision === 'session') return undefined;
+    return { block: true, reason: toolRejectedReason() };
+  },
 });
+
+const toolLabels = new Map<string, { displayName: string; serverName: string }>();
+
+export function refreshAgentTools() {
+  const state = store.getState();
+  const expose =
+    state.mcp.toolsEnabled &&
+    modelHasTools(state.ollama.listedModels, state.ollama.ollamaModelParams.model);
+  if (!expose) {
+    toolLabels.clear();
+    agent.state.tools = [];
+    return;
+  }
+  const built = buildAgentTools(listCallableMcpTools());
+  toolLabels.clear();
+  const callable = listCallableMcpTools().slice(0, built.length);
+  built.forEach((tool, index) => {
+    const source = callable[index];
+    if (!source) return;
+    toolLabels.set(tool.name, {
+      displayName: source.title || source.name,
+      serverName: source.serverName,
+    });
+  });
+  agent.state.tools = built as AgentTool[];
+}
+
+setMcpToolsChangedListener(() => refreshAgentTools());
 
 agent.subscribe((event) => {
   if (!runIsCurrent()) return;
@@ -176,6 +247,50 @@ agent.subscribe((event) => {
     clearLoadingTimer();
     store.dispatch(setResponseStatus('outputting'));
     store.dispatch(updateLastMessage(foldAssistantText(thinkingText, visibleText)));
+    return;
+  }
+
+  if (event.type === 'message_end' && event.message.role === 'assistant') {
+    const thinking = event.message.content
+      .filter((part) => part.type === 'thinking')
+      .map((part) => part.thinking)
+      .join('');
+    const toolCalls = event.message.content
+      .filter((part): part is ToolCall => part.type === 'toolCall')
+      .map((part) => ({ id: part.id, name: part.name, arguments: part.arguments }));
+    store.dispatch(patchLastAssistant({ ...(thinking ? { thinking } : {}), toolCalls }));
+    return;
+  }
+
+  if (event.type === 'tool_execution_start') {
+    clearLoadingTimer();
+    store.dispatch(setResponseStatus('tool'));
+    store.dispatch(
+      setPendingTool({
+        id: event.toolCallId,
+        name: event.toolName,
+        argumentsText: JSON.stringify(event.args ?? {}),
+      })
+    );
+    return;
+  }
+
+  if (event.type === 'message_end' && event.message.role === 'toolResult') {
+    const content = event.message.content
+      .map((part) => (part.type === 'text' ? part.text : ''))
+      .filter((text) => text.length > 0)
+      .join('\n');
+    store.dispatch(setPendingTool(null));
+    store.dispatch(
+      addMessage({
+        role: 'tool',
+        content,
+        createdAt: event.message.timestamp || Date.now(),
+        toolCallId: event.message.toolCallId,
+        toolName: event.message.toolName,
+        isError: event.message.isError,
+      })
+    );
     return;
   }
 
@@ -221,14 +336,17 @@ export async function settleAgent() {
 /** 新对话：运行中不重置。调用方要先确认已经空闲，再清空界面。 */
 export function resetAgentTranscript(): boolean {
   if (agent.state.isStreaming) return false;
+  clearSessionToolAllows();
   agent.reset();
   agent.state.messages = [];
+  refreshAgentTools();
   return true;
 }
 
 /** 打开历史只回填转录，不调用 prompt。运行中不改共享 Agent。 */
 export function loadAgentTranscript(messages: Message[]): boolean {
   if (agent.state.isStreaming) return false;
+  clearSessionToolAllows();
   agent.state.messages = toAgentMessages(messages);
   return true;
 }

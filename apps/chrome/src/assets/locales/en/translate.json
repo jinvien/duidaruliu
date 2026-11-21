@@ -31,7 +31,17 @@
     "imageTooLarge": "Image is too large",
     "imageUnsupported": "Unsupported image format",
     "imageReadFailed": "Failed to read image",
-    "imageLimit": "Up to {{count}} images"
+    "imageLimit": "Up to {{count}} images",
+    "tools": "Tools",
+    "toolsChecking": "Checking tools",
+    "toolsUnknown": "Tools unknown",
+    "toolAllowOnce": "Allow once",
+    "toolAllowSession": "Allow for this chat",
+    "toolReject": "Reject",
+    "toolParams": "Parameters",
+    "toolResult": "Tool result",
+    "toolRunning": "{{name}} running",
+    "mcpDisconnected": "An MCP server is disconnected"
   },
   "links": {
     "shortCut": "Quick links"
@@ -70,7 +80,10 @@
     "removeServer": "Remove",
     "saved": "Saved",
     "duplicateName": "Names must be unique",
-    "invalid": "Invalid configuration: {{detail}}"
+    "invalid": "Invalid configuration: {{detail}}",
+    "toolsEnabled": "Give tools to the current model",
+    "toolsEnabledExtra": "While off, requests omit tools. Only a model that explicitly reports the tools capability receives them.",
+    "toolCap": "More than {{count}} tools are connected. The local model only sees the first {{count}}."
   },
   "customLinkSetting": {
     "linkSetting": "Link Settings",

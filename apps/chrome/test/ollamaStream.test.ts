@@ -322,6 +322,12 @@ async function main() {
     let calls = 0;
     const fetchImpl: typeof fetch = async () => {
       calls += 1;
+      if (calls > 1) {
+        return new Response(
+          ndjson([{ message: { role: 'assistant', content: '好' }, done: true, done_reason: 'stop' }]),
+          { status: 200 }
+        );
+      }
       return new Response(
         ndjson([
           {
@@ -346,13 +352,15 @@ async function main() {
     agent.state.messages = [{ role: 'user', content: '调用', timestamp: 1 }];
     await withTimeout(agent.continue());
     const assistant = agent.state.messages.at(-1);
-    assert(calls === 1, `toolUse without toolCall blocks started ${calls} requests`);
-    assert(assistant?.role === 'assistant', 'toolUse turn stored an assistant message');
+    assert(calls === 2, `unknown tool call continued once, fetches=${calls}`);
     assert(
-      assistant?.role !== 'assistant' ||
-        !assistant.content.some((part) => part.type === 'toolCall'),
-      'stage 1 does not execute tool calls'
+      agent.state.messages.some(
+        (message) =>
+          message.role === 'assistant' && message.content.some((part) => part.type === 'toolCall')
+      ),
+      'tool call is part of the assistant message'
     );
+    assert(assistant?.role === 'assistant', 'toolUse turn stored an assistant message');
     assert(!agent.state.isStreaming, 'toolUse turn is idle');
   }
 
