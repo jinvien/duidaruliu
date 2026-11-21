@@ -53,10 +53,14 @@ export function isHttpHeaderName(name: string): boolean {
   return HTTP_HEADER_NAME.test(name);
 }
 
-/** 字段值只能是一行可见字符。换行和 NUL 不能保存，避免把凭据写进错误信息。 */
+/**
+ * 与 Fetch Headers 的 ByteString 对齐：码位必须落在 0x00–0xFF。
+ * 另外拒绝控制字符，只留 HTAB。报错用固定文案，不带原值和异常。
+ */
 export function isHttpHeaderValue(value: string): boolean {
   for (let index = 0; index < value.length; index += 1) {
     const code = value.charCodeAt(index);
+    if (code > 0xff) return false;
     if (code === 0x09) continue;
     if (code < 0x20 || code === 0x7f) return false;
   }

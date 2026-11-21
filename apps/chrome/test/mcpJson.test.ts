@@ -193,7 +193,70 @@ function mainParse() {
     !JSON.stringify(newlineArrayHeader).includes('super-secret'),
     'array header errors do not echo values'
   );
+  const unicodeObject = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: { url: 'https://example.com/mcp', headers: { Authorization: 'Bearer 中文' } },
+      },
+    })
+  );
+  assert(!unicodeObject.ok, 'object header values above Latin-1 are rejected');
+  assert(
+    !unicodeObject.ok &&
+      unicodeObject.issues.every(
+        (item) => item.detail === 'headers must use an HTTP token name and a single-line value'
+      ),
+    'unicode header errors use a fixed message'
+  );
+  assert(
+    !JSON.stringify(unicodeObject).includes('中文'),
+    'unicode header errors do not echo the value'
+  );
+
+  const unicodeArray = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: {
+          url: 'https://example.com/mcp',
+          headers: [{ name: 'Authorization', value: 'Bearer 中文' }],
+        },
+      },
+    })
+  );
+  assert(!unicodeArray.ok, 'array header values above Latin-1 are rejected');
+  assert(
+    !JSON.stringify(unicodeArray).includes('中文'),
+    'array unicode errors do not echo the value'
+  );
+
+  const latin1 = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: {
+          url: 'https://example.com/mcp',
+          headers: { Authorization: 'Bearer caf\u00e9', 'X-Note': 'a\tb \u00ff' },
+        },
+      },
+    })
+  );
+  assert(
+    latin1.ok &&
+      latin1.servers[0]?.headers.some((header) => header.value === 'Bearer caf\u00e9') &&
+      latin1.servers[0]?.headers.some((header) => header.value === 'a\tb \u00ff'),
+    'ASCII, tab, and Latin-1 header values stay valid'
+  );
+
   const kept = [{ name: 'keep', url: 'https://example.com/mcp' }];
+  const rejectedUnicode = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: { url: 'https://example.com/mcp', headers: { Authorization: 'Bearer 中文' } },
+      },
+    })
+  );
+  const storedUnicode = rejectedUnicode.ok ? rejectedUnicode.servers : kept;
+  assert(storedUnicode === kept, 'a non-ByteString header does not replace the saved servers');
+
   const rejectedHeaders = parseMcpServersDocument(
     JSON.stringify({
       mcpServers: { docs: { url: 'https://example.com/mcp', headers: { '': 'x' } } },
