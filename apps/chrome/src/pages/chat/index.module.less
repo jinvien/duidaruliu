@@ -142,16 +142,31 @@
   gap: 2px;
 }
 
-.historyLabelMain {
+.historyLabelTitle {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyLabelMeta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   min-width: 0;
   gap: var(--ant-margin-xxs);
 }
 
-.historyLabelTitle {
+.historyModelTag {
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 58%;
+  margin-inline-end: 0;
   overflow: hidden;
+  font-size: var(--ant-font-size-sm);
+  line-height: 18px;
+  color: var(--ant-color-text-description);
+  background: var(--ant-color-fill-quaternary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -159,13 +174,6 @@
 .historyLabelTime {
   flex: none;
   font-size: var(--ant-font-size-sm);
-}
-
-.historyLabelModel {
-  overflow: hidden;
-  font-size: var(--ant-font-size-sm);
-  line-height: 1.2;
-  color: var(--ant-color-text-tertiary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 18px;
+  color: var(--ant-color-text-description);
 }

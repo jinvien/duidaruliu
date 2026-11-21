@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { App as AntdApp, Drawer, Upload, Button, Flex, Tooltip, Divider } from 'antd';
+import { App as AntdApp, Drawer, Upload, Button, Flex, Tooltip, Divider, Tag } from 'antd';
 import { Conversations as ConversationsPanel } from '@ant-design/x';
 import {
   FileDownloadIcon,
@@ -118,37 +118,63 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
 
       if (role === 'system') {
         const systemContent = previewSource(secondMessage);
-
-        displayedContent =
-          systemContent.length > 11 ? `${systemContent.slice(0, 10)}...` : systemContent;
-
-        displayedContent = contentWithPromptTag(originalContent, displayedContent as string);
+        displayedContent = contentWithPromptTag(originalContent, systemContent);
       } else {
-        const source = previewSource(firstMessage);
-        displayedContent = source.length > 11 ? `${source.slice(0, 12)}...` : source;
+        displayedContent = previewSource(firstMessage);
       }
 
+      const questionText =
+        role === 'system' ? previewSource(secondMessage) : previewSource(firstMessage);
       const modelName = lastAnswerModel(conversationMessages, lastModel);
       const updatedAt = dayjs(lastUpdatedAt);
+      const timeText = updatedAt.isValid() ? updatedAt.format('YYYY-MM-DD HH:mm') : '';
       const groupKey = getTimeGroup(lastUpdatedAt);
+      const label = (
+        <span className={Styles.historyLabel}>
+          <span className={Styles.historyLabelTitle}>{displayedContent}</span>
+          {modelName || timeText ? (
+            <span className={Styles.historyLabelMeta}>
+              {modelName ? (
+                <Tag
+                  bordered={false}
+                  className={Styles.historyModelTag}
+                  style={{
+                    marginInlineEnd: 0,
+                    color: 'var(--ant-color-text-description)',
+                    background: 'var(--ant-color-fill-quaternary)',
+                  }}
+                >
+                  {modelName}
+                </Tag>
+              ) : null}
+              {timeText ? <span className={Styles.historyLabelTime}>{timeText}</span> : null}
+            </span>
+          ) : null}
+        </span>
+      );
 
       return {
         key: i.toString(),
-        label: (
+        label: questionText ? (
           <Tooltip
-            title={updatedAt.isValid() ? updatedAt.format('YYYY-MM-DD HH:mm') : undefined}
+            title={questionText}
             placement="right"
+            color="var(--ant-color-bg-elevated)"
+            styles={{
+              body: {
+                color: 'var(--ant-color-text-description)',
+                fontSize: 'var(--ant-font-size)',
+                lineHeight: 'var(--ant-line-height)',
+                maxWidth: 240,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              },
+            }}
           >
-            <span className={Styles.historyLabel}>
-              <span className={Styles.historyLabelMain}>
-                <span className={Styles.historyLabelTitle}>{displayedContent}</span>
-                <span className={Styles.historyLabelTime}>
-                  {updatedAt.isValid() ? updatedAt.format('HH:mm') : ''}
-                </span>
-              </span>
-              {modelName ? <span className={Styles.historyLabelModel}>{modelName}</span> : null}
-            </span>
+            {label}
           </Tooltip>
+        ) : (
+          label
         ),
         disabled: false,
         group: DATE_GROUP_MAP[groupKey as keyof typeof DATE_GROUP_MAP] || t('utils.earlier'),
