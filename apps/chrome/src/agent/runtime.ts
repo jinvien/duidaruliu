@@ -227,7 +227,7 @@ function ensureStreamingAssistant(model?: string) {
       role: 'assistant',
       content: '',
       createdAt: Date.now(),
-      model: model || store.getState().ollama.ollamaModelParams.model,
+      model: model && model !== 'unknown' ? model : store.getState().ollama.ollamaModelParams.model,
     })
   );
 }

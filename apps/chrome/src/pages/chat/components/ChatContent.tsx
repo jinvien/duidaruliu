@@ -18,6 +18,7 @@ import { setIsViewHistoryMode } from '@/store/historySlice';
 import { setMessages } from '@/store/chatSlice';
 import { foldAssistantText } from '@/agent/ollamaStream';
 import { dropLastAssistantTurn } from '@/utils/chatTurn';
+import { groupChatBlocks, readableToolName, type AssistantSegment } from '@/utils/chatView';
 
 // import utils
 import { copyToClipboard } from '@/utils/copyToClipboard';
@@ -56,6 +57,7 @@ const ChatContent: React.FC = () => {
   // store
   const messages = useAppSelector((state) => state.chat.messages);
   const pendingTool = useAppSelector((state) => state.chat.pendingTool);
+  const selectedModel = useAppSelector((state) => state.ollama.ollamaModelParams.model);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const { isDarkMode } = useAppSelector((state) => state.app);
 
@@ -206,6 +208,7 @@ const ChatContent: React.FC = () => {
 
   const renderHeader = (role: keyof typeof roles, model: string | undefined) => {
     if (role === 'assistant') {
+      if (!model || model === 'unknown') return null;
       return <strong>{model}</strong>;
     }
     if (role === 'system') {
@@ -220,74 +223,107 @@ const ChatContent: React.FC = () => {
         ref={listRef}
         style={{ maxHeight: '100%' }}
         roles={roles}
-        items={[
-          ...messages.flatMap((message, i) => {
-            const {
-              role,
-              content,
-              model,
-              images,
-              thinking,
-              toolCalls,
-              toolName,
-              toolDisplayName,
-              isError,
-            } = message;
-            const shown =
-              role === 'assistant' ? foldAssistantText(thinking ?? '', content) : content;
-            if (role === 'assistant' && !shown.trim() && toolCalls?.length) return [];
-            const toolBody =
-              role === 'tool' ? (
-                <Collapse
-                  bordered={false}
-                  items={[
+        items={groupChatBlocks(messages, selectedModel).flatMap(
+          (block, blockIndex, blocks): any => {
+            const isLast = blockIndex === blocks.length - 1;
+            if (block.kind === 'message') {
+              const { role, content, model, images } = block.message;
+              return [
+                {
+                  key: block.index,
+                  role,
+                  content: role === 'system' ? renderPrompt(content) : { text: content, images },
+                  loadingRender: () => <Badge status="processing" className="loadingDot" />,
+                  loading: false,
+                  header: role === 'user' ? null : renderHeader(role, model),
+                  footer: null,
+                },
+              ];
+            }
+            const waiting = isLast && responseStatus === 'waiting';
+            if (block.segments.length === 0 && !(pendingTool && isLast) && !waiting) return [];
+            const segments: AssistantSegment[] =
+              pendingTool && isLast
+                ? [
+                    ...block.segments,
                     {
-                      key: 'result',
-                      label: (
-                        <span style={isError ? { color: 'var(--ant-color-error)' } : undefined}>
-                          {toolDisplayName || toolName || t('chat.toolResult')}
-                        </span>
-                      ),
-                      children: (
-                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                          {content.length > 1200 ? `${content.slice(0, 1200)}…` : content}
-                        </pre>
-                      ),
+                      type: 'tool',
+                      name:
+                        readableToolName(pendingTool.displayName, pendingTool.name) ||
+                        t('chat.toolResult'),
+                      content: '',
+                      pending: true,
                     },
-                  ]}
-                />
-              ) : null;
+                  ]
+                : block.segments;
+            const hasVisibleText = segments.some((segment) => segment.type === 'text');
             return [
               {
-                key: i,
-                role,
-                content:
-                  role === 'system'
-                    ? renderPrompt(content)
-                    : role === 'user'
-                      ? { text: content, images }
-                      : role === 'tool'
-                        ? toolBody
-                        : shown,
+                key: `assistant-${block.lastIndex}`,
+                role: 'assistant' as const,
+                content: (
+                  <div>
+                    {segments.map((segment, segmentIndex) =>
+                      segment.type === 'text' ? (
+                        <div key={segmentIndex}>
+                          {messageRender(foldAssistantText(segment.thinking ?? '', segment.text))}
+                        </div>
+                      ) : (
+                        <Collapse
+                          key={segmentIndex}
+                          bordered={false}
+                          style={{ marginTop: segmentIndex === 0 ? 0 : 8 }}
+                          items={[
+                            {
+                              key: 'tool',
+                              label: (
+                                <span
+                                  style={
+                                    segment.isError
+                                      ? { color: 'var(--ant-color-error)' }
+                                      : undefined
+                                  }
+                                >
+                                  {segment.pending ? <Badge status="processing" /> : null}{' '}
+                                  {segment.pending
+                                    ? t('chat.toolRunning', { name: segment.name })
+                                    : segment.name || t('chat.toolResult')}
+                                </span>
+                              ),
+                              children: segment.pending ? null : (
+                                <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                                  {segment.content.length > 1200
+                                    ? `${segment.content.slice(0, 1200)}…`
+                                    : segment.content}
+                                </pre>
+                              ),
+                            },
+                          ]}
+                        />
+                      )
+                    )}
+                  </div>
+                ),
+                messageRender: (content: React.ReactNode) => content,
                 loadingRender: () => <Badge status="processing" className="loadingDot" />,
-                loading: i === messages.length - 1 && responseStatus === 'waiting',
-                header: role === 'user' ? null : renderHeader(role, model),
+                loading: waiting && !hasVisibleText && !pendingTool,
+                header: renderHeader('assistant', block.model || selectedModel),
                 footer:
-                  role === 'assistant' || (role === 'tool' && i === messages.length - 1) ? (
+                  block.copyText || (isLast && responseStatus === 'end') ? (
                     <Space>
-                      {role === 'assistant' ? (
+                      {block.copyText ? (
                         <Button
                           color="default"
                           variant="text"
                           size="small"
                           icon={<FileCopyIcon />}
                           onClick={() => {
-                            copyToClipboard(content);
+                            copyToClipboard(block.copyText);
                             antdMessage.success(t('chat.messageCopy'));
                           }}
                         />
                       ) : null}
-                      {i === messages.length - 1 && responseStatus === 'end' && (
+                      {isLast && responseStatus === 'end' && (
                         <Button
                           color="default"
                           variant="text"
@@ -300,26 +336,8 @@ const ChatContent: React.FC = () => {
                   ) : null,
               },
             ];
-          }),
-          ...(pendingTool
-            ? [
-                {
-                  key: -1,
-                  role: 'tool' as const,
-                  content: (
-                    <span>
-                      <Badge status="processing" />{' '}
-                      {t('chat.toolRunning', { name: pendingTool.displayName || pendingTool.name })}
-                    </span>
-                  ),
-                  loadingRender: () => <Badge status="processing" className="loadingDot" />,
-                  loading: true,
-                  header: undefined,
-                  footer: null,
-                },
-              ]
-            : []),
-        ]}
+          }
+        )}
       />
     </Flex>
   );

@@ -12,7 +12,7 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts && tsx --tsconfig tsconfig.json test/stage3.test.ts && tsx --tsconfig tsconfig.json test/stage3Runtime.test.ts && tsx --tsconfig tsconfig.json test/reviewFixes.test.ts && tsx --tsconfig tsconfig.json test/mcpJson.test.ts && tsx --tsconfig tsconfig.json test/toolGate.test.ts && tsx --tsconfig tsconfig.json test/serverSummary.test.ts",
+    "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts && tsx --tsconfig tsconfig.json test/stage3.test.ts && tsx --tsconfig tsconfig.json test/stage3Runtime.test.ts && tsx --tsconfig tsconfig.json test/reviewFixes.test.ts && tsx --tsconfig tsconfig.json test/mcpJson.test.ts && tsx --tsconfig tsconfig.json test/toolGate.test.ts && tsx --tsconfig tsconfig.json test/serverSummary.test.ts && tsx --tsconfig tsconfig.json test/chatView.test.ts",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
