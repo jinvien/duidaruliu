@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { App as AntdApp, Alert, Button, Divider, Input, Switch, Tag } from 'antd';
+import { App as AntdApp, Alert, Button, Collapse, Divider, Input, Switch, Tag } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import { MCP_RUNTIME_PUSH, MCP_RUNTIME_QUERY } from '@/mcp/bridge';
@@ -8,11 +8,14 @@ import {
   serversToMcpDocument,
   type McpConfigIssue,
 } from '@/mcp/jsonConfig';
+import { summarizeSavedServer, type SavedServerStatus } from '@/mcp/serverSummary';
 import { MCP_MODEL_TOOL_CAP } from '@/mcp/tools';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 import { setMcpServers, setMcpToolsEnabled } from '@/store/mcpSlice';
 
-import type { McpConnectionStatus, McpServerRuntime } from '@/mcp/session';
+import Styles from './mcp.module.less';
+
+import type { McpServerRuntime } from '@/mcp/session';
 
 const ISSUE_KEY: Record<McpConfigIssue['code'], string> = {
   json: 'issueJson',
@@ -24,6 +27,16 @@ const ISSUE_KEY: Record<McpConfigIssue['code'], string> = {
   unsupported: 'issueUnsupported',
   invalid: 'issueInvalid',
   duplicate: 'issueDuplicate',
+};
+
+const STATUS_COLOR: Record<SavedServerStatus, string> = {
+  disabled: 'default',
+  idle: 'default',
+  connecting: 'processing',
+  connected: 'success',
+  auth: 'warning',
+  stdio: 'warning',
+  error: 'error',
 };
 
 const McpSetting: React.FC = () => {
@@ -76,156 +89,162 @@ const McpSetting: React.FC = () => {
     antdMessage.success(t('mcpSetting.jsonSaved'));
   };
 
-  const statusText = (name: string) => {
-    const current = runtime.find((item) => item.name === name);
-    const status: McpConnectionStatus = current?.status ?? 'idle';
+  const statusLabel = (status: SavedServerStatus, detail?: string) => {
+    if (status === 'disabled') return t('mcpSetting.statusDisabled');
     if (status === 'connecting') return t('mcpSetting.statusConnecting');
     if (status === 'connected') return t('mcpSetting.statusConnected');
     if (status === 'auth') return t('mcpSetting.authRequired');
     if (status === 'stdio') return t('mcpSetting.stdioOnly');
     if (status === 'error') {
-      return current?.detail
-        ? t('mcpSetting.statusErrorDetail', { detail: current.detail })
-        : t('mcpSetting.statusError');
+      return detail ? t('mcpSetting.statusErrorDetail', { detail }) : t('mcpSetting.statusError');
     }
     return t('mcpSetting.statusIdle');
   };
 
-  const statusColor = (name: string) => {
-    const status = runtime.find((item) => item.name === name)?.status ?? 'idle';
-    if (status === 'connected') return 'success';
-    if (status === 'connecting') return 'processing';
-    if (status === 'auth' || status === 'stdio') return 'warning';
-    if (status === 'error') return 'error';
-    return 'default';
-  };
+  const connectedToolCount = runtime.reduce(
+    (count, server) => (server.status === 'connected' ? count + server.tools.length : count),
+    0
+  );
 
   return (
-    <section>
+    <section className={Styles.page}>
       <Divider orientation="left">{t('mcpSetting.title')}</Divider>
-      <Alert
-        type="info"
-        showIcon
-        message={t('mcpSetting.storageNotice')}
-        style={{ marginBottom: 12 }}
-      />
-      <Alert type="info" showIcon message={t('mcpSetting.jsonHelp')} style={{ marginBottom: 12 }} />
-      <Alert
-        type="info"
-        showIcon
-        message={t('mcpSetting.jsonExamples')}
-        style={{ marginBottom: 16 }}
-      />
-      <div style={{ marginBottom: 8 }}>{t('mcpSetting.jsonLabel')}</div>
-      <Input.TextArea
-        value={text}
-        spellCheck={false}
-        autoSize={{ minRows: 16, maxRows: 28 }}
-        style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}
-        onChange={(event) => {
-          dirty.current = true;
-          setText(event.target.value);
-        }}
-      />
-      {issues.length ? (
-        <Alert
-          type="error"
-          showIcon
-          style={{ marginTop: 12 }}
-          message={t('mcpSetting.jsonRejected')}
-          description={
-            <ul style={{ margin: 0, paddingInlineStart: 18 }}>
-              {issues.map((item, index) => (
-                <li key={`${item.code}-${item.server ?? ''}-${index}`}>
-                  {t(`mcpSetting.${ISSUE_KEY[item.code]}`, {
-                    server: item.server ?? '',
-                    detail: item.detail ?? '',
-                  }).trim()}
-                </li>
-              ))}
-            </ul>
-          }
-        />
-      ) : null}
-      <div style={{ textAlign: 'right', margin: '16px 0' }}>
-        <Button type="primary" disabled={!loaded} onClick={() => void save()}>
-          {t('formAction.save')}
-        </Button>
-      </div>
-      <FormTools
-        toolsEnabled={toolsEnabled}
-        onChange={(checked) => {
-          dispatch(setMcpToolsEnabled(checked));
-          void chrome.storage.local.set({ mcpToolsEnabled: checked });
-        }}
-        label={t('mcpSetting.toolsEnabled')}
-        extra={t('mcpSetting.toolsEnabledExtra')}
-      />
-      {runtime.reduce((count, item) => count + item.tools.length, 0) > MCP_MODEL_TOOL_CAP ? (
-        <Alert
-          type="warning"
-          showIcon
-          message={t('mcpSetting.toolCap', { count: MCP_MODEL_TOOL_CAP })}
-          style={{ margin: '12px 0' }}
-        />
-      ) : null}
-      <div style={{ marginTop: 8 }}>
-        <strong>{t('mcpSetting.savedServers')}</strong>
-        <div style={{ color: 'var(--ant-color-text-description)', marginTop: 4 }}>
-          {t('mcpSetting.connectionIsNotChat')}
+
+      <div className={Styles.switchRow}>
+        <div>
+          <div>{t('mcpSetting.toolsEnabled')}</div>
+          <p className={Styles.hint}>{t('mcpSetting.toolsEnabledExtra')}</p>
         </div>
-        {servers.length ? (
-          servers.map((server) => {
-            const tools = runtime.find((item) => item.name === server.name)?.tools ?? [];
-            const showTools =
-              runtime.find((item) => item.name === server.name)?.status === 'connected';
-            return (
-              <div key={server.name} style={{ marginTop: 12 }}>
-                <div style={{ marginBottom: 8 }}>
-                  <Tag color={statusColor(server.name)}>{server.name}</Tag>
-                  <span>{statusText(server.name)}</span>
-                </div>
-                {showTools ? (
-                  <div style={{ marginBottom: 8 }}>
-                    <strong>{t('mcpSetting.tools')}</strong>
-                    {tools.length ? (
-                      <ul>
-                        {tools.map((tool) => (
-                          <li key={tool.name}>
-                            {tool.name}
-                            {tool.description ? ` — ${tool.description}` : ''}
-                          </li>
-                        ))}
-                      </ul>
+        <Switch
+          checked={toolsEnabled}
+          onChange={(checked) => {
+            dispatch(setMcpToolsEnabled(checked));
+            void chrome.storage.local.set({ mcpToolsEnabled: checked });
+          }}
+        />
+      </div>
+
+      <div className={Styles.block}>
+        <div>{t('mcpSetting.savedServers')}</div>
+        <p className={Styles.hint}>{t('mcpSetting.connectionIsNotChat')}</p>
+        {!loaded ? <p className={Styles.hint}>{t('mcpSetting.loading')}</p> : null}
+        {loaded && servers.length === 0 ? (
+          <p className={Styles.hint}>{t('mcpSetting.noServers')}</p>
+        ) : null}
+        {loaded && servers.length > 0 ? (
+          <Collapse
+            size="small"
+            items={servers.map((server) => {
+              const current = runtime.find((item) => item.name === server.name);
+              const summary = summarizeSavedServer(server, current);
+              const tools = summary.status === 'connected' ? (current?.tools ?? []) : [];
+              return {
+                key: server.name,
+                label: (
+                  <span className={Styles.serverLabel}>
+                    <span className={Styles.serverName}>{server.name}</span>
+                    <Tag color={STATUS_COLOR[summary.status]}>
+                      {summary.status === 'error'
+                        ? t('mcpSetting.statusError')
+                        : statusLabel(summary.status)}
+                    </Tag>
+                    {summary.status === 'connected' ? (
+                      <span className={Styles.hint}>
+                        {t('mcpSetting.toolCount', { count: summary.toolCount })}
+                      </span>
+                    ) : null}
+                  </span>
+                ),
+                children: (
+                  <div className={Styles.toolPanel}>
+                    {summary.status === 'connected' ? (
+                      tools.length ? (
+                        tools.map((tool) => (
+                          <div key={tool.name} className={Styles.toolItem}>
+                            <div className={Styles.toolName}>{tool.name}</div>
+                            {tool.description ? (
+                              <p className={Styles.toolDesc}>{tool.description}</p>
+                            ) : null}
+                          </div>
+                        ))
+                      ) : (
+                        <p className={Styles.hint}>{t('mcpSetting.noTools')}</p>
+                      )
                     ) : (
-                      <p>{t('mcpSetting.noTools')}</p>
+                      <p className={Styles.detail}>{statusLabel(summary.status, summary.detail)}</p>
                     )}
                   </div>
-                ) : null}
-              </div>
-            );
-          })
-        ) : (
-          <p>{t('mcpSetting.noServers')}</p>
-        )}
+                ),
+              };
+            })}
+          />
+        ) : null}
+        {connectedToolCount > MCP_MODEL_TOOL_CAP ? (
+          <Alert
+            type="warning"
+            showIcon
+            message={t('mcpSetting.toolCap', { count: MCP_MODEL_TOOL_CAP })}
+          />
+        ) : null}
       </div>
+
+      <div className={Styles.block}>
+        <div className={Styles.editorHead}>
+          <span>{t('mcpSetting.jsonLabel')}</span>
+          <Button type="primary" disabled={!loaded} onClick={() => void save()}>
+            {t('formAction.save')}
+          </Button>
+        </div>
+        <p className={Styles.hint}>{t('mcpSetting.storageNotice')}</p>
+        <Input.TextArea
+          className={Styles.editor}
+          value={text}
+          spellCheck={false}
+          rows={12}
+          disabled={!loaded}
+          onChange={(event) => {
+            dirty.current = true;
+            setText(event.target.value);
+          }}
+        />
+        {issues.length ? (
+          <Alert
+            type="error"
+            showIcon
+            message={t('mcpSetting.jsonRejected')}
+            description={
+              <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                {issues.map((item, index) => (
+                  <li key={`${item.code}-${item.server ?? ''}-${index}`}>
+                    {t(`mcpSetting.${ISSUE_KEY[item.code]}`, {
+                      server: item.server ?? '',
+                      detail: item.detail ?? '',
+                    }).trim()}
+                  </li>
+                ))}
+              </ul>
+            }
+          />
+        ) : null}
+      </div>
+
+      <Collapse
+        size="small"
+        items={[
+          {
+            key: 'help',
+            label: t('mcpSetting.helpTitle'),
+            children: (
+              <div className={Styles.help}>
+                <p>{t('mcpSetting.jsonHelp')}</p>
+                <p>{t('mcpSetting.jsonExamples')}</p>
+              </div>
+            ),
+          },
+        ]}
+      />
     </section>
   );
 };
-
-function FormTools(props: {
-  toolsEnabled: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  extra: string;
-}) {
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div>{props.label}</div>
-      <Switch checked={props.toolsEnabled} onChange={props.onChange} />
-      <div style={{ color: 'var(--ant-color-text-description)' }}>{props.extra}</div>
-    </div>
-  );
-}
 
 export default McpSetting;
