@@ -163,7 +163,7 @@ const McpSetting: React.FC = () => {
                                   <Input placeholder={t('mcpSetting.headerValue')} />
                                 </Form.Item>
                                 <Button type="link" onClick={() => headerOps.remove(header.name)}>
-                                  {t('mcpSetting.removeServer')}
+                                  {t('mcpSetting.removeHeader')}
                                 </Button>
                               </Space>
                             ))}

@@ -15,7 +15,7 @@ import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 
 // tools
 import { closeMcpSessions, syncMcpSessions } from '@/mcp/session';
-import { rewriteOrigin, syncMcpOriginRules } from '@/utils/rewriteOrigin';
+import { clearMcpOriginRules, rewriteOrigin, syncMcpOriginRules } from '@/utils/rewriteOrigin';
 
 // constants
 import { SYNC_VALUE_CHANGED } from '@/constants/command';
@@ -125,7 +125,10 @@ const App: React.FC = () => {
 
     dispatch(initializeMcp());
     return () => {
-      void closeMcpSessions();
+      void (async () => {
+        await closeMcpSessions();
+        await clearMcpOriginRules();
+      })();
     };
   }, [dispatch]);
 

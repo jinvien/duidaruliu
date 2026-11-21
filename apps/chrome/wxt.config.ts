@@ -40,7 +40,7 @@ export default defineConfig({
         },
         load(id) {
           if (id === '\0pi-mcp-oauth-blocked') {
-            return 'export default {};\n';
+            throw new Error('@earendil-works/pi-mcp/oauth is not available in this extension');
           }
           if (id !== '\0pi-mcp-browser') return null;
           return [

@@ -140,14 +140,29 @@ async function connectServer(
   }
 }
 
+let queue: Promise<void> = Promise.resolve();
+
+function enqueue(task: () => Promise<void>): Promise<void> {
+  const run = queue.then(task, task);
+  queue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
+}
+
 /**
  * 只在侧栏页面调用。失败的服务器留在自己的状态里，不抛到聊天。
- * 这里不向 Agent 注册工具。
+ * 这里不向 Agent 注册工具。同步串行执行，避免后一次连接被前一次写丢。
  */
-export async function syncMcpSessions(
+export function syncMcpSessions(
   servers: McpServerRecord[],
   fetchImpl: McpFetch = globalThis.fetch
 ) {
+  return enqueue(() => runSync(servers, fetchImpl));
+}
+
+async function runSync(servers: McpServerRecord[], fetchImpl: McpFetch) {
   const gen = ++generation;
   const next = new Map<string, Session>();
   await Promise.all(
@@ -160,8 +175,8 @@ export async function syncMcpSessions(
       await session.client.close().catch(() => {});
     })
   );
-  sessions = next;
   if (gen !== generation) return;
+  sessions = next;
 
   snapshot = servers.map((server) => {
     const existing = sessions.get(server.name);
@@ -193,11 +208,13 @@ export async function syncMcpSessions(
   emit();
 }
 
-export async function closeMcpSessions() {
-  generation += 1;
-  const current = sessions;
-  sessions = new Map();
-  snapshot = [];
-  emit();
-  await Promise.all([...current.values()].map((session) => session.client.close().catch(() => {})));
+export function closeMcpSessions() {
+  return enqueue(async () => {
+    generation += 1;
+    const current = [...sessions.values()];
+    sessions = new Map();
+    snapshot = [];
+    emit();
+    await Promise.all(current.map((session) => session.client.close().catch(() => {})));
+  });
 }

@@ -1,6 +1,12 @@
 /// <reference lib="dom" />
 import { streamOllamaChat } from '../src/agent/ollamaStream';
-import { planMcpOriginRules, MCP_ORIGIN_RULE_ID_START } from '../src/mcp/origin';
+import {
+  mcpOriginRuleIds,
+  planMcpOriginRules,
+  planOllamaOriginRule,
+  MCP_ORIGIN_RULE_ID_START,
+  OLLAMA_ORIGIN_RULE_PRIORITY,
+} from '../src/mcp/origin';
 import { closeMcpSessions, getMcpRuntime, syncMcpSessions } from '../src/mcp/session';
 import { mcpOriginRewriteDefault, type McpServerRecord } from '../src/mcp/types';
 
@@ -55,18 +61,38 @@ async function main() {
   );
   assert(mcpOriginRewriteDefault('https://example.com/mcp') === false, 'remote https does not');
 
-  const rules = planMcpOriginRules([
-    server({ name: 'local', url: 'http://127.0.0.1:8080/mcp', rewriteOrigin: true }),
-    server({ name: 'same', url: 'http://127.0.0.1:8080/other', rewriteOrigin: true }),
-    server({ name: 'remote', url: 'https://example.com/mcp', rewriteOrigin: false }),
-    server({
-      name: 'forced',
-      url: 'https://tools.example/mcp',
-      rewriteOrigin: true,
-      enabled: true,
-    }),
-    server({ name: 'off', url: 'http://localhost:9/mcp', rewriteOrigin: true, enabled: false }),
-  ]);
+  const extensionId = 'abcdefghijklmnopqrstuvwxyzabcdef';
+  const ollama = planOllamaOriginRule('http://127.0.0.1:11434');
+  assert(
+    ollama?.id === 1 && ollama.priority === OLLAMA_ORIGIN_RULE_PRIORITY,
+    'ollama stays rule 1'
+  );
+  assert(
+    ollama?.action.requestHeaders[0]?.value === 'http://127.0.0.1:11434',
+    'ollama origin includes its port'
+  );
+  const ollamaPattern = new RegExp(ollama?.condition.regexFilter ?? '$^');
+  assert(ollamaPattern.test('http://127.0.0.1:11434/api/chat'), 'ollama rule matches its own port');
+  assert(
+    !ollamaPattern.test('http://127.0.0.1:8080/mcp'),
+    'ollama rule skips other loopback ports'
+  );
+
+  const rules = planMcpOriginRules(
+    [
+      server({ name: 'local', url: 'http://127.0.0.1:8080/mcp', rewriteOrigin: true }),
+      server({ name: 'same', url: 'http://127.0.0.1:8080/other', rewriteOrigin: true }),
+      server({ name: 'remote', url: 'https://example.com/mcp', rewriteOrigin: false }),
+      server({
+        name: 'forced',
+        url: 'https://tools.example/mcp',
+        rewriteOrigin: true,
+        enabled: true,
+      }),
+      server({ name: 'off', url: 'http://localhost:9/mcp', rewriteOrigin: true, enabled: false }),
+    ],
+    extensionId
+  );
   assert(rules.length === 2, `one rule per origin, got ${rules.length}`);
   assert(
     rules.every((rule) => rule.id >= MCP_ORIGIN_RULE_ID_START),
@@ -78,6 +104,19 @@ async function main() {
     rules[1]?.action.requestHeaders[0]?.value === 'https://tools.example',
     'forced remote origin'
   );
+  assert(
+    rules.every((rule) => rule.priority > OLLAMA_ORIGIN_RULE_PRIORITY),
+    'mcp origin rules outrank ollama'
+  );
+  assert(
+    rules.every((rule) => rule.condition.initiatorDomains?.[0] === extensionId),
+    'mcp origin rules are limited to this extension'
+  );
+  assert(
+    mcpOriginRuleIds([1, 99, 100, 101]).join(',') === '100,101',
+    'closing the panel removes only the mcp rule ids'
+  );
+  assert(planMcpOriginRules([], extensionId).length === 0, 'cleanup adds no mcp rules');
 
   const seen: Record<string, string[]> = { a: [], b: [], c: [] };
   const fetchImpl: typeof fetch = async (input, init) => {
@@ -174,7 +213,89 @@ async function main() {
   const messages = chatBody?.messages as Array<{ role?: string }> | undefined;
   assert(messages?.[0]?.role === 'user', 'chat messages unchanged');
 
+  let releaseSlow = () => {};
+  const slowGate = new Promise<void>((resolve) => {
+    releaseSlow = resolve;
+  });
+  let slowStarted = false;
+  const deleted: string[] = [];
+  const overlapFetch: typeof fetch = async (input, init) => {
+    const url = String(input);
+    const method = init?.method ?? 'GET';
+    if (method === 'GET') return new Response(null, { status: 405 });
+    if (method === 'DELETE') {
+      deleted.push(url);
+      return new Response(null, { status: 200 });
+    }
+    const message = JSON.parse(String(init?.body ?? '{}')) as { id?: number; method?: string };
+    if (url.includes(':9001') && message.method === 'initialize') {
+      slowStarted = true;
+      await slowGate;
+    }
+    if (message.method === 'notifications/initialized') return new Response(null, { status: 202 });
+    if (message.method === 'initialize') {
+      return jsonResponse(
+        {
+          jsonrpc: '2.0',
+          id: message.id,
+          result: {
+            protocolVersion: '2025-11-25',
+            capabilities: { tools: {} },
+            serverInfo: { name: 'overlap', version: '1.0.0' },
+          },
+        },
+        200,
+        { 'mcp-session-id': 'overlap' }
+      );
+    }
+    if (message.method === 'tools/list') {
+      return jsonResponse({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { tools: [{ name: 'later', inputSchema: { type: 'object' } }] },
+      });
+    }
+    return new Response('unexpected', { status: 500 });
+  };
+
+  const slowTurn = syncMcpSessions(
+    [server({ name: 'slow', url: 'http://127.0.0.1:9001/mcp' })],
+    overlapFetch
+  );
+  const waitStarted = Date.now();
+  while (!slowStarted) {
+    if (Date.now() - waitStarted > 2000) throw new Error('slow sync did not start');
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  const fastTurn = syncMcpSessions(
+    [server({ name: 'fast', url: 'http://127.0.0.1:9002/mcp' })],
+    overlapFetch
+  );
+  assert(
+    !getMcpRuntime().some((item) => item.name === 'fast'),
+    'a later sync waits until the current one finishes'
+  );
+  releaseSlow();
+  await slowTurn;
+  await fastTurn;
+  const overlapped = getMcpRuntime();
+  assert(
+    overlapped.length === 1 &&
+      overlapped[0]?.name === 'fast' &&
+      overlapped[0].status === 'connected' &&
+      overlapped[0].tools[0]?.name === 'later',
+    'the later sync keeps its client'
+  );
+  assert(
+    deleted.some((url) => url.includes(':9001')),
+    'the earlier overlapping client was closed'
+  );
+
   await closeMcpSessions();
+  assert(
+    deleted.some((url) => url.includes(':9002')),
+    'closing the panel closes the remaining client'
+  );
   if (failed) throw new Error(`${failed} assertion(s) failed`);
   console.log('mcp session fixtures passed');
 }
