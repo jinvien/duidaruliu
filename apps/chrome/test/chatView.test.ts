@@ -1,4 +1,9 @@
-import { groupChatBlocks, readableToolName } from '../src/utils/chatView';
+import {
+  answerModelName,
+  groupChatBlocks,
+  lastAnswerModel,
+  readableToolName,
+} from '../src/utils/chatView';
 
 import type { Message } from '../src/store/chatSlice';
 
@@ -104,6 +109,31 @@ function main() {
       held.copyText === '完成',
     'an empty tool-call placeholder stays inside the same answer'
   );
+
+  const historyMessages = [
+    message({ role: 'user', content: '旧问题' }),
+    message({ role: 'assistant', content: '旧回答', model: 'qwen2.5' }),
+    message({ role: 'assistant', content: '跟进', model: 'unknown' }),
+  ];
+  assert(lastAnswerModel(historyMessages, 'unknown') === 'qwen2.5', 'tag skips a trailing unknown');
+  assert(
+    lastAnswerModel(
+      [message({ role: 'assistant', content: '只有未知', model: 'unknown' })],
+      'unknown'
+    ) === '',
+    'an unknown-only history has no tag'
+  );
+  assert(
+    lastAnswerModel(
+      [message({ role: 'assistant', content: '实名', model: 'llama3.1' })],
+      'llama3.1'
+    ) === 'llama3.1',
+    'a stored real model stays on the tag'
+  );
+  assert(answerModelName('unknown') === '', 'unknown is not restored onto the selector');
+  assert(answerModelName('  unknown  ') === '', 'padded unknown is not a model');
+  assert(answerModelName(' qwen2.5 ') === 'qwen2.5', 'a real lastModel is restored as stored');
+  assert(answerModelName('') === '', 'an empty lastModel does not change the selector');
 
   if (failed) throw new Error(`${failed} assertion(s) failed`);
   console.log('chat view fixtures passed');
