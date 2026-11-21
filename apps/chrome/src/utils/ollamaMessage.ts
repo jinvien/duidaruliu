@@ -9,8 +9,16 @@ export type OllamaWireMessage = {
   images?: string[];
 };
 
+/** data URL 图片，或 Pi ImageContent 里已经去掉前缀的 base64。 */
+export type OllamaWireImage = ChatImage | { data: string };
+
+function wireImageBase64(image: OllamaWireImage): string {
+  if ('dataUrl' in image) return imageDataUrlToBase64(image.dataUrl);
+  return image.data.replace(/\s/g, '');
+}
+
 export function toOllamaWireMessage(
-  message: { role: string; content: string; images?: ChatImage[] },
+  message: { role: string; content: string; images?: OllamaWireImage[] },
   includeImages: boolean
 ): OllamaWireMessage {
   const wire: OllamaWireMessage = {
@@ -21,9 +29,7 @@ export function toOllamaWireMessage(
     return wire;
   }
 
-  const images = message.images
-    .map((image) => imageDataUrlToBase64(image.dataUrl))
-    .filter((value) => value.length > 0);
+  const images = message.images.map(wireImageBase64).filter((value) => value.length > 0);
   if (images.length) {
     wire.images = images;
   }

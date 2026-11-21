@@ -3,6 +3,7 @@ import { App as AntdApp, Button, Space, Select, Badge, Tooltip } from 'antd';
 import { MenuApplicationIcon, ChatAddIcon } from 'tdesign-icons-react';
 import { useTranslation } from 'react-i18next';
 
+import { resetAgentTranscript } from '@/agent/runtime';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 import { setOllamaModelParams } from '@/store/ollamaSlice';
 import { setMessages } from '@/store/chatSlice';
@@ -50,7 +51,7 @@ const HeaderSection: React.FC = () => {
     if (isViewHistoryMode) {
       dispatch(setIsViewHistoryMode(false));
     }
-    // 新增对话
+    resetAgentTranscript();
     dispatch(
       setMessages({
         messages: [],

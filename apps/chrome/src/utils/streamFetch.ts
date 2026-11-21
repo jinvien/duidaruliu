@@ -4,20 +4,11 @@ type StreamingFetchOptions = {
   headers?: HeadersInit;
   body?: BodyInit;
   signal?: AbortSignal;
-};
-
-type OllamaResponseObj = {
-  model: string;
-  created_at: string;
-  message?: {
-    role?: string;
-    content?: string;
-  };
-  done: boolean;
+  fetchImpl?: typeof fetch;
 };
 
 type StreamingFetchCallbacks = {
-  onUpdate: (chunk: OllamaResponseObj) => void;
+  onUpdate: (chunk: unknown) => void;
   onError?: (error: Error) => void;
   onSuccess?: () => void;
 };
@@ -61,9 +52,9 @@ export async function streamingFetch(
   const { onUpdate, onError, onSuccess } = callbacks;
 
   try {
-    const { url, method = 'GET', headers, body, signal } = options;
+    const { url, method = 'GET', headers, body, signal, fetchImpl = fetch } = options;
 
-    const response = await fetch(url, { method, headers, body, signal });
+    const response = await fetchImpl(url, { method, headers, body, signal });
 
     if (!response.ok) {
       throw await errorFromResponse(response);

@@ -57,6 +57,7 @@ const ChatContent: React.FC = () => {
   const { isDarkMode } = useAppSelector((state) => state.app);
 
   const reGenerator = async () => {
+    if (responseStatus !== 'end') return;
     dispatch(setIsViewHistoryMode(false));
     await dispatch(
       setMessages({
