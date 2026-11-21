@@ -50,7 +50,10 @@ const chatSlice = createSlice({
       state.messages = messages;
     },
     updateLastMessage: (state, action: PayloadAction<string>) => {
-      state.messages[state.messages.length - 1].content = action.payload;
+      const last = state.messages[state.messages.length - 1];
+      // 进行中的回复被换成用户消息或清空后，不能把增量写进去。
+      if (!last || last.role !== 'assistant') return;
+      last.content = action.payload;
     },
   },
 });

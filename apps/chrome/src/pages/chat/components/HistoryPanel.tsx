@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import Links from './Links';
 
 // store
-import { loadAgentTranscript } from '@/agent/runtime';
+import { loadAgentTranscript, settleAgent } from '@/agent/runtime';
 import { useAppSelector, useAppDispatch } from '@/hooks/useStore';
 import {
   setIsShowHistoryPanel,
@@ -77,12 +77,16 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     dispatch(initializeConversations());
   }, [isShowHistoryPanel]);
 
-  const onHistoryItemChange = (key: number) => {
+  const onHistoryItemChange = async (key: number) => {
     const conversation = conversations?.[key];
     if (!conversation) return;
 
-    if (!isViewHistoryMode) {
-      dispatch(storeCurrentMessages(messages));
+    const viewingHistory = isViewHistoryMode;
+    const currentMessages = messages;
+    await settleAgent();
+
+    if (!viewingHistory) {
+      dispatch(storeCurrentMessages(currentMessages));
       dispatch(setIsViewHistoryMode(true));
     }
 

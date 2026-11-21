@@ -57,14 +57,13 @@ const ChatContent: React.FC = () => {
   const { isDarkMode } = useAppSelector((state) => state.app);
 
   const reGenerator = async () => {
-    if (responseStatus !== 'end') return;
     dispatch(setIsViewHistoryMode(false));
     await dispatch(
       setMessages({
         messages: messages.slice(0, -1),
       })
     );
-    sendMessage();
+    await sendMessage();
   };
 
   const ThinkTag = ({ children }: any) => (

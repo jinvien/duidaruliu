@@ -9,6 +9,7 @@ import HistoryPanel from './components/HistoryPanel';
 import ChatSender from './components/ChatSender';
 
 // import hooks
+import { settleAgent } from '@/agent/runtime';
 import { useChat } from '@/hooks/useChat';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 
@@ -58,10 +59,12 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
         createdAt: Date.now(),
       },
     ];
+    const saveCurrent = !isViewHistoryMode;
+    await settleAgent();
     await dispatch(
       setMessages({
         messages: translateMessages,
-        isSaveCurrent: !isViewHistoryMode,
+        isSaveCurrent: saveCurrent,
       })
     );
 

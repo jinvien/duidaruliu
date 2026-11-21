@@ -1,7 +1,7 @@
 import { Agent } from '@earendil-works/pi-agent-core';
 import i18n from '@/i18n';
 import store from '@/store';
-import { setResponseStatus, updateLastMessage } from '@/store/chatSlice';
+import { addMessage, setResponseStatus, updateLastMessage } from '@/store/chatSlice';
 import { imageDataUrlToBase64 } from '@/utils/chatImage';
 import { modelHasVision } from '@/utils/modelCapability';
 
@@ -28,6 +28,10 @@ let modelParamsOverride: OllamaModelParams | undefined;
 let loadingTimer: ReturnType<typeof setTimeout> | undefined;
 let thinkingText = '';
 let visibleText = '';
+/** 每次换会话或重新开跑都会增加。过期的流式事件不能再改界面。 */
+let epoch = 0;
+/** 当前这次 continue 对应的 epoch。0 表示还没有跑过。 */
+let runEpoch = 0;
 
 function mimeTypeFromDataUrl(dataUrl: string): string {
   return DATA_URL_MIME.exec(dataUrl)?.[1] || 'image/png';
@@ -97,6 +101,33 @@ function clearLoadingTimer() {
   loadingTimer = undefined;
 }
 
+function runIsCurrent() {
+  return runEpoch !== 0 && runEpoch === epoch;
+}
+
+function invalidateRun() {
+  epoch += 1;
+  clearLoadingTimer();
+}
+
+function armRun() {
+  epoch += 1;
+  runEpoch = epoch;
+}
+
+function messageText(message: AgentMessage): string {
+  if (!('content' in message)) return '';
+  const content = message.content;
+  if (typeof content === 'string') return content;
+  return content
+    .map((part) => {
+      if (part.type === 'text') return part.text;
+      if (part.type === 'thinking') return part.thinking;
+      return '';
+    })
+    .join('');
+}
+
 function lastAssistant(
   messages: AgentMessage[]
 ): Extract<AgentMessage, { role: 'assistant' }> | undefined {
@@ -120,11 +151,16 @@ const agent = new Agent({
 });
 
 agent.subscribe((event) => {
+  if (!runIsCurrent()) return;
+
   if (event.type === 'agent_start') {
     thinkingText = '';
     visibleText = '';
     clearLoadingTimer();
+    const scheduledEpoch = epoch;
     loadingTimer = setTimeout(() => {
+      loadingTimer = undefined;
+      if (scheduledEpoch !== epoch) return;
       store.dispatch(setResponseStatus('waiting'));
     }, 500);
     return;
@@ -133,6 +169,8 @@ agent.subscribe((event) => {
   if (event.type === 'message_update') {
     const update = event.assistantMessageEvent;
     if (update.type !== 'text_delta' && update.type !== 'thinking_delta') return;
+    const last = store.getState().chat.messages.at(-1);
+    if (!last || last.role !== 'assistant') return;
     if (update.type === 'text_delta') visibleText += update.delta;
     else thinkingText += update.delta;
     clearLoadingTimer();
@@ -167,25 +205,71 @@ export function abortAgent() {
   agent.abort();
 }
 
-/** 新对话：先重置循环，再由调用方清空界面消息。不保留上一轮的系统提示。 */
-export function resetAgentTranscript() {
-  if (agent.state.isStreaming) return;
-  agent.reset();
-  agent.state.messages = [];
+/**
+ * 立刻让进行中的增量失效，再中止循环并等到它真正停下来。
+ * 换会话之前调用，避免旧回复写到新的消息列表上。
+ */
+export async function settleAgent() {
+  invalidateRun();
+  if (agent.state.isStreaming) {
+    agent.abort();
+    await agent.waitForIdle();
+  }
+  store.dispatch(setResponseStatus('end'));
 }
 
-/** 打开历史只回填转录，不调用 prompt。 */
-export function loadAgentTranscript(messages: Message[]) {
+/** 新对话：运行中不重置。调用方要先确认已经空闲，再清空界面。 */
+export function resetAgentTranscript(): boolean {
+  if (agent.state.isStreaming) return false;
+  agent.reset();
+  agent.state.messages = [];
+  return true;
+}
+
+/** 打开历史只回填转录，不调用 prompt。运行中不改共享 Agent。 */
+export function loadAgentTranscript(messages: Message[]): boolean {
+  if (agent.state.isStreaming) return false;
   agent.state.messages = toAgentMessages(messages);
+  return true;
+}
+
+export function snapshotAgentTranscript(): { role: string; text: string }[] {
+  return agent.state.messages.map((message) => ({
+    role: message.role,
+    text: messageText(message),
+  }));
 }
 
 export async function continueAgent(messages: Message[], override?: OllamaModelParams) {
-  if (agent.state.isStreaming) return;
+  if (agent.state.isStreaming) await settleAgent();
+  armRun();
   modelParamsOverride = override;
   agent.state.messages = toAgentMessages(messages);
   try {
     await agent.continue();
   } finally {
     modelParamsOverride = undefined;
+  }
+}
+
+/** 停掉上一轮后再按当前 Redux 消息请求。调用方即使已经换过会话，也不能在这里直接返回。 */
+export async function startAssistantTurn(override?: OllamaModelParams) {
+  await settleAgent();
+  const state = store.getState();
+  const messages = state.chat.messages;
+  store.dispatch(
+    addMessage({
+      role: 'assistant',
+      content: '',
+      createdAt: Date.now(),
+      model: state.ollama.ollamaModelParams.model,
+    })
+  );
+  try {
+    await continueAgent(messages, override);
+  } catch (error) {
+    console.error('onChatError', error);
+    store.dispatch(setResponseStatus('end'));
+    reportChatError(error);
   }
 }

@@ -318,6 +318,44 @@ async function main() {
     assert(!body || !('think' in body), 'agent request has no think');
   }
 
+  {
+    let calls = 0;
+    const fetchImpl: typeof fetch = async () => {
+      calls += 1;
+      return new Response(
+        ndjson([
+          {
+            message: {
+              role: 'assistant',
+              content: '',
+              tool_calls: [{ function: { name: 'now' } }],
+            },
+            done: false,
+          },
+          { message: { role: 'assistant', content: '部分' }, done: true, done_reason: 'stop' },
+        ]),
+        { status: 200 }
+      );
+    };
+    const agent = new Agent({
+      initialState: { thinkingLevel: 'off', tools: [], messages: [] },
+      toolExecution: 'sequential',
+      streamFn: (nextModel, context, options) =>
+        streamOllamaChat(nextModel, context, options, { ...baseRequest, fetchImpl }),
+    });
+    agent.state.messages = [{ role: 'user', content: '调用', timestamp: 1 }];
+    await withTimeout(agent.continue());
+    const assistant = agent.state.messages.at(-1);
+    assert(calls === 1, `toolUse without toolCall blocks started ${calls} requests`);
+    assert(assistant?.role === 'assistant', 'toolUse turn stored an assistant message');
+    assert(
+      assistant?.role !== 'assistant' ||
+        !assistant.content.some((part) => part.type === 'toolCall'),
+      'stage 1 does not execute tool calls'
+    );
+    assert(!agent.state.isStreaming, 'toolUse turn is idle');
+  }
+
   if (failed) {
     throw new Error(`${failed} assertion(s) failed`);
   }
