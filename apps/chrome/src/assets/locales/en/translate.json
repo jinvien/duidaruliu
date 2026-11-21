@@ -41,7 +41,16 @@
     "toolParams": "Parameters",
     "toolResult": "Tool result",
     "toolRunning": "{{name}} running",
-    "mcpDisconnected": "An MCP server is disconnected"
+    "mcpDisconnected": "An MCP server is disconnected",
+    "toolsActive": "This chat will send {{count}} tools. You will still be asked before each call.",
+    "toolsGate": {
+      "switchOff": "A server can show as connected in Settings, but Give tools to the current model is still off. This chat will not send tools.",
+      "modelPending": "Checking whether this model reports the tools capability. Until that is known, this chat will not send tools. Connected in Settings only means the server is up.",
+      "modelUnknown": "This model's tools capability could not be confirmed. This chat will not send tools. Connected in Settings only means the server is up.",
+      "modelUnsupported": "This model is confirmed to have no tools capability, so this chat will not send tools to it. Connected in Settings only means the server is up, not that the model can call tools.",
+      "modelUnsupportedShort": "No tools",
+      "noTools": "The switch is on and this model supports tools, but no connected tool is available. This chat will not send tools."
+    }
   },
   "links": {
     "shortCut": "Quick links"
@@ -91,6 +100,7 @@
     "jsonSaved": "Saved. An open chat side panel reconnects from it.",
     "savedServers": "Saved servers",
     "noServers": "No saved servers yet.",
+    "connectionIsNotChat": "Connected here only means the server is up. It does not mean this chat will send tools to the model. That status is above the chat input.",
     "issueJson": "The JSON could not be parsed.",
     "issueShape": "Use an object like {\"mcpServers\":{\"name\":{\"url\":\"https://.../mcp\"}}}. An older server array is also accepted.",
     "issueName": "The name {{server}} must be letters, digits, underscores, or hyphens, and it must match the key.",

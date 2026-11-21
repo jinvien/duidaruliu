@@ -171,6 +171,9 @@ const McpSetting: React.FC = () => {
       ) : null}
       <div style={{ marginTop: 8 }}>
         <strong>{t('mcpSetting.savedServers')}</strong>
+        <div style={{ color: 'var(--ant-color-text-description)', marginTop: 4 }}>
+          {t('mcpSetting.connectionIsNotChat')}
+        </div>
         {servers.length ? (
           servers.map((server) => {
             const tools = runtime.find((item) => item.name === server.name)?.tools ?? [];

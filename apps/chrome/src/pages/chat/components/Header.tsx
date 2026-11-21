@@ -11,7 +11,13 @@ import { setIsShowHistoryPanel, setIsViewHistoryMode } from '@/store/historySlic
 
 import { useOllamaTags } from '@/hooks/useOllama';
 import { getMcpRuntime, subscribeMcpRuntime } from '@/mcp/session';
-import { modelCapabilityMark, modelToolsMark, type CapabilityMark } from '@/utils/modelCapability';
+import { explainChatTools, modelToolCapability } from '@/mcp/toolGate';
+import {
+  modelCapabilityMark,
+  modelHasTools,
+  modelToolsMark,
+  type CapabilityMark,
+} from '@/utils/modelCapability';
 
 // import local styles
 import Styles from '../index.module.less';
@@ -79,11 +85,26 @@ const HeaderSection: React.FC = () => {
     if (!ollamaIsRunning) return name;
     const vision = markText(modelCapabilityMark(ollamaTags, name, listState), 'vision');
     const tools = markText(modelToolsMark(ollamaTags, name, listState), 'tools');
+    const gate = explainChatTools({
+      toolsEnabled: mcpToolsEnabled,
+      enabledServerCount: mcpServers.filter((server) => server.enabled).length,
+      connectedToolCount: mcpRuntime.reduce(
+        (count, server) => (server.status === 'connected' ? count + server.tools.length : count),
+        0
+      ),
+      capability: modelToolCapability({
+        hasTools: modelHasTools(ollamaTags, name),
+        mark: modelToolsMark(ollamaTags, name, listState),
+      }),
+    });
+    const unsupported =
+      gate.kind === 'modelUnsupported' ? t('chat.toolsGate.modelUnsupportedShort') : '';
     return (
       <span className={Styles.modelOption}>
         <span>{name}</span>
         {vision ? <span className={Styles.modelVision}>{vision}</span> : null}
         {tools ? <span className={Styles.modelVision}>{tools}</span> : null}
+        {unsupported ? <span className={Styles.modelVision}>{unsupported}</span> : null}
       </span>
     );
   };

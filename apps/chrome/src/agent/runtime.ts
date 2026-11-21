@@ -9,6 +9,7 @@ import {
   updateLastMessage,
 } from '@/store/chatSlice';
 import { imageDataUrlToBase64 } from '@/utils/chatImage';
+import { shouldExposeTools } from '@/mcp/toolGate';
 import { modelHasTools, modelHasVision } from '@/utils/modelCapability';
 import {
   cancelPendingToolApproval,
@@ -119,8 +120,10 @@ function currentRequest(): OllamaStreamRequest {
     url: `${ollamaUrl}/api/chat`,
     modelParams,
     includeImages: modelHasVision(listedModels, modelParams.model),
-    includeTools:
-      store.getState().mcp.toolsEnabled && modelHasTools(listedModels, modelParams.model),
+    includeTools: shouldExposeTools(
+      store.getState().mcp.toolsEnabled,
+      modelHasTools(listedModels, modelParams.model)
+    ),
     lang: store.getState().app.lang,
     translateSystemPrompt: i18n.t('prompt.aiTranslateSelected.systemPrompt'),
     translatePostfix: i18n.t('prompt.aiTranslateSelected.postfix'),
@@ -246,9 +249,10 @@ function assistantParts(message: Extract<AgentMessage, { role: 'assistant' }>) {
 
 export function refreshAgentTools() {
   const state = store.getState();
-  const expose =
-    state.mcp.toolsEnabled &&
-    modelHasTools(state.ollama.listedModels, state.ollama.ollamaModelParams.model);
+  const expose = shouldExposeTools(
+    state.mcp.toolsEnabled,
+    modelHasTools(state.ollama.listedModels, state.ollama.ollamaModelParams.model)
+  );
   if (!expose) {
     toolLabels.clear();
     agent.state.tools = [];

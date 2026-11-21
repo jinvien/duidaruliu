@@ -41,7 +41,16 @@
     "toolParams": "参数",
     "toolResult": "工具结果",
     "toolRunning": "{{name}} 执行中",
-    "mcpDisconnected": "有 MCP 服务器未连接"
+    "mcpDisconnected": "有 MCP 服务器未连接",
+    "toolsActive": "这次对话会带上 {{count}} 个工具。调用前仍会请你允许。",
+    "toolsGate": {
+      "switchOff": "设置里的服务器可以显示已连接，但「把工具交给当前模型」还关着。这次对话不会带上工具。",
+      "modelPending": "正在确认当前模型有没有 tools 能力。确认前这次对话不会带上工具。设置里的已连接只表示服务器连上了。",
+      "modelUnknown": "没能确认当前模型有没有 tools 能力。这次对话不会带上工具。设置里的已连接只表示服务器连上了。",
+      "modelUnsupported": "当前模型已确认没有 tools 能力，这次对话不会把工具发给它。设置里的已连接只表示服务器连上了，和模型能不能调用工具不是一回事。",
+      "modelUnsupportedShort": "无工具",
+      "noTools": "总开关已打开，当前模型也支持工具，但还没有已连接的可用工具。这次对话不会带上工具。"
+    }
   },
   "links": {
     "shortCut": "快捷入口"
@@ -91,6 +100,7 @@
     "jsonSaved": "已保存。打开着的聊天侧栏会按它重新连接。",
     "savedServers": "已保存的服务器",
     "noServers": "还没有已保存的服务器。",
+    "connectionIsNotChat": "这里的「已连接」只表示服务器连上了，不表示这次对话会把工具发给模型。对话是否带上工具，看聊天输入框上方的说明。",
     "issueJson": "JSON 无法解析。",
     "issueShape": "需要 {\"mcpServers\":{\"名称\":{\"url\":\"https://.../mcp\"}}} 这样的对象。旧的服务器数组也可以。",
     "issueName": "名称 {{server}} 只能是字母、数字、下划线或短横线，并且要和键一致。",

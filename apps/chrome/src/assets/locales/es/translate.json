@@ -41,7 +41,16 @@
     "toolParams": "Parámetros",
     "toolResult": "Resultado de la herramienta",
     "toolRunning": "{{name}} en ejecución",
-    "mcpDisconnected": "Hay un servidor MCP desconectado"
+    "mcpDisconnected": "Hay un servidor MCP desconectado",
+    "toolsActive": "Esta conversación enviará {{count}} herramientas. Aun así se pedirá permiso antes de cada llamada.",
+    "toolsGate": {
+      "switchOff": "Un servidor puede verse conectado en Ajustes, pero Entregar herramientas al modelo actual sigue apagado. Esta conversación no enviará herramientas.",
+      "modelPending": "Comprobando si este modelo informa la capacidad tools. Hasta saberlo, esta conversación no enviará herramientas. Conectado en Ajustes solo significa que el servidor responde.",
+      "modelUnknown": "No se pudo confirmar si este modelo tiene la capacidad tools. Esta conversación no enviará herramientas. Conectado en Ajustes solo significa que el servidor responde.",
+      "modelUnsupported": "Este modelo no tiene la capacidad tools. Esta conversación no le enviará herramientas. Conectado en Ajustes solo significa que el servidor responde, no que el modelo pueda llamarlas.",
+      "modelUnsupportedShort": "Sin herramientas",
+      "noTools": "El interruptor está activo y el modelo admite herramientas, pero no hay ninguna conectada. Esta conversación no enviará herramientas."
+    }
   },
   "links": {
     "shortCut": "Enlaces rápidos"
@@ -91,6 +100,7 @@
     "jsonSaved": "Guardado. El panel de chat abierto se vuelve a conectar con él.",
     "savedServers": "Servidores guardados",
     "noServers": "Todavía no hay servidores guardados.",
+    "connectionIsNotChat": "Conectado aquí solo significa que el servidor responde. No significa que esta conversación enviará herramientas al modelo. Ese aviso está encima del campo de chat.",
     "issueJson": "No se pudo analizar el JSON.",
     "issueShape": "Hace falta un objeto como {\"mcpServers\":{\"nombre\":{\"url\":\"https://.../mcp\"}}}. También vale un array antiguo.",
     "issueName": "El nombre {{server}} solo puede tener letras, números, guiones bajos o guiones, y debe coincidir con la clave.",

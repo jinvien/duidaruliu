@@ -1,11 +1,14 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
 import { EnterIcon, Filter2Icon, Filter3Icon, CloseIcon, ImageAddIcon } from 'tdesign-icons-react';
 import { useTranslation } from 'react-i18next';
 import { agentIsStreaming } from '@/agent/runtime';
 import { useAppSelector, useAppDispatch } from '@/hooks/useStore';
+import { getMcpRuntime, subscribeMcpRuntime } from '@/mcp/session';
+import { explainChatTools, modelToolCapability } from '@/mcp/toolGate';
 import { composerCanSend } from '@/pages/chat/composer';
+import { modelHasTools, modelToolsMark } from '@/utils/modelCapability';
 import store from '@/store';
 import { setIsViewHistoryMode } from '@/store/historySlice';
 import { addMessage } from '@/store/chatSlice';
@@ -29,6 +32,9 @@ const ChatSender: FC = () => {
     (state) => state.ollama
   );
   const { responseStatus } = useAppSelector((state) => state.chat);
+  const toolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
+  const mcpServers = useAppSelector((state) => state.mcp.servers);
+  const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
   const prompts = useAppSelector((state) => state.prompt).map((prompt) => ({
     ...prompt,
     icon: prompt.type === 'quick' ? <Filter2Icon /> : <Filter3Icon />,
@@ -199,6 +205,25 @@ const ChatSender: FC = () => {
         }}
       />
 
+      <ToolAvailabilityNotice
+        notice={explainChatTools({
+          toolsEnabled,
+          enabledServerCount: mcpServers.filter((server) => server.enabled).length,
+          connectedToolCount: mcpRuntime.reduce(
+            (count, server) =>
+              server.status === 'connected' ? count + server.tools.length : count,
+            0
+          ),
+          capability: modelToolCapability({
+            hasTools: modelHasTools(listedModels, ollamaModelParams.model),
+            mark: modelToolsMark(
+              listedModels,
+              ollamaModelParams.model,
+              modelsStatus === 'idle' ? 'loading' : modelsStatus
+            ),
+          }),
+        })}
+      />
       <ToolApprovalCard />
       <Suggestion
         items={prompts}
@@ -293,5 +318,22 @@ const ChatSender: FC = () => {
     </Flex>
   );
 };
+
+function ToolAvailabilityNotice({ notice }: { notice: ReturnType<typeof explainChatTools> }) {
+  const { t } = useTranslation();
+  if (notice.kind === 'hidden') return null;
+  const message =
+    notice.kind === 'active'
+      ? t('chat.toolsActive', { count: notice.count })
+      : t(`chat.toolsGate.${notice.kind}`);
+  return (
+    <Alert
+      type={notice.kind === 'active' ? 'info' : 'warning'}
+      showIcon
+      message={message}
+      style={{ marginBottom: 8 }}
+    />
+  );
+}
 
 export default ChatSender;
