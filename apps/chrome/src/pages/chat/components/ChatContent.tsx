@@ -26,6 +26,14 @@ import Styles from '../index.module.less';
 // import types
 import type { GetProp, GetRef } from 'antd';
 import type { BubbleProps } from '@ant-design/x';
+import type { ChatImage } from '@/store/chatSlice';
+
+// 依赖里存在两份 @types/react，直接作为 JSX 使用会在类型检查时报错。运行时仍是原来的组件。
+const Highlighter = SyntaxHighlighter as unknown as React.ComponentType<{
+  language?: string;
+  style?: { [key: string]: React.CSSProperties };
+  children: string;
+}>;
 
 const ChatContent: React.FC = () => {
   // tools
@@ -118,11 +126,7 @@ const ChatContent: React.FC = () => {
                       antdMessage.success(t('chat.codeCopy'));
                     }}
                   />
-                  <SyntaxHighlighter
-                    language={language}
-                    style={themeStyle}
-                    children={childrenString}
-                  />
+                  <Highlighter language={language} style={themeStyle} children={childrenString} />
                 </div>
               ) : (
                 <code
@@ -146,8 +150,21 @@ const ChatContent: React.FC = () => {
     }
   };
 
-  const userContentRender = (content: string) => {
-    return <div className={Styles.userContentPre}>{content}</div>;
+  const userContentRender = (content: string | { text: string; images?: ChatImage[] }) => {
+    const text = typeof content === 'string' ? content : content.text;
+    const images = typeof content === 'string' ? undefined : content.images;
+    return (
+      <div>
+        {images?.length ? (
+          <div className={Styles.userImages}>
+            {images.map((image, index) => (
+              <img key={index} src={image.dataUrl} alt="" className={Styles.userImage} />
+            ))}
+          </div>
+        ) : null}
+        {text ? <div className={Styles.userContentPre}>{text}</div> : null}
+      </div>
+    );
   };
 
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
@@ -189,11 +206,16 @@ const ChatContent: React.FC = () => {
         ref={listRef}
         style={{ maxHeight: '100%' }}
         roles={roles}
-        items={messages.map(({ role, content, model }, i) => {
+        items={messages.map(({ role, content, model, images }, i) => {
           return {
             key: i,
             role,
-            content: role === 'system' ? renderPrompt(content) : content,
+            content:
+              role === 'system'
+                ? renderPrompt(content)
+                : role === 'user'
+                  ? { text: content, images }
+                  : content,
             loadingRender: () => <Badge status="processing" className="loadingDot" />,
             loading: i === messages.length - 1 && responseStatus === 'waiting',
             header: role === 'user' ? null : renderHeader(role, model),

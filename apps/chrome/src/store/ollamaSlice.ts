@@ -1,17 +1,20 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 import type { OllamaModelParams } from '@/hooks/useOllama';
+import type { OllamaListedModel } from '@/utils/modelCapability';
 
 export type OllamaSetting = {
   ollamaUrl: string;
   ollamaIsRunning: boolean;
   ollamaModelParams: OllamaModelParams;
+  listedModels: OllamaListedModel[];
 };
 
 const initialState: OllamaSetting = {
   ollamaUrl: '',
   ollamaIsRunning: false,
   ollamaModelParams: { model: '' },
+  listedModels: [],
 };
 
 // 检查 Ollama 服务状态
@@ -51,6 +54,15 @@ const ollamaSlice = createSlice({
       state.ollamaUrl = action.payload;
       chrome.storage.sync.set({ ollamaSettings: { url: action.payload } });
     },
+    setListedModels(state, action: PayloadAction<OllamaListedModel[]>) {
+      state.listedModels = action.payload;
+    },
+    setModelCapabilities(state, action: PayloadAction<{ name: string; capabilities: string[] }>) {
+      const model = state.listedModels.find((item) => item.name === action.payload.name);
+      if (!model) return;
+      model.capabilities = action.payload.capabilities;
+      model.capabilitiesKnown = true;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -63,6 +75,7 @@ const ollamaSlice = createSlice({
   },
 });
 
-export const { setOllamaModelParams, setOllamaUrl } = ollamaSlice.actions;
+export const { setOllamaModelParams, setOllamaUrl, setListedModels, setModelCapabilities } =
+  ollamaSlice.actions;
 
 export default ollamaSlice;

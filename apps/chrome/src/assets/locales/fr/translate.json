@@ -17,7 +17,15 @@
     "chatHistoryFailed": "Format d'historique de discussion invalide",
     "uploadConversation": "Importer l'historique des conversations",
     "exportConversation": "Exporter l'historique des conversations",
-    "exportSuccess": "Exportation réussie"
+    "exportSuccess": "Exportation réussie",
+    "attachImage": "Ajouter une image",
+    "removeImage": "Retirer l'image",
+    "imageMessage": "[Image]",
+    "vision": "Vision",
+    "imageTooLarge": "Image trop volumineuse",
+    "imageUnsupported": "Format d'image non pris en charge",
+    "imageReadFailed": "Échec de la lecture de l'image",
+    "imageLimit": "{{count}} images maximum"
   },
   "links": {
     "shortCut": "Liens rapides"
@@ -71,7 +79,7 @@
     "delete": "Supprimer",
     "save": "Enregistrer",
     "clear": "Effacer",
-    "saveSuccess":"Enregistré avec succès"
+    "saveSuccess": "Enregistré avec succès"
   },
   "prompt": {
     "aiTranslateSelected": {

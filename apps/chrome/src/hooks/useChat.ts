@@ -5,6 +5,9 @@ import { streamingFetch } from '@/utils/streamFetch';
 import { PROMPTS } from '@/constants/prompt';
 import i18n from '@/i18n';
 
+import { modelHasVision } from '@/utils/modelCapability';
+import { toOllamaWireMessage } from '@/utils/ollamaMessage';
+
 import type { OllamaModelParams } from './useOllama';
 import type { Message } from '@/store/chatSlice';
 
@@ -16,7 +19,7 @@ let abortControl: () => void;
 export const useChat = () => {
   const dispatch = useAppDispatch();
 
-  const { ollamaModelParams, ollamaUrl } = useAppSelector((state) => state.ollama);
+  const { ollamaModelParams, ollamaUrl, listedModels } = useAppSelector((state) => state.ollama);
   const { lang } = useAppSelector((state) => state.app);
 
   const sendMessage = async (tempOllamaParams?: OllamaModelParams) => {
@@ -32,82 +35,93 @@ export const useChat = () => {
       controller?.abort();
     };
 
-    const modelConfig = tempOllamaParams ? tempOllamaParams : ollamaModelParams;
+    try {
+      const modelConfig = tempOllamaParams ? tempOllamaParams : ollamaModelParams;
 
-    const messages = store.getState().chat.messages;
+      const messages = store.getState().chat.messages;
 
-    // 在消息队列末位添加一个助手消息
-    const messageWithAssistant: Message = {
-      role: 'assistant',
-      content,
-      createdAt: Date.now(),
-      model: ollamaModelParams.model,
-    };
-    dispatch(addMessage(messageWithAssistant));
+      // 在消息队列末位添加一个助手消息
+      const messageWithAssistant: Message = {
+        role: 'assistant',
+        content,
+        createdAt: Date.now(),
+        model: ollamaModelParams.model,
+      };
+      dispatch(addMessage(messageWithAssistant));
 
-    let systemPrompt = '';
+      let systemPrompt = '';
+      const includeImages = modelHasVision(listedModels, modelConfig.model);
 
-    // 移除 createAt 和 model 属性 ，因为其不是模型对话标准属性，仅用于本地记录
-    let finalMessages = messages.map(({ createdAt, model, ...rest }) => {
-      const { role, content } = rest;
-      if (role === 'system') {
-        systemPrompt = content;
-      }
-
-      // 在用户内容后有追加提示词，缓解不遵循提示词的问题
-      if (role === 'user' && systemPrompt) {
-        // 翻译助手
-        if (systemPrompt === i18n.t('prompt.aiTranslateSelected.systemPrompt')) {
-          const langFullnameMap: { [key: string]: string } = {
-            zh: '中文',
-            'zh-CN': '中文',
-            en: 'English',
-          };
-          rest.content = `${content} \n ${i18n.t('prompt.aiTranslateSelected.postfix')}${langFullnameMap[lang]}`;
+      // 去掉仅用于本地记录的字段。没有图片时不带 images，纯文本请求体保持原样。
+      const finalMessages = messages.map((message) => {
+        let nextContent = message.content;
+        if (message.role === 'system') {
+          systemPrompt = nextContent;
         }
-      }
 
-      return rest;
-    });
-
-    streamingFetch(
-      {
-        url: `${ollamaUrl}/api/chat`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: finalMessages,
-          ...modelConfig,
-        }),
-        signal: controller.signal,
-      },
-      {
-        onUpdate: (response) => {
-          dispatch(setResponseStatus('outputting'));
-          clearTimeout(loadingTimer);
-          try {
-            const chunkContent = response.message.content;
-
-            // 将最后一条消息的内容和 AI助手的回复合并
-            content += chunkContent;
-
-            dispatch(updateLastMessage(content));
-          } catch (e) {
-            console.error(e);
+        // 在用户内容后有追加提示词，缓解不遵循提示词的问题
+        if (message.role === 'user' && systemPrompt) {
+          // 翻译助手
+          if (systemPrompt === i18n.t('prompt.aiTranslateSelected.systemPrompt')) {
+            const langFullnameMap: { [key: string]: string } = {
+              zh: '中文',
+              'zh-CN': '中文',
+              en: 'English',
+            };
+            nextContent = `${nextContent} \n ${i18n.t('prompt.aiTranslateSelected.postfix')}${langFullnameMap[lang]}`;
           }
+        }
+
+        return toOllamaWireMessage(
+          { role: message.role, content: nextContent, images: message.images },
+          includeImages
+        );
+      });
+
+      streamingFetch(
+        {
+          url: `${ollamaUrl}/api/chat`,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: finalMessages,
+            ...modelConfig,
+          }),
+          signal: controller.signal,
         },
-        onSuccess: () => {
-          dispatch(setResponseStatus('end'));
-        },
-        onError: (error) => {
-          clearTimeout(loadingTimer);
-          console.error('onChatError', error);
-          if (error instanceof DOMException && error.name === 'AbortError') {
+        {
+          onUpdate: (response) => {
+            dispatch(setResponseStatus('outputting'));
+            clearTimeout(loadingTimer);
+            try {
+              const chunkContent = response.message?.content ?? '';
+              if (!chunkContent) return;
+
+              // 将最后一条消息的内容和 AI助手的回复合并
+              content += chunkContent;
+
+              dispatch(updateLastMessage(content));
+            } catch (e) {
+              console.error(e);
+            }
+          },
+          onSuccess: () => {
             dispatch(setResponseStatus('end'));
-          }
-        },
-      }
-    );
+          },
+          onError: (error) => {
+            clearTimeout(loadingTimer);
+            console.error('onChatError', error);
+            if (error instanceof DOMException && error.name === 'AbortError') {
+              dispatch(setResponseStatus('end'));
+            }
+          },
+        }
+      );
+    } catch (error) {
+      clearTimeout(loadingTimer);
+      console.error('onChatError', error);
+      dispatch(setResponseStatus('end'));
+    }
   };
 
   return {

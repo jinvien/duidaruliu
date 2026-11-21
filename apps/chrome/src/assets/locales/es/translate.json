@@ -17,7 +17,15 @@
     "chatHistoryFailed": "Formato de historial de chat inválido",
     "uploadConversation": "Subir historial de conversación",
     "exportConversation": "Exportar historial de conversación",
-    "exportSuccess": "Exportación exitosa"
+    "exportSuccess": "Exportación exitosa",
+    "attachImage": "Añadir imagen",
+    "removeImage": "Quitar imagen",
+    "imageMessage": "[Imagen]",
+    "vision": "Visión",
+    "imageTooLarge": "La imagen es demasiado grande",
+    "imageUnsupported": "Formato de imagen no compatible",
+    "imageReadFailed": "No se pudo leer la imagen",
+    "imageLimit": "Como máximo {{count}} imágenes"
   },
   "links": {
     "shortCut": "Enlaces rápidos"

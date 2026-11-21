@@ -37,6 +37,7 @@ import { contentWithPromptTag } from '@/utils/promptHelper';
 import type { GetProp } from 'antd';
 import type { ConversationsProps } from '@ant-design/x';
 import type { SetAppMode } from '@/entrypoints/sidepanel/App';
+import type { Message } from '@/store/chatSlice';
 
 const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   const { message: antdMessage } = AntdApp.useApp();
@@ -64,17 +65,19 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     dispatch(initializeConversations());
   }, [isShowHistoryPanel]);
 
-  const onHistoryItemChange = async (key: number) => {
+  const onHistoryItemChange = (key: number) => {
+    const conversation = conversations?.[key];
+    if (!conversation) return;
+
     if (!isViewHistoryMode) {
       dispatch(storeCurrentMessages(messages));
       dispatch(setIsViewHistoryMode(true));
     }
 
-    const { historyConversations } = await chrome.storage.local.get('historyConversations');
-    const { lastModel, messages: selectedMessages } = historyConversations[key];
-
-    dispatch(setOllamaModelParams({ ...ollamaModelParams, model: lastModel }));
-    dispatch(setMessages({ messages: selectedMessages }));
+    if (conversation.lastModel) {
+      dispatch(setOllamaModelParams({ ...ollamaModelParams, model: conversation.lastModel }));
+    }
+    dispatch(setMessages({ messages: conversation.messages }));
   };
 
   const changeLanguage = async () => {
@@ -84,24 +87,31 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     chrome.storage.sync.set({ appSettings: { ...appSettings, lang: newLang } });
   };
 
+  const previewSource = (message?: Message) => {
+    if (!message) return '';
+    const text = message.content.trim();
+    if (text) return text;
+    if (message.images?.length) return t('chat.imageMessage');
+    return '';
+  };
+
   const chatHistoryItems: GetProp<ConversationsProps, 'items'> = conversations?.map(
     ({ messages, lastUpdatedAt }, i) => {
       const [firstMessage, secondMessage] = messages;
-
-      const { content: originalContent, role } = firstMessage;
+      const role = firstMessage?.role;
+      const originalContent = firstMessage?.content ?? '';
       let displayedContent: string | React.ReactNode = originalContent;
 
       if (role === 'system') {
-        const systemContent = secondMessage?.content || '';
+        const systemContent = previewSource(secondMessage);
 
         displayedContent =
           systemContent.length > 11 ? `${systemContent.slice(0, 10)}...` : systemContent;
 
         displayedContent = contentWithPromptTag(originalContent, displayedContent as string);
       } else {
-        // 非系统消息直接截断
-        displayedContent =
-          originalContent.length > 11 ? `${originalContent.slice(0, 12)}...` : originalContent;
+        const source = previewSource(firstMessage);
+        displayedContent = source.length > 11 ? `${source.slice(0, 12)}...` : source;
       }
 
       return {

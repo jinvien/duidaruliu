@@ -9,9 +9,9 @@ type StreamingFetchOptions = {
 type OllamaResponseObj = {
   model: string;
   created_at: string;
-  message: {
-    role: string;
-    content: string;
+  message?: {
+    role?: string;
+    content?: string;
   };
   done: boolean;
 };

@@ -17,7 +17,15 @@
     "chatHistoryFailed": "Неверный формат истории чата",
     "uploadConversation": "Загрузить историю диалогов",
     "exportConversation": "Экспортировать историю диалогов",
-    "exportSuccess": "Экспорт успешен"
+    "exportSuccess": "Экспорт успешен",
+    "attachImage": "Добавить изображение",
+    "removeImage": "Удалить изображение",
+    "imageMessage": "[Изображение]",
+    "vision": "Зрение",
+    "imageTooLarge": "Изображение слишком большое",
+    "imageUnsupported": "Неподдерживаемый формат изображения",
+    "imageReadFailed": "Не удалось прочитать изображение",
+    "imageLimit": "Не больше {{count}} изображений"
   },
   "links": {
     "shortCut": "Быстрые ссылки"
@@ -72,7 +80,6 @@
     "save": "Сохранить",
     "clear": "Очистить",
     "saveSuccess": "Успешно сохранено"
-
   },
   "prompt": {
     "extraText": "К вашим услугам",

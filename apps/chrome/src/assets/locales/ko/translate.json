@@ -17,7 +17,15 @@
     "chatHistoryFailed": "잘못된 채팅 기록 형식입니다",
     "uploadConversation": "대화 기록 업로드",
     "exportConversation": "대화 기록 내보내기",
-    "exportSuccess": "내보내기 성공"
+    "exportSuccess": "내보내기 성공",
+    "attachImage": "이미지 추가",
+    "removeImage": "이미지 제거",
+    "imageMessage": "[이미지]",
+    "vision": "비전",
+    "imageTooLarge": "이미지가 너무 큽니다",
+    "imageUnsupported": "지원하지 않는 이미지 형식입니다",
+    "imageReadFailed": "이미지를 읽지 못했습니다",
+    "imageLimit": "이미지는 최대 {{count}}장까지 추가할 수 있습니다"
   },
   "links": {
     "shortCut": "빠른 링크"

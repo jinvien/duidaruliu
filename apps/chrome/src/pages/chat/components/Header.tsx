@@ -9,6 +9,7 @@ import { setMessages } from '@/store/chatSlice';
 import { setIsShowHistoryPanel, setIsViewHistoryMode } from '@/store/historySlice';
 
 import { useOllamaTags } from '@/hooks/useOllama';
+import { modelHasVision } from '@/utils/modelCapability';
 
 // import local styles
 import Styles from '../index.module.less';
@@ -77,10 +78,20 @@ const HeaderSection: React.FC = () => {
           variant="borderless"
           value={ollamaIsRunning ? ollamaModelParams.model : t('chat.serverNotStart')}
           popupMatchSelectWidth={false}
-          options={ollamaTags.map(({ name }: any) => ({
+          options={ollamaTags.map(({ name }) => ({
             value: name,
             label: name,
           }))}
+          optionRender={(option) => {
+            const name = String(option.value ?? '');
+            const vision = modelHasVision(ollamaTags, name);
+            return (
+              <span className={Styles.modelOption}>
+                <span>{name}</span>
+                {vision ? <span className={Styles.modelVision}>{t('chat.vision')}</span> : null}
+              </span>
+            );
+          }}
           onChange={(value) => {
             chrome.storage.sync.set({ ollamaModelParams: { ...ollamaModelParams, model: value } });
           }}

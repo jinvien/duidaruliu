@@ -5,12 +5,19 @@ import { storeCurrentMessagesFunc } from './historySlice';
 export type ResponseStatus = 'waiting' | 'outputting' | 'end';
 
 export type RoleType = 'user' | 'assistant' | 'system' | 'tool';
-// 消息类型
+
+/** 本地展示与历史用的图片。发给 Ollama 时去掉 data URL 前缀。 */
+export type ChatImage = {
+  dataUrl: string;
+};
+
+// 消息类型。content 保持字符串，旧历史没有 images 也能读。
 export type Message = {
   role: RoleType;
   content: string;
   createdAt: number;
   model?: string;
+  images?: ChatImage[];
 };
 
 const initialState: {

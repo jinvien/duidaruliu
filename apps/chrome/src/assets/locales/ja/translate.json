@@ -17,7 +17,15 @@
     "chatHistoryFailed": "チャット履歴の形式が無効です",
     "uploadConversation": "会話履歴をアップロード",
     "exportConversation": "会話履歴をエクスポート",
-    "exportSuccess": "エクスポート成功"
+    "exportSuccess": "エクスポート成功",
+    "attachImage": "画像を追加",
+    "removeImage": "画像を削除",
+    "imageMessage": "[画像]",
+    "vision": "視覚",
+    "imageTooLarge": "画像が大きすぎます",
+    "imageUnsupported": "未対応の画像形式です",
+    "imageReadFailed": "画像の読み込みに失敗しました",
+    "imageLimit": "画像は最大 {{count}} 枚までです"
   },
   "links": {
     "shortCut": "クイックリンク"
@@ -72,7 +80,6 @@
     "save": "保存",
     "clear": "クリア",
     "saveSuccess": "正常に保存されました"
-
   },
   "prompt": {
     "aiTranslateSelected": {

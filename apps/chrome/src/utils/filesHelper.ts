@@ -1,5 +1,6 @@
+import { isChatImage } from '@/utils/chatImage';
+
 import type { Conversation } from '@/store/historySlice';
-import type { Message } from '@/store/chatSlice';
 
 export function exportJsonArrayToFile(jsonArray: any[], filename: string): void {
   const blob = new Blob([JSON.stringify(jsonArray, null, 2)], { type: 'application/json' });
@@ -17,20 +18,27 @@ export function exportJsonArrayToFile(jsonArray: any[], filename: string): void 
 }
 
 // 验证上传的 JSON 是否符合预期结构
-const isValidJsonArray = (data: any): data is Conversation[] => {
+const isValidStoredMessage = (msg: unknown): boolean => {
+  if (!msg || typeof msg !== 'object') return false;
+  const value = msg as Record<string, unknown>;
+  if (typeof value.content !== 'string') return false;
+  if (typeof value.createdAt !== 'number') return false;
+  if (typeof value.role !== 'string') return false;
+  if (value.images === undefined) return true;
+  return Array.isArray(value.images) && value.images.every(isChatImage);
+};
+
+const isValidJsonArray = (data: unknown): data is Conversation[] => {
   return (
     Array.isArray(data) &&
     data.every(
       (item) =>
-        typeof item.lastModel === 'string' &&
-        typeof item.lastUpdatedAt === 'number' &&
-        Array.isArray(item.messages) &&
-        item.messages.every(
-          (msg: Message) =>
-            typeof msg.content === 'string' &&
-            typeof msg.createdAt === 'number' &&
-            typeof msg.role === 'string'
-        )
+        !!item &&
+        typeof item === 'object' &&
+        typeof (item as Conversation).lastModel === 'string' &&
+        typeof (item as Conversation).lastUpdatedAt === 'number' &&
+        Array.isArray((item as Conversation).messages) &&
+        (item as Conversation).messages.every(isValidStoredMessage)
     )
   );
 };
