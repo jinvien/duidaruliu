@@ -17,7 +17,21 @@
     "chatHistoryFailed": "Formato de historial de chat inválido",
     "uploadConversation": "Subir historial de conversación",
     "exportConversation": "Exportar historial de conversación",
-    "exportSuccess": "Exportación exitosa"
+    "exportSuccess": "Exportación exitosa",
+    "attachImage": "Añadir imagen",
+    "removeImage": "Quitar imagen",
+    "imageMessage": "[Imagen]",
+    "vision": "Visión",
+    "visionChecking": "Comprobando",
+    "visionUnknown": "Desconocido",
+    "requestFailed": "La solicitud falló",
+    "requestFailedStatus": "La solicitud falló ({{status}})",
+    "requestFailedDetail": "La solicitud falló: {{detail}}",
+    "historySaveFailed": "No se pudo guardar la conversación",
+    "imageTooLarge": "La imagen es demasiado grande",
+    "imageUnsupported": "Formato de imagen no compatible",
+    "imageReadFailed": "No se pudo leer la imagen",
+    "imageLimit": "Como máximo {{count}} imágenes"
   },
   "links": {
     "shortCut": "Enlaces rápidos"
@@ -84,6 +98,14 @@
     "today": "Hoy",
     "lastDay": "Ayer",
     "last7Day": "Últimos 7 días",
-    "last30Day": "Últimos 30 días"
+    "last30Day": "Últimos 30 días",
+    "earlier": "Antes",
+    "justNow": "Ahora mismo",
+    "minutesAgo_one": "hace {{count}} minuto",
+    "minutesAgo_other": "hace {{count}} minutos",
+    "hoursAgo_one": "hace {{count}} hora",
+    "hoursAgo_other": "hace {{count}} horas",
+    "daysAgo_one": "hace {{count}} día",
+    "daysAgo_other": "hace {{count}} días"
   }
 }

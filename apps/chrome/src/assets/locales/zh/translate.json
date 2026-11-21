@@ -17,7 +17,21 @@
     "chatHistoryFailed": "聊天记录格式不正确",
     "uploadConversation": "上传对话记录",
     "exportConversation": "导出对话记录",
-    "exportSuccess": "导出成功"
+    "exportSuccess": "导出成功",
+    "attachImage": "添加图片",
+    "removeImage": "移除图片",
+    "imageMessage": "[图片]",
+    "vision": "视觉",
+    "visionChecking": "检测中",
+    "visionUnknown": "未知",
+    "requestFailed": "请求失败",
+    "requestFailedStatus": "请求失败（{{status}}）",
+    "requestFailedDetail": "请求失败：{{detail}}",
+    "historySaveFailed": "对话保存失败",
+    "imageTooLarge": "图片过大",
+    "imageUnsupported": "不支持的图片格式",
+    "imageReadFailed": "图片读取失败",
+    "imageLimit": "最多添加 {{count}} 张图片"
   },
   "links": {
     "shortCut": "快捷入口"
@@ -71,7 +85,7 @@
     "delete": "删除",
     "save": "保存",
     "clear": "清空",
-    "saveSuccess":"保存成功"
+    "saveSuccess": "保存成功"
   },
   "prompt": {
     "aiTranslateSelected": {
@@ -84,6 +98,11 @@
     "today": "今天",
     "lastDay": "昨天",
     "last7Day": "最近7天",
-    "last30Day": "过去30天"
+    "last30Day": "过去30天",
+    "earlier": "更早",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}} 分钟前",
+    "hoursAgo": "{{count}} 小时前",
+    "daysAgo": "{{count}} 天前"
   }
 }

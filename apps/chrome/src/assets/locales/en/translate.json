@@ -17,7 +17,21 @@
     "chatHistoryFailed": "Invalid chat history format",
     "uploadConversation": "Upload conversation history",
     "exportConversation": "Export conversation history",
-    "exportSuccess": "Export successful"
+    "exportSuccess": "Export successful",
+    "attachImage": "Add image",
+    "removeImage": "Remove image",
+    "imageMessage": "[Image]",
+    "vision": "Vision",
+    "visionChecking": "Checking",
+    "visionUnknown": "Unknown",
+    "requestFailed": "Request failed",
+    "requestFailedStatus": "Request failed ({{status}})",
+    "requestFailedDetail": "Request failed: {{detail}}",
+    "historySaveFailed": "Couldn't save the chat",
+    "imageTooLarge": "Image is too large",
+    "imageUnsupported": "Unsupported image format",
+    "imageReadFailed": "Failed to read image",
+    "imageLimit": "Up to {{count}} images"
   },
   "links": {
     "shortCut": "Quick links"
@@ -85,6 +99,14 @@
     "today": "Today",
     "lastDay": "Yesterday",
     "last7Day": "Last 7 days",
-    "last30Day": "Past 30 days"
+    "last30Day": "Past 30 days",
+    "earlier": "Earlier",
+    "justNow": "Just now",
+    "minutesAgo_one": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo_one": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
   }
 }

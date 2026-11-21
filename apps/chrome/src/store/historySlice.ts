@@ -1,4 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { message } from 'antd';
+import { normalizeStoredMessage } from '@/utils/chatImage';
+import i18n from '@/i18n';
 import type { Message } from '@/store/chatSlice';
 
 export type Conversation = {
@@ -23,30 +26,64 @@ export const storeCurrentMessagesFunc = async (messages: Message[]) => {
   if (!messages.length) {
     return;
   }
-  const { historyConversations } = await chrome.storage.local.get('historyConversations');
-  const newHistoryConversations = [
-    {
-      messages,
-      lastUpdatedAt: Date.now(),
-      lastModel: messages[messages.length - 1]?.model,
-    },
-    ...historyConversations,
-  ];
+  try {
+    const { historyConversations } = await chrome.storage.local.get('historyConversations');
+    const stored = Array.isArray(historyConversations) ? historyConversations : [];
+    const newHistoryConversations = [
+      {
+        messages,
+        lastUpdatedAt: Date.now(),
+        lastModel: messages[messages.length - 1]?.model,
+      },
+      ...stored,
+    ];
 
-  await chrome.storage.local.set({
-    historyConversations: newHistoryConversations,
-  });
+    await chrome.storage.local.set({
+      historyConversations: newHistoryConversations,
+    });
 
-  return newHistoryConversations;
+    return newHistoryConversations;
+  } catch (error) {
+    console.error('store history failed', error);
+    message.error(i18n.t('chat.historySaveFailed'));
+    return undefined;
+  }
 };
 
 // 异步获取存储数据
 export const storeCurrentMessages = createAsyncThunk('history/store', storeCurrentMessagesFunc);
 
-// 异步获取存储数据
+export function normalizeConversation(raw: unknown): Conversation | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const value = raw as Record<string, unknown>;
+  if (!Array.isArray(value.messages)) return null;
+
+  const messages = value.messages
+    .map(normalizeStoredMessage)
+    .filter((message): message is Message => message !== null);
+  if (!messages.length) return null;
+
+  const conversation: Conversation = {
+    lastModel: typeof value.lastModel === 'string' ? value.lastModel : '',
+    lastUpdatedAt:
+      typeof value.lastUpdatedAt === 'number' && Number.isFinite(value.lastUpdatedAt)
+        ? value.lastUpdatedAt
+        : messages[messages.length - 1].createdAt,
+    messages,
+  };
+  if (typeof value.exportedAt === 'number') {
+    conversation.exportedAt = value.exportedAt;
+  }
+  return conversation;
+}
+
+// 异步获取存储数据。只规范化内存中的副本，不改写旧的本地记录。
 export const initializeConversations = createAsyncThunk('history/initialize', async () => {
   const { historyConversations } = await chrome.storage.local.get('historyConversations');
-  return historyConversations;
+  if (!Array.isArray(historyConversations)) return [] as Conversation[];
+  return historyConversations
+    .map(normalizeConversation)
+    .filter((item): item is Conversation => item !== null);
 });
 
 const historySlice = createSlice({
@@ -63,7 +100,9 @@ const historySlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(storeCurrentMessages.fulfilled, (state, action) => {
       if (action.payload) {
-        state.conversations = action.payload;
+        state.conversations = action.payload
+          .map(normalizeConversation)
+          .filter((item): item is Conversation => item !== null);
       }
     });
     builder.addCase(initializeConversations.fulfilled, (state, action) => {

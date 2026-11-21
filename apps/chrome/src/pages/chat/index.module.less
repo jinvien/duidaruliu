@@ -59,3 +59,121 @@
   z-index: 1;
   background-color: var(--ant-color-bg-elevated);
 }
+
+.modelOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ant-padding-xs);
+}
+
+.modelVision {
+  color: var(--ant-color-text-description);
+  font-size: var(--ant-font-size-sm);
+  font-weight: 400;
+}
+
+.pendingImages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-padding-xs);
+}
+
+.pendingImage {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--ant-color-border);
+  border-radius: var(--ant-border-radius);
+  overflow: hidden;
+  background: var(--ant-color-bg-layout);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.pendingImageRemove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ant-color-bg-elevated);
+  color: var(--ant-color-text);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.userImages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ant-padding-xxs);
+
+  &:not(:last-child) {
+    margin-bottom: var(--ant-padding-xxs);
+  }
+}
+
+.userImage {
+  display: block;
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: var(--ant-border-radius);
+  object-fit: contain;
+  background: var(--ant-color-bg-container);
+}
+
+.historyLabel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: 2px;
+}
+
+.historyLabelTitle {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyLabelMeta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--ant-margin-xxs);
+}
+
+.historyModelTag {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 58%;
+  margin-inline-end: 0;
+  overflow: hidden;
+  font-size: var(--ant-font-size-sm);
+  line-height: 18px;
+  color: var(--ant-color-text-description);
+  background: var(--ant-color-fill-quaternary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyLabelTime {
+  flex: none;
+  font-size: var(--ant-font-size-sm);
+  line-height: 18px;
+  color: var(--ant-color-text-description);
+}

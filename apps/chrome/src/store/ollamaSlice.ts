@@ -1,17 +1,23 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 import type { OllamaModelParams } from '@/hooks/useOllama';
+import type { CapabilityState, OllamaListedModel } from '@/utils/modelCapability';
 
 export type OllamaSetting = {
   ollamaUrl: string;
   ollamaIsRunning: boolean;
   ollamaModelParams: OllamaModelParams;
+  listedModels: OllamaListedModel[];
+  /** tags/show 的整体进度。loading 时缺能力不能显示成已确认无视觉。 */
+  modelsStatus: 'idle' | 'loading' | 'ready' | 'error';
 };
 
 const initialState: OllamaSetting = {
   ollamaUrl: '',
   ollamaIsRunning: false,
   ollamaModelParams: { model: '' },
+  listedModels: [],
+  modelsStatus: 'idle',
 };
 
 // 检查 Ollama 服务状态
@@ -51,6 +57,25 @@ const ollamaSlice = createSlice({
       state.ollamaUrl = action.payload;
       chrome.storage.sync.set({ ollamaSettings: { url: action.payload } });
     },
+    setListedModels(state, action: PayloadAction<OllamaListedModel[]>) {
+      state.listedModels = action.payload;
+    },
+    setModelsStatus(state, action: PayloadAction<'idle' | 'loading' | 'ready' | 'error'>) {
+      state.modelsStatus = action.payload;
+    },
+    setModelCapabilities(
+      state,
+      action: PayloadAction<{
+        name: string;
+        capabilities: string[];
+        capabilityState: CapabilityState;
+      }>
+    ) {
+      const model = state.listedModels.find((item) => item.name === action.payload.name);
+      if (!model) return;
+      model.capabilities = action.payload.capabilities;
+      model.capabilityState = action.payload.capabilityState;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -63,6 +88,12 @@ const ollamaSlice = createSlice({
   },
 });
 
-export const { setOllamaModelParams, setOllamaUrl } = ollamaSlice.actions;
+export const {
+  setOllamaModelParams,
+  setOllamaUrl,
+  setListedModels,
+  setModelsStatus,
+  setModelCapabilities,
+} = ollamaSlice.actions;
 
 export default ollamaSlice;

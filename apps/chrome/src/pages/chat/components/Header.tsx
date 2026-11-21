@@ -9,6 +9,7 @@ import { setMessages } from '@/store/chatSlice';
 import { setIsShowHistoryPanel, setIsViewHistoryMode } from '@/store/historySlice';
 
 import { useOllamaTags } from '@/hooks/useOllama';
+import { modelCapabilityMark, type CapabilityMark } from '@/utils/modelCapability';
 
 // import local styles
 import Styles from '../index.module.less';
@@ -18,7 +19,9 @@ const HeaderSection: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const { ollamaModelParams, ollamaUrl, ollamaIsRunning } = useAppSelector((state) => state.ollama);
+  const { ollamaModelParams, ollamaUrl, ollamaIsRunning, modelsStatus } = useAppSelector(
+    (state) => state.ollama
+  );
   const messages = useAppSelector((state) => state.chat.messages);
   const { isViewHistoryMode } = useAppSelector((state) => state.history);
   const { responseStatus } = useAppSelector((state) => state.chat);
@@ -56,6 +59,26 @@ const HeaderSection: React.FC = () => {
     );
   };
 
+  const markText = (mark: CapabilityMark | null) => {
+    if (mark === 'vision') return t('chat.vision');
+    if (mark === 'pending') return t('chat.visionChecking');
+    if (mark === 'unknown') return t('chat.visionUnknown');
+    return '';
+  };
+
+  const renderModelLabel = (name: string) => {
+    if (!ollamaIsRunning) return name;
+    const text = markText(
+      modelCapabilityMark(ollamaTags, name, modelsStatus === 'idle' ? 'loading' : modelsStatus)
+    );
+    return (
+      <span className={Styles.modelOption}>
+        <span>{name}</span>
+        {text ? <span className={Styles.modelVision}>{text}</span> : null}
+      </span>
+    );
+  };
+
   return (
     <header className={Styles.header}>
       <div className={Styles.left}>
@@ -77,10 +100,12 @@ const HeaderSection: React.FC = () => {
           variant="borderless"
           value={ollamaIsRunning ? ollamaModelParams.model : t('chat.serverNotStart')}
           popupMatchSelectWidth={false}
-          options={ollamaTags.map(({ name }: any) => ({
+          options={ollamaTags.map(({ name }) => ({
             value: name,
             label: name,
           }))}
+          labelRender={(item) => renderModelLabel(String(item.value ?? item.label ?? ''))}
+          optionRender={(option) => renderModelLabel(String(option.value ?? ''))}
           onChange={(value) => {
             chrome.storage.sync.set({ ollamaModelParams: { ...ollamaModelParams, model: value } });
           }}

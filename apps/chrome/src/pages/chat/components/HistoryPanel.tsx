@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { App as AntdApp, Drawer, Upload, Button, Flex, Tooltip, Divider } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { App as AntdApp, Drawer, Upload, Button, Flex, Tooltip, Divider, Tag } from 'antd';
 import { Conversations as ConversationsPanel } from '@ant-design/x';
 import {
   FileDownloadIcon,
@@ -28,15 +28,19 @@ import { setMessages } from '@/store/chatSlice';
 import { toggleTheme } from '@/store/appSlice';
 
 // utils
-import { getTimeGroup } from '@/utils/date';
+import { getTimeGroup, classifyHistoryListTime } from '@/utils/date';
 import { exportJsonArrayToFile, uploadHistoryMessages } from '@/utils/filesHelper';
 import { queryCurrentTab } from '@/utils/tab';
 import { contentWithPromptTag } from '@/utils/promptHelper';
+
+// import styles
+import Styles from '../index.module.less';
 
 // types
 import type { GetProp } from 'antd';
 import type { ConversationsProps } from '@ant-design/x';
 import type { SetAppMode } from '@/entrypoints/sidepanel/App';
+import type { Message } from '@/store/chatSlice';
 
 const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   const { message: antdMessage } = AntdApp.useApp();
@@ -48,6 +52,7 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     lastDay: i18n.t('utils.lastDay'),
     last7Day: i18n.t('utils.last7Day'),
     last30Day: i18n.t('utils.last30Day'),
+    earlier: i18n.t('utils.earlier'),
   };
 
   const { isShowHistoryPanel, conversations, isViewHistoryMode } = useAppSelector(
@@ -57,6 +62,13 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   const { ollamaModelParams } = useAppSelector((state) => state.ollama);
   const { isDarkMode, lang } = useAppSelector((state) => state.app);
 
+  const [listOpenedAt, setListOpenedAt] = useState(() => Date.now());
+  const [historyPanelWasOpen, setHistoryPanelWasOpen] = useState(isShowHistoryPanel);
+  if (isShowHistoryPanel !== historyPanelWasOpen) {
+    setHistoryPanelWasOpen(isShowHistoryPanel);
+    if (isShowHistoryPanel) setListOpenedAt(Date.now());
+  }
+
   useEffect(() => {
     if (!isShowHistoryPanel) {
       return;
@@ -64,17 +76,19 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     dispatch(initializeConversations());
   }, [isShowHistoryPanel]);
 
-  const onHistoryItemChange = async (key: number) => {
+  const onHistoryItemChange = (key: number) => {
+    const conversation = conversations?.[key];
+    if (!conversation) return;
+
     if (!isViewHistoryMode) {
       dispatch(storeCurrentMessages(messages));
       dispatch(setIsViewHistoryMode(true));
     }
 
-    const { historyConversations } = await chrome.storage.local.get('historyConversations');
-    const { lastModel, messages: selectedMessages } = historyConversations[key];
-
-    dispatch(setOllamaModelParams({ ...ollamaModelParams, model: lastModel }));
-    dispatch(setMessages({ messages: selectedMessages }));
+    if (conversation.lastModel) {
+      dispatch(setOllamaModelParams({ ...ollamaModelParams, model: conversation.lastModel }));
+    }
+    dispatch(setMessages({ messages: conversation.messages }));
   };
 
   const changeLanguage = async () => {
@@ -84,40 +98,112 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     chrome.storage.sync.set({ appSettings: { ...appSettings, lang: newLang } });
   };
 
-  const chatHistoryItems: GetProp<ConversationsProps, 'items'> = conversations?.map(
-    ({ messages, lastUpdatedAt }, i) => {
-      const [firstMessage, secondMessage] = messages;
+  const previewSource = (message?: Message) => {
+    if (!message) return '';
+    const text = message.content.trim();
+    if (text) return text;
+    if (message.images?.length) return t('chat.imageMessage');
+    return '';
+  };
 
-      const { content: originalContent, role } = firstMessage;
+  const formatHistoryListTime = (timestamp: number) => {
+    const value = classifyHistoryListTime(timestamp, listOpenedAt);
+    if (!value) return '';
+    switch (value.type) {
+      case 'justNow':
+        return t('utils.justNow');
+      case 'minutes':
+        return t('utils.minutesAgo', { count: value.count });
+      case 'hours':
+        return t('utils.hoursAgo', { count: value.count });
+      case 'yesterday':
+        return `${t('utils.lastDay')} ${value.time}`;
+      case 'days':
+        return t('utils.daysAgo', { count: value.count });
+      case 'monthDay':
+      case 'full':
+        return value.text;
+    }
+  };
+
+  const lastAnswerModel = (conversationMessages: Message[], lastModel?: string) => {
+    for (let index = conversationMessages.length - 1; index >= 0; index -= 1) {
+      const message = conversationMessages[index];
+      if (message.role === 'assistant' && message.model?.trim()) {
+        return message.model.trim();
+      }
+    }
+    return lastModel?.trim() || '';
+  };
+
+  const chatHistoryItems: GetProp<ConversationsProps, 'items'> = conversations?.map(
+    ({ messages: conversationMessages, lastUpdatedAt, lastModel }, i) => {
+      const [firstMessage, secondMessage] = conversationMessages;
+      const role = firstMessage?.role;
+      const originalContent = firstMessage?.content ?? '';
       let displayedContent: string | React.ReactNode = originalContent;
 
       if (role === 'system') {
-        const systemContent = secondMessage?.content || '';
-
-        displayedContent =
-          systemContent.length > 11 ? `${systemContent.slice(0, 10)}...` : systemContent;
-
-        displayedContent = contentWithPromptTag(originalContent, displayedContent as string);
+        const systemContent = previewSource(secondMessage);
+        displayedContent = contentWithPromptTag(originalContent, systemContent);
       } else {
-        // 非系统消息直接截断
-        displayedContent =
-          originalContent.length > 11 ? `${originalContent.slice(0, 12)}...` : originalContent;
+        displayedContent = previewSource(firstMessage);
       }
+
+      const questionText =
+        role === 'system' ? previewSource(secondMessage) : previewSource(firstMessage);
+      const modelName = lastAnswerModel(conversationMessages, lastModel);
+      const timeText = formatHistoryListTime(lastUpdatedAt);
+      const groupKey = getTimeGroup(lastUpdatedAt);
+      const label = (
+        <span className={Styles.historyLabel}>
+          <span className={Styles.historyLabelTitle}>{displayedContent}</span>
+          {modelName || timeText ? (
+            <span className={Styles.historyLabelMeta}>
+              {modelName ? (
+                <Tag
+                  bordered={false}
+                  className={Styles.historyModelTag}
+                  style={{
+                    marginInlineEnd: 0,
+                    color: 'var(--ant-color-text-description)',
+                    background: 'var(--ant-color-fill-quaternary)',
+                  }}
+                >
+                  {modelName}
+                </Tag>
+              ) : null}
+              {timeText ? <span className={Styles.historyLabelTime}>{timeText}</span> : null}
+            </span>
+          ) : null}
+        </span>
+      );
 
       return {
         key: i.toString(),
-        label: (
-          <span>
-            {displayedContent}
-            <span
-              style={{ fontSize: 'var(--ant-font-size-sm)', marginLeft: 'var(--ant-margin-xxs)' }}
-            >
-              {dayjs(lastUpdatedAt).format('HH:mm')}
-            </span>
-          </span>
+        label: questionText ? (
+          <Tooltip
+            title={questionText}
+            placement="right"
+            color="var(--ant-color-bg-elevated)"
+            styles={{
+              body: {
+                color: 'var(--ant-color-text-description)',
+                fontSize: 'var(--ant-font-size)',
+                lineHeight: 'var(--ant-line-height)',
+                maxWidth: 240,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              },
+            }}
+          >
+            {label}
+          </Tooltip>
+        ) : (
+          label
         ),
         disabled: false,
-        group: DATE_GROUP_MAP[getTimeGroup(lastUpdatedAt) as keyof typeof DATE_GROUP_MAP],
+        group: DATE_GROUP_MAP[groupKey as keyof typeof DATE_GROUP_MAP] || t('utils.earlier'),
       };
     }
   );

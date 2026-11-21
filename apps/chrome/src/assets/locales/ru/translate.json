@@ -17,7 +17,21 @@
     "chatHistoryFailed": "Неверный формат истории чата",
     "uploadConversation": "Загрузить историю диалогов",
     "exportConversation": "Экспортировать историю диалогов",
-    "exportSuccess": "Экспорт успешен"
+    "exportSuccess": "Экспорт успешен",
+    "attachImage": "Добавить изображение",
+    "removeImage": "Удалить изображение",
+    "imageMessage": "[Изображение]",
+    "vision": "Зрение",
+    "visionChecking": "Проверка",
+    "visionUnknown": "Неизвестно",
+    "requestFailed": "Запрос не выполнен",
+    "requestFailedStatus": "Запрос не выполнен ({{status}})",
+    "requestFailedDetail": "Запрос не выполнен: {{detail}}",
+    "historySaveFailed": "Не удалось сохранить диалог",
+    "imageTooLarge": "Изображение слишком большое",
+    "imageUnsupported": "Неподдерживаемый формат изображения",
+    "imageReadFailed": "Не удалось прочитать изображение",
+    "imageLimit": "Не больше {{count}} изображений"
   },
   "links": {
     "shortCut": "Быстрые ссылки"
@@ -72,7 +86,6 @@
     "save": "Сохранить",
     "clear": "Очистить",
     "saveSuccess": "Успешно сохранено"
-
   },
   "prompt": {
     "extraText": "К вашим услугам",
@@ -86,6 +99,20 @@
     "today": "Сегодня",
     "lastDay": "Вчера",
     "last7Day": "Последние 7 дней",
-    "last30Day": "Последние 30 дней"
+    "last30Day": "Последние 30 дней",
+    "earlier": "Ранее",
+    "justNow": "Только что",
+    "minutesAgo_one": "{{count}} минуту назад",
+    "minutesAgo_few": "{{count}} минуты назад",
+    "minutesAgo_many": "{{count}} минут назад",
+    "minutesAgo_other": "{{count}} минут назад",
+    "hoursAgo_one": "{{count}} час назад",
+    "hoursAgo_few": "{{count}} часа назад",
+    "hoursAgo_many": "{{count}} часов назад",
+    "hoursAgo_other": "{{count}} часов назад",
+    "daysAgo_one": "{{count}} день назад",
+    "daysAgo_few": "{{count}} дня назад",
+    "daysAgo_many": "{{count}} дней назад",
+    "daysAgo_other": "{{count}} дней назад"
   }
 }

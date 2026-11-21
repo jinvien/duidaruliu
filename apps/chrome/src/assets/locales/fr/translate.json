@@ -17,7 +17,21 @@
     "chatHistoryFailed": "Format d'historique de discussion invalide",
     "uploadConversation": "Importer l'historique des conversations",
     "exportConversation": "Exporter l'historique des conversations",
-    "exportSuccess": "Exportation réussie"
+    "exportSuccess": "Exportation réussie",
+    "attachImage": "Ajouter une image",
+    "removeImage": "Retirer l'image",
+    "imageMessage": "[Image]",
+    "vision": "Vision",
+    "visionChecking": "Vérification",
+    "visionUnknown": "Inconnu",
+    "requestFailed": "La requête a échoué",
+    "requestFailedStatus": "La requête a échoué ({{status}})",
+    "requestFailedDetail": "La requête a échoué : {{detail}}",
+    "historySaveFailed": "Impossible d'enregistrer la conversation",
+    "imageTooLarge": "Image trop volumineuse",
+    "imageUnsupported": "Format d'image non pris en charge",
+    "imageReadFailed": "Échec de la lecture de l'image",
+    "imageLimit": "{{count}} images maximum"
   },
   "links": {
     "shortCut": "Liens rapides"
@@ -71,7 +85,7 @@
     "delete": "Supprimer",
     "save": "Enregistrer",
     "clear": "Effacer",
-    "saveSuccess":"Enregistré avec succès"
+    "saveSuccess": "Enregistré avec succès"
   },
   "prompt": {
     "aiTranslateSelected": {
@@ -84,6 +98,14 @@
     "today": "Aujourd'hui",
     "lastDay": "Hier",
     "last7Day": "7 derniers jours",
-    "last30Day": "30 derniers jours"
+    "last30Day": "30 derniers jours",
+    "earlier": "Plus tôt",
+    "justNow": "À l'instant",
+    "minutesAgo_one": "il y a {{count}} minute",
+    "minutesAgo_other": "il y a {{count}} minutes",
+    "hoursAgo_one": "il y a {{count}} heure",
+    "hoursAgo_other": "il y a {{count}} heures",
+    "daysAgo_one": "il y a {{count}} jour",
+    "daysAgo_other": "il y a {{count}} jours"
   }
 }
