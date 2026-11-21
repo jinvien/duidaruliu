@@ -15,6 +15,7 @@ export type OllamaWireMessage = {
   role: string;
   content: string;
   images?: string[];
+  thinking?: string;
   tool_calls?: OllamaFunctionCall[];
   tool_name?: string;
 };

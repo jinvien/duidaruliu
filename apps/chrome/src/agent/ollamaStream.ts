@@ -124,10 +124,15 @@ function wireMessage(
 
   if (message.role === 'assistant') {
     const calls = message.content.filter((part): part is ToolCall => part.type === 'toolCall');
+    const thinking = message.content
+      .filter((part) => part.type === 'thinking')
+      .map((part) => part.thinking)
+      .join('');
     const wire: OllamaWireMessage = {
       role: 'assistant',
       content: contentText(message.content, ''),
     };
+    if (thinking) wire.thinking = thinking;
     if (calls.length) {
       wire.tool_calls = calls.map(
         (call): OllamaFunctionCall => ({

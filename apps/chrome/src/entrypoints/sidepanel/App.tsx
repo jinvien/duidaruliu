@@ -144,7 +144,12 @@ const App: React.FC = () => {
     if (!mcpLoaded) return;
     void syncMcpSessions(mcpServers).finally(() => refreshAgentTools());
     void syncMcpOriginRules(mcpServers);
-  }, [mcpLoaded, mcpServers, mcpToolsEnabled, listedModels, selectedModel]);
+  }, [mcpLoaded, mcpServers]);
+
+  useEffect(() => {
+    if (!mcpLoaded) return;
+    refreshAgentTools();
+  }, [mcpLoaded, mcpToolsEnabled, listedModels, selectedModel]);
   if (!ollamaUrl) {
     return null;
   }

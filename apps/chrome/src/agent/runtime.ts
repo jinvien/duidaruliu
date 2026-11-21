@@ -11,14 +11,19 @@ import {
 import { imageDataUrlToBase64 } from '@/utils/chatImage';
 import { modelHasTools, modelHasVision } from '@/utils/modelCapability';
 import {
+  cancelPendingToolApproval,
   clearSessionToolAllows,
+  decideToolApproval,
+  getPendingToolApproval,
   isToolAllowedForSession,
   requestToolApproval,
 } from '@/mcp/approval';
+
+export { decideToolApproval, getPendingToolApproval, isToolAllowedForSession };
 import { listCallableMcpTools, setMcpToolsChangedListener } from '@/mcp/session';
 import { buildAgentTools, toolRejectedReason } from '@/mcp/tools';
 
-import { foldAssistantText, streamOllamaChat, type OllamaStreamRequest } from './ollamaStream';
+import { streamOllamaChat, type OllamaStreamRequest } from './ollamaStream';
 
 import type { AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import type { AssistantMessage, ImageContent, TextContent, ToolCall } from '@earendil-works/pi-ai';
@@ -177,12 +182,11 @@ const agent = new Agent({
     streamOllamaChat(model, context, options, currentRequest()),
   beforeToolCall: async ({ toolCall, args }, signal) => {
     if (signal?.aborted || isToolAllowedForSession(toolCall.name)) return undefined;
-    const meta = toolLabels.get(toolCall.name);
     const decision = await requestToolApproval(
       {
         id: toolCall.name,
-        displayName: meta?.displayName || toolCall.name,
-        serverName: meta?.serverName || '',
+        displayName: toolDisplayName(toolCall.name),
+        serverName: toolLabels.get(toolCall.name)?.serverName || '',
         args,
       },
       signal ?? new AbortController().signal
@@ -194,6 +198,45 @@ const agent = new Agent({
 });
 
 const toolLabels = new Map<string, { displayName: string; serverName: string }>();
+
+function toolDisplayName(name: string) {
+  return (
+    toolLabels.get(name)?.displayName ||
+    agent.state.tools.find((tool) => tool.name === name)?.label ||
+    name
+  );
+}
+
+/** 工具结果之后的下一轮助手消息要新开一条，不能写回工具调用那条。 */
+function ensureStreamingAssistant(model?: string) {
+  const last = store.getState().chat.messages.at(-1);
+  if (last?.role === 'assistant') return;
+  thinkingText = '';
+  visibleText = '';
+  store.dispatch(
+    addMessage({
+      role: 'assistant',
+      content: '',
+      createdAt: Date.now(),
+      model: model || store.getState().ollama.ollamaModelParams.model,
+    })
+  );
+}
+
+function assistantParts(message: Extract<AgentMessage, { role: 'assistant' }>) {
+  const text = message.content
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('');
+  const thinking = message.content
+    .filter((part) => part.type === 'thinking')
+    .map((part) => part.thinking)
+    .join('');
+  const toolCalls = message.content
+    .filter((part): part is ToolCall => part.type === 'toolCall')
+    .map((part) => ({ id: part.id, name: part.name, arguments: part.arguments }));
+  return { text, thinking, toolCalls };
+}
 
 export function refreshAgentTools() {
   const state = store.getState();
@@ -219,6 +262,10 @@ export function refreshAgentTools() {
   agent.state.tools = built as AgentTool[];
 }
 
+export function setAgentTools(tools: AgentTool[]) {
+  agent.state.tools = tools;
+}
+
 setMcpToolsChangedListener(() => refreshAgentTools());
 
 agent.subscribe((event) => {
@@ -237,27 +284,34 @@ agent.subscribe((event) => {
     return;
   }
 
+  if (event.type === 'message_start' && event.message.role === 'assistant') {
+    const message = event.message;
+    thinkingText = '';
+    visibleText = '';
+    ensureStreamingAssistant(message.model);
+    return;
+  }
+
   if (event.type === 'message_update') {
     const update = event.assistantMessageEvent;
+    const message = event.message;
     if (update.type !== 'text_delta' && update.type !== 'thinking_delta') return;
-    const last = store.getState().chat.messages.at(-1);
-    if (!last || last.role !== 'assistant') return;
+    if (message.role !== 'assistant') return;
+    ensureStreamingAssistant(message.model);
     if (update.type === 'text_delta') visibleText += update.delta;
     else thinkingText += update.delta;
     clearLoadingTimer();
     store.dispatch(setResponseStatus('outputting'));
-    store.dispatch(updateLastMessage(foldAssistantText(thinkingText, visibleText)));
+    store.dispatch(updateLastMessage(visibleText));
+    if (thinkingText) store.dispatch(patchLastAssistant({ thinking: thinkingText }));
     return;
   }
 
   if (event.type === 'message_end' && event.message.role === 'assistant') {
-    const thinking = event.message.content
-      .filter((part) => part.type === 'thinking')
-      .map((part) => part.thinking)
-      .join('');
-    const toolCalls = event.message.content
-      .filter((part): part is ToolCall => part.type === 'toolCall')
-      .map((part) => ({ id: part.id, name: part.name, arguments: part.arguments }));
+    const message = event.message;
+    ensureStreamingAssistant(message.model);
+    const { text, thinking, toolCalls } = assistantParts(message);
+    store.dispatch(updateLastMessage(text));
     store.dispatch(patchLastAssistant({ ...(thinking ? { thinking } : {}), toolCalls }));
     return;
   }
@@ -269,6 +323,7 @@ agent.subscribe((event) => {
       setPendingTool({
         id: event.toolCallId,
         name: event.toolName,
+        displayName: toolDisplayName(event.toolName),
         argumentsText: JSON.stringify(event.args ?? {}),
       })
     );
@@ -288,6 +343,7 @@ agent.subscribe((event) => {
         createdAt: event.message.timestamp || Date.now(),
         toolCallId: event.message.toolCallId,
         toolName: event.message.toolName,
+        toolDisplayName: toolDisplayName(event.message.toolName),
         isError: event.message.isError,
       })
     );
@@ -296,6 +352,8 @@ agent.subscribe((event) => {
 
   if (event.type !== 'agent_end') return;
   clearLoadingTimer();
+  cancelPendingToolApproval();
+  store.dispatch(setPendingTool(null));
   store.dispatch(setResponseStatus('end'));
   const assistant = lastAssistant(event.messages);
   if (!assistant || assistant.stopReason === 'stop' || assistant.stopReason === 'length') return;
@@ -317,7 +375,9 @@ export function agentIsStreaming(): boolean {
 }
 
 export function abortAgent() {
+  store.dispatch(setPendingTool(null));
   agent.abort();
+  cancelPendingToolApproval();
 }
 
 /**
@@ -326,11 +386,16 @@ export function abortAgent() {
  */
 export async function settleAgent() {
   invalidateRun();
+  store.dispatch(setPendingTool(null));
   if (agent.state.isStreaming) {
     agent.abort();
+    cancelPendingToolApproval();
     await agent.waitForIdle();
+  } else {
+    cancelPendingToolApproval();
   }
   store.dispatch(setResponseStatus('end'));
+  store.dispatch(setPendingTool(null));
 }
 
 /** 新对话：运行中不重置。调用方要先确认已经空闲，再清空界面。 */

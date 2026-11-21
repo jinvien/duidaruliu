@@ -197,6 +197,39 @@ async function main() {
     'tools field is sent'
   );
 
+  const thinkingReplay = await collect(
+    [
+      { role: 'user', content: '问', timestamp: 1 },
+      {
+        role: 'assistant',
+        content: [
+          { type: 'thinking', thinking: '想一下' },
+          { type: 'text', text: '答案' },
+        ],
+        api: 'ollama',
+        provider: 'ollama',
+        model: 'qwen',
+        stopReason: 'stop',
+        timestamp: 2,
+        usage: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          totalTokens: 0,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        },
+      } as unknown as Message,
+    ],
+    [{ message: { content: '好' }, done: true, done_reason: 'stop' }]
+  );
+  const thought = (thinkingReplay.body.messages as Array<Record<string, unknown>>).find(
+    (item) => item.role === 'assistant'
+  );
+  assert(thought?.content === '答案', 'thinking is not folded into content');
+  assert(thought?.thinking === '想一下', 'thinking is replayed on its own field');
+  assert(!String(thought?.content).includes('想一下'), 'content does not repeat thinking');
+
   const hidden = await collect(
     [{ role: 'user', content: '你好', timestamp: 1 }],
     [{ message: { content: '好' }, done: true, done_reason: 'stop' }],
@@ -299,6 +332,17 @@ async function main() {
     toolCalls: [{ id: 'ollama-tool-1', name: 'echo', arguments: { q: 'hi' } }],
   });
   assert(storedTool?.toolCalls?.[0]?.arguments.q === 'hi', 'tool calls survive storage');
+  const storedName = normalizeStoredMessage({
+    role: 'tool',
+    content: '好',
+    createdAt: 3,
+    toolName: 'mcp__docs__echo',
+    toolDisplayName: '回声',
+  });
+  assert(
+    storedName?.toolName === 'mcp__docs__echo' && storedName.toolDisplayName === '回声',
+    'display name survives storage'
+  );
 
   const trimmed = dropLastAssistantTurn([
     { role: 'user', content: '问', createdAt: 1 },

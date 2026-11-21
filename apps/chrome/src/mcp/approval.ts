@@ -67,3 +67,8 @@ export function decideToolApproval(decision: Exclude<ToolApprovalDecision, 'abor
   if (decision === 'session') sessionAllowed.add(waiter.approval.id);
   waiter.resolve(decision);
 }
+
+/** 换会话、中止或本轮结束时，不能把批准卡片留在输入框上。 */
+export function cancelPendingToolApproval() {
+  waiter?.resolve('aborted');
+}

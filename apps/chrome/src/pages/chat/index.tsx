@@ -9,13 +9,12 @@ import HistoryPanel from './components/HistoryPanel';
 import ChatSender from './components/ChatSender';
 
 // import hooks
-import { settleAgent } from '@/agent/runtime';
 import { useChat } from '@/hooks/useChat';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 
 // import store
-import { setMessages } from '@/store/chatSlice';
 import { setIsViewHistoryMode, setIsShowHistoryPanel } from '@/store/historySlice';
+import { replaceConversationForTranslate } from './translateConversation';
 
 // import constants
 import { SELECTION_COMMANDS } from '@/constants/command';
@@ -59,19 +58,17 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
         createdAt: Date.now(),
       },
     ];
-    const saveCurrent = !isViewHistoryMode;
-    await settleAgent();
-    await dispatch(
-      setMessages({
-        messages: translateMessages,
-        isSaveCurrent: saveCurrent,
-      })
-    );
-
-    dispatch(setIsViewHistoryMode(false));
-    dispatch(setIsShowHistoryPanel(false));
-
-    await sendMessage(translatedModelConfig);
+    await replaceConversationForTranslate({
+      dispatch,
+      messages: translateMessages,
+      saveCurrent: !isViewHistoryMode,
+      send: sendMessage,
+      override: translatedModelConfig,
+      onReplaced: () => {
+        dispatch(setIsViewHistoryMode(false));
+        dispatch(setIsShowHistoryPanel(false));
+      },
+    });
   };
 
   useEffect(() => {

@@ -16,6 +16,7 @@ import { useChat } from '@/hooks/useChat';
 // import store
 import { setIsViewHistoryMode } from '@/store/historySlice';
 import { setMessages } from '@/store/chatSlice';
+import { foldAssistantText } from '@/agent/ollamaStream';
 import { dropLastAssistantTurn } from '@/utils/chatTurn';
 
 // import utils
@@ -221,8 +222,20 @@ const ChatContent: React.FC = () => {
         roles={roles}
         items={[
           ...messages.flatMap((message, i) => {
-            const { role, content, model, images, toolCalls, toolName, isError } = message;
-            if (role === 'assistant' && !content.trim() && toolCalls?.length) return [];
+            const {
+              role,
+              content,
+              model,
+              images,
+              thinking,
+              toolCalls,
+              toolName,
+              toolDisplayName,
+              isError,
+            } = message;
+            const shown =
+              role === 'assistant' ? foldAssistantText(thinking ?? '', content) : content;
+            if (role === 'assistant' && !shown.trim() && toolCalls?.length) return [];
             const toolBody =
               role === 'tool' ? (
                 <Collapse
@@ -232,7 +245,7 @@ const ChatContent: React.FC = () => {
                       key: 'result',
                       label: (
                         <span style={isError ? { color: 'var(--ant-color-error)' } : undefined}>
-                          {toolName || t('chat.toolResult')}
+                          {toolDisplayName || toolName || t('chat.toolResult')}
                         </span>
                       ),
                       children: (
@@ -255,7 +268,7 @@ const ChatContent: React.FC = () => {
                       ? { text: content, images }
                       : role === 'tool'
                         ? toolBody
-                        : content,
+                        : shown,
                 loadingRender: () => <Badge status="processing" className="loadingDot" />,
                 loading: i === messages.length - 1 && responseStatus === 'waiting',
                 header: role === 'user' ? null : renderHeader(role, model),
@@ -296,7 +309,7 @@ const ChatContent: React.FC = () => {
                   content: (
                     <span>
                       <Badge status="processing" />{' '}
-                      {t('chat.toolRunning', { name: pendingTool.name })}
+                      {t('chat.toolRunning', { name: pendingTool.displayName || pendingTool.name })}
                     </span>
                   ),
                   loadingRender: () => <Badge status="processing" className="loadingDot" />,

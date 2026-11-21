@@ -72,6 +72,9 @@ export function normalizeStoredMessage(raw: unknown): Message | null {
   if (toolCalls) message.toolCalls = toolCalls;
   if (typeof value.toolCallId === 'string') message.toolCallId = value.toolCallId;
   if (typeof value.toolName === 'string') message.toolName = value.toolName;
+  if (typeof value.toolDisplayName === 'string' && value.toolDisplayName) {
+    message.toolDisplayName = value.toolDisplayName;
+  }
   if (typeof value.isError === 'boolean') message.isError = value.isError;
   return message;
 }

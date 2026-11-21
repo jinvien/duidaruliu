@@ -28,12 +28,15 @@ export type Message = {
   toolCalls?: ToolCallRecord[];
   toolCallId?: string;
   toolName?: string;
+  /** 气泡上的名字。回放仍用 toolName。 */
+  toolDisplayName?: string;
   isError?: boolean;
 };
 
 export type PendingTool = {
   id: string;
   name: string;
+  displayName?: string;
   argumentsText: string;
 };
 
