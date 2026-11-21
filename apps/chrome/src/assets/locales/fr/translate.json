@@ -98,6 +98,7 @@
     "today": "Aujourd'hui",
     "lastDay": "Hier",
     "last7Day": "7 derniers jours",
-    "last30Day": "30 derniers jours"
+    "last30Day": "30 derniers jours",
+    "earlier": "Plus tôt"
   }
 }

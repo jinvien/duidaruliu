@@ -30,7 +30,6 @@ export function getTimeGroup(timestamp: number): string {
     return 'last30Day';
   }
 
-  // 5. 超过30天，显示年份
-  const year = updatedDate.getFullYear();
-  return year.toString();
+  // 5. 超过30天，归入「更早」
+  return 'earlier';
 }

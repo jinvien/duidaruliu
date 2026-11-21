@@ -99,6 +99,7 @@
     "today": "Today",
     "lastDay": "Yesterday",
     "last7Day": "Last 7 days",
-    "last30Day": "Past 30 days"
+    "last30Day": "Past 30 days",
+    "earlier": "Earlier"
   }
 }

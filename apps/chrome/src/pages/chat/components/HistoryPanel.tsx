@@ -33,6 +33,9 @@ import { exportJsonArrayToFile, uploadHistoryMessages } from '@/utils/filesHelpe
 import { queryCurrentTab } from '@/utils/tab';
 import { contentWithPromptTag } from '@/utils/promptHelper';
 
+// import styles
+import Styles from '../index.module.less';
+
 // types
 import type { GetProp } from 'antd';
 import type { ConversationsProps } from '@ant-design/x';
@@ -49,6 +52,7 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     lastDay: i18n.t('utils.lastDay'),
     last7Day: i18n.t('utils.last7Day'),
     last30Day: i18n.t('utils.last30Day'),
+    earlier: i18n.t('utils.earlier'),
   };
 
   const { isShowHistoryPanel, conversations, isViewHistoryMode } = useAppSelector(
@@ -95,9 +99,19 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     return '';
   };
 
+  const lastAnswerModel = (conversationMessages: Message[], lastModel?: string) => {
+    for (let index = conversationMessages.length - 1; index >= 0; index -= 1) {
+      const message = conversationMessages[index];
+      if (message.role === 'assistant' && message.model?.trim()) {
+        return message.model.trim();
+      }
+    }
+    return lastModel?.trim() || '';
+  };
+
   const chatHistoryItems: GetProp<ConversationsProps, 'items'> = conversations?.map(
-    ({ messages, lastUpdatedAt }, i) => {
-      const [firstMessage, secondMessage] = messages;
+    ({ messages: conversationMessages, lastUpdatedAt, lastModel }, i) => {
+      const [firstMessage, secondMessage] = conversationMessages;
       const role = firstMessage?.role;
       const originalContent = firstMessage?.content ?? '';
       let displayedContent: string | React.ReactNode = originalContent;
@@ -114,20 +128,30 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
         displayedContent = source.length > 11 ? `${source.slice(0, 12)}...` : source;
       }
 
+      const modelName = lastAnswerModel(conversationMessages, lastModel);
+      const updatedAt = dayjs(lastUpdatedAt);
+      const groupKey = getTimeGroup(lastUpdatedAt);
+
       return {
         key: i.toString(),
         label: (
-          <span>
-            {displayedContent}
-            <span
-              style={{ fontSize: 'var(--ant-font-size-sm)', marginLeft: 'var(--ant-margin-xxs)' }}
-            >
-              {dayjs(lastUpdatedAt).format('HH:mm')}
+          <Tooltip
+            title={updatedAt.isValid() ? updatedAt.format('YYYY-MM-DD HH:mm') : undefined}
+            placement="right"
+          >
+            <span className={Styles.historyLabel}>
+              <span className={Styles.historyLabelMain}>
+                <span className={Styles.historyLabelTitle}>{displayedContent}</span>
+                <span className={Styles.historyLabelTime}>
+                  {updatedAt.isValid() ? updatedAt.format('HH:mm') : ''}
+                </span>
+              </span>
+              {modelName ? <span className={Styles.historyLabelModel}>{modelName}</span> : null}
             </span>
-          </span>
+          </Tooltip>
         ),
         disabled: false,
-        group: DATE_GROUP_MAP[getTimeGroup(lastUpdatedAt) as keyof typeof DATE_GROUP_MAP],
+        group: DATE_GROUP_MAP[groupKey as keyof typeof DATE_GROUP_MAP] || t('utils.earlier'),
       };
     }
   );

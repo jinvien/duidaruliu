@@ -133,3 +133,39 @@
   object-fit: contain;
   background: var(--ant-color-bg-container);
 }
+
+.historyLabel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: 2px;
+}
+
+.historyLabelMain {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: var(--ant-margin-xxs);
+}
+
+.historyLabelTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyLabelTime {
+  flex: none;
+  font-size: var(--ant-font-size-sm);
+}
+
+.historyLabelModel {
+  overflow: hidden;
+  font-size: var(--ant-font-size-sm);
+  line-height: 1.2;
+  color: var(--ant-color-text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

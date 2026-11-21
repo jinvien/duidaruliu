@@ -98,6 +98,7 @@
     "today": "今天",
     "lastDay": "昨天",
     "last7Day": "最近7天",
-    "last30Day": "过去30天"
+    "last30Day": "过去30天",
+    "earlier": "更早"
   }
 }
