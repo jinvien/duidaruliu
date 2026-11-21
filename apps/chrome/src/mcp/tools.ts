@@ -13,6 +13,7 @@ import type { CallableMcpTool } from './session';
 export const MCP_MODEL_TOOL_CAP = 32;
 
 const TOOL_REJECTED_REASON = '用户拒绝了这次工具调用，工具没有执行。';
+const TOOL_ABORTED_REASON = '对话已取消，这次工具调用没有执行。';
 
 export function modelToolText(blocks: readonly { type: string; text?: string }[]): string {
   return blocks
@@ -62,4 +63,18 @@ export function buildAgentTools(tools: CallableMcpTool[]): AgentTool[] {
 
 export function toolRejectedReason() {
   return TOOL_REJECTED_REASON;
+}
+
+export function toolAbortedReason() {
+  return TOOL_ABORTED_REASON;
+}
+
+/** 取消必须拦住调用。返回 undefined 会被 pi-agent-core 当成允许。 */
+export function blockReasonForToolDecision(
+  decision: 'once' | 'session' | 'reject' | 'aborted' | undefined,
+  signalAborted: boolean
+): string | undefined {
+  if (signalAborted || decision === 'aborted') return toolAbortedReason();
+  if (decision === 'reject') return toolRejectedReason();
+  return undefined;
 }

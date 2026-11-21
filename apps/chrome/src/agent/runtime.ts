@@ -21,7 +21,7 @@ import {
 
 export { decideToolApproval, getPendingToolApproval, isToolAllowedForSession };
 import { listCallableMcpTools, setMcpToolsChangedListener } from '@/mcp/session';
-import { buildAgentTools, toolRejectedReason } from '@/mcp/tools';
+import { blockReasonForToolDecision, buildAgentTools } from '@/mcp/tools';
 
 import { streamOllamaChat, type OllamaStreamRequest } from './ollamaStream';
 
@@ -181,7 +181,10 @@ const agent = new Agent({
   streamFn: (model, context, options) =>
     streamOllamaChat(model, context, options, currentRequest()),
   beforeToolCall: async ({ toolCall, args }, signal) => {
-    if (signal?.aborted || isToolAllowedForSession(toolCall.name)) return undefined;
+    if (signal?.aborted) {
+      return { block: true, reason: blockReasonForToolDecision('aborted', true) ?? '' };
+    }
+    if (isToolAllowedForSession(toolCall.name)) return undefined;
     const decision = await requestToolApproval(
       {
         id: toolCall.name,
@@ -191,9 +194,12 @@ const agent = new Agent({
       },
       signal ?? new AbortController().signal
     );
-    if (decision === 'aborted' || signal?.aborted) return undefined;
-    if (decision === 'once' || decision === 'session') return undefined;
-    return { block: true, reason: toolRejectedReason() };
+    const reason = blockReasonForToolDecision(
+      decision === 'once' || decision === 'session' ? undefined : decision,
+      signal?.aborted === true
+    );
+    if (reason) return { block: true, reason };
+    return undefined;
   },
 });
 
@@ -438,6 +444,7 @@ export async function continueAgent(messages: Message[], override?: OllamaModelP
 /** 停掉上一轮后再按当前 Redux 消息请求。调用方即使已经换过会话，也不能在这里直接返回。 */
 export async function startAssistantTurn(override?: OllamaModelParams) {
   await settleAgent();
+  store.dispatch(setResponseStatus('waiting'));
   const state = store.getState();
   const messages = state.chat.messages;
   store.dispatch(

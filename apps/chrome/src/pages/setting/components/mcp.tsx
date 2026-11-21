@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   App as AntdApp,
   Alert,
@@ -13,7 +13,9 @@ import {
 } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import { getMcpRuntime, inspectMcpServer, subscribeMcpRuntime } from '@/mcp/session';
+import { MCP_RUNTIME_PUSH, MCP_RUNTIME_QUERY } from '@/mcp/bridge';
+import { rewriteOriginForSave } from '@/mcp/page';
+import { inspectMcpServer, type McpServerRuntime } from '@/mcp/session';
 import { MCP_MODEL_TOOL_CAP } from '@/mcp/tools';
 import { mcpOriginRewriteDefault, type McpServerRecord } from '@/mcp/types';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
@@ -28,7 +30,8 @@ const McpSetting: React.FC = () => {
   const servers = useAppSelector((state) => state.mcp.servers);
   const loaded = useAppSelector((state) => state.mcp.loaded);
   const toolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
-  const runtime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
+  const [runtime, setRuntime] = useState<McpServerRuntime[]>([]);
+  const rewriteTouched = useRef(new Set<string>());
   const [form] = Form.useForm<{ servers: McpServerRecord[] }>();
   const watched = Form.useWatch('servers', form) as McpServerRecord[] | undefined;
 
@@ -36,6 +39,22 @@ const McpSetting: React.FC = () => {
     if (!loaded) return;
     form.setFieldsValue({ servers });
   }, [form, loaded, servers]);
+
+  useEffect(() => {
+    if (!chrome.runtime?.onMessage) return;
+    const onMessage = (message: { type?: string; runtime?: McpServerRuntime[] }) => {
+      if (message?.type === MCP_RUNTIME_PUSH && Array.isArray(message.runtime)) {
+        setRuntime(message.runtime);
+      }
+    };
+    chrome.runtime.onMessage.addListener(onMessage);
+    void Promise.resolve(chrome.runtime.sendMessage({ type: MCP_RUNTIME_QUERY }))
+      .then((response: { runtime?: McpServerRuntime[] } | undefined) => {
+        if (Array.isArray(response?.runtime)) setRuntime(response.runtime);
+      })
+      .catch(() => undefined);
+    return () => chrome.runtime.onMessage.removeListener(onMessage);
+  }, []);
 
   const adjustRewrite = (index: number, url: string) => {
     const current = (form.getFieldValue('servers') as McpServerRecord[] | undefined)?.[index];
@@ -48,14 +67,19 @@ const McpSetting: React.FC = () => {
   };
 
   const onFinish = async (values: { servers?: McpServerRecord[] }) => {
-    const next = (values.servers ?? []).map((server) => {
+    const next = (values.servers ?? []).map((server, index) => {
+      const name = server.name?.trim() ?? '';
+      const url = server.url?.trim() ?? '';
+      const saved = servers.some((item) => item.name === name);
+      const touched =
+        rewriteTouched.current.has(`index:${index}`) || rewriteTouched.current.has(`name:${name}`);
       const record: McpServerRecord = {
-        name: server.name?.trim() ?? '',
-        url: server.url?.trim() ?? '',
+        name,
+        url,
         headers: (server.headers ?? []).filter((header) => header?.name?.trim() || header?.value),
         timeout: server.timeout || 30,
         enabled: server.enabled !== false,
-        rewriteOrigin: Boolean(server.rewriteOrigin),
+        rewriteOrigin: rewriteOriginForSave(url, Boolean(server.rewriteOrigin), touched || saved),
       };
       if (server.command) record.command = server.command;
       return record;
@@ -213,7 +237,15 @@ const McpSetting: React.FC = () => {
                         extra={t('mcpSetting.rewriteOriginExtra')}
                         valuePropName="checked"
                       >
-                        <Switch />
+                        <Switch
+                          onClick={() => {
+                            rewriteTouched.current.add(`index:${name}`);
+                            const serverName = String(
+                              form.getFieldValue(['servers', name, 'name']) ?? ''
+                            ).trim();
+                            if (serverName) rewriteTouched.current.add(`name:${serverName}`);
+                          }}
+                        />
                       </Form.Item>
                     </Space>
                     <div style={{ marginBottom: 8 }}>

@@ -3,7 +3,10 @@ import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
 import { EnterIcon, Filter2Icon, Filter3Icon, CloseIcon, ImageAddIcon } from 'tdesign-icons-react';
 import { useTranslation } from 'react-i18next';
+import { agentIsStreaming } from '@/agent/runtime';
 import { useAppSelector, useAppDispatch } from '@/hooks/useStore';
+import { composerCanSend } from '@/pages/chat/composer';
+import store from '@/store';
 import { setIsViewHistoryMode } from '@/store/historySlice';
 import { addMessage } from '@/store/chatSlice';
 import { useChat } from '@/hooks/useChat';
@@ -92,8 +95,13 @@ const ChatSender: FC = () => {
     [antdMessage, pendingImages.length, t]
   );
 
+  const turnBusy = responseStatus !== 'end' || agentIsStreaming();
+
   const handleSubmit = useCallback(() => {
-    if (!userContent.length || responseStatus !== 'end' || !ollamaIsRunning) return;
+    const status = store.getState().chat.responseStatus;
+    if (!composerCanSend(status, agentIsStreaming(), userContent.length > 0, ollamaIsRunning)) {
+      return;
+    }
 
     const images: ChatImage[] | undefined =
       visionEnabled && pendingImages.length
@@ -122,7 +130,6 @@ const ChatSender: FC = () => {
     dispatch,
     ollamaIsRunning,
     pendingImages,
-    responseStatus,
     selectedSystemPrompt,
     sendMessage,
     userContent,
@@ -222,7 +229,7 @@ const ChatSender: FC = () => {
                       color="default"
                       aria-label={attachTitle}
                       icon={<ImageAddIcon />}
-                      disabled={!visionEnabled || imageLimitReached || responseStatus !== 'end'}
+                      disabled={!visionEnabled || imageLimitReached || turnBusy}
                       onMouseDown={(event) => event.stopPropagation()}
                       onClick={() => fileInputRef.current?.click()}
                     />
@@ -230,7 +237,7 @@ const ChatSender: FC = () => {
                 ) : undefined
               }
               onPaste={(event) => {
-                if (!visionEnabled || responseStatus !== 'end') return;
+                if (!visionEnabled || turnBusy) return;
                 const files = Array.from(event.clipboardData?.files ?? []).filter((file) =>
                   file.type.startsWith('image/')
                 );
@@ -257,7 +264,7 @@ const ChatSender: FC = () => {
                 const { SendButton, LoadingButton } = info.components;
                 return (
                   <>
-                    {responseStatus !== 'end' ? (
+                    {turnBusy ? (
                       <LoadingButton type="default" />
                     ) : (
                       <SendButton
@@ -267,7 +274,12 @@ const ChatSender: FC = () => {
                         shape="default"
                         type="default"
                         disabled={
-                          !userContent.length || responseStatus !== 'end' || !ollamaIsRunning
+                          !composerCanSend(
+                            responseStatus,
+                            agentIsStreaming(),
+                            userContent.length > 0,
+                            ollamaIsRunning
+                          )
                         }
                       />
                     )}

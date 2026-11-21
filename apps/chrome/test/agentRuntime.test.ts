@@ -123,11 +123,14 @@ async function main() {
       messages: [{ role: 'user', content: '先问', createdAt: 1 }],
     })
   );
+  const startedAt = Date.now();
   const firstTurn = runtime.startAssistantTurn();
+  await waitFor(() => store.getState().chat.responseStatus === 'waiting');
+  assert(Date.now() - startedAt < 500, 'the turn is busy before the 500ms spinner delay');
   await waitFor(() => calls.length === 1 && runtime.agentIsStreaming());
   assert(
-    store.getState().chat.responseStatus === 'end',
-    'spinner stays off during the first 500ms'
+    store.getState().chat.responseStatus === 'waiting',
+    'a second send sees the turn as busy while the request is still open'
   );
   assert(runtime.resetAgentTranscript() === false, 'new chat cannot reset a live run');
   assert(store.getState().chat.messages.length > 0, 'new chat did not clear the list');
