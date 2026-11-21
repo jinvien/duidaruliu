@@ -12,6 +12,8 @@ export type McpServerRecord = {
   enabled: boolean;
   timeout: number;
   rewriteOrigin: boolean;
+  /** 只随 JSON 回写，不参与连接。 */
+  description?: string;
 };
 
 export const DEFAULT_MCP_TIMEOUT_SECONDS = 30;
@@ -60,6 +62,7 @@ function normalizeOne(fallbackName: string, value: unknown): McpServerRecord | n
   if (!name) return null;
   const url = typeof value.url === 'string' ? value.url.trim() : '';
   const command = typeof value.command === 'string' ? value.command : undefined;
+  const description = typeof value.description === 'string' ? value.description : undefined;
   const timeout =
     typeof value.timeout === 'number' && value.timeout > 0
       ? value.timeout
@@ -68,6 +71,7 @@ function normalizeOne(fallbackName: string, value: unknown): McpServerRecord | n
     name,
     url,
     ...(command ? { command } : {}),
+    ...(description ? { description } : {}),
     headers: normalizeHeaders(value.headers),
     enabled: typeof value.enabled === 'boolean' ? value.enabled : true,
     timeout,

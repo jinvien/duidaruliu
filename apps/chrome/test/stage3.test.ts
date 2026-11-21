@@ -236,6 +236,10 @@ async function main() {
     false
   );
   assert(!('tools' in hidden.body), 'missing tools capability omits the field');
+  assert(
+    !(hidden.body.messages as Array<{ role?: string }>).some((item) => item.role === 'system'),
+    'a plain chat does not invent a system prompt'
+  );
 
   assert(
     modelHasTools([{ name: 'qwen', capabilities: ['tools'], capabilityState: 'known' }], 'qwen'),
