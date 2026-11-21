@@ -112,6 +112,121 @@ function mainParse() {
     'unknown field values are not copied into errors'
   );
 
+  const protoDoc = '{"mcpServers":{"__proto__":{"url":"https://example.com/mcp"}}}';
+  const proto = parseMcpServersDocument(protoDoc);
+  assert(
+    proto.ok && proto.servers.length === 1 && proto.servers[0]?.name === '__proto__',
+    'proto name is a real server'
+  );
+  if (proto.ok) {
+    const rewritten = serversToMcpDocument(proto.servers);
+    const round = parseMcpServersDocument(rewritten);
+    assert(
+      round.ok && round.servers.length === 1 && round.servers[0]?.url === 'https://example.com/mcp',
+      'proto name survives a save and reload'
+    );
+    const document = JSON.parse(rewritten) as { mcpServers: Record<string, unknown> };
+    assert(
+      Object.prototype.hasOwnProperty.call(document.mcpServers, '__proto__'),
+      'rewritten proto key is own data'
+    );
+  }
+  const constructorName = parseMcpServersDocument(
+    JSON.stringify({ mcpServers: { constructor: { url: 'https://example.com/mcp' } } })
+  );
+  assert(constructorName.ok, 'constructor is an allowed server name');
+  if (constructorName.ok) {
+    const round = parseMcpServersDocument(serversToMcpDocument(constructorName.servers));
+    assert(round.ok && round.servers[0]?.name === 'constructor', 'constructor name round-trips');
+  }
+
+  const badObjectHeader = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: {
+          url: 'https://example.com/mcp',
+          headers: { 'Bad Header': 'super-secret', Authorization: 'Bearer\nsuper-secret' },
+        },
+      },
+    })
+  );
+  assert(!badObjectHeader.ok, 'object headers with a space or newline are rejected');
+  assert(
+    !JSON.stringify(badObjectHeader).includes('super-secret'),
+    'header errors do not echo values'
+  );
+
+  const emptyObjectHeader = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: { docs: { url: 'https://example.com/mcp', headers: { '': 'super-secret' } } },
+    })
+  );
+  assert(!emptyObjectHeader.ok, 'an empty header name is rejected');
+  assert(
+    !JSON.stringify(emptyObjectHeader).includes('super-secret'),
+    'empty-name errors do not echo values'
+  );
+
+  const badArrayHeader = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: {
+          url: 'https://example.com/mcp',
+          headers: [{ name: 'Bad Header', value: 'super-secret' }],
+        },
+      },
+    })
+  );
+  assert(!badArrayHeader.ok, 'array headers with an illegal name are rejected');
+  const newlineArrayHeader = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: {
+          url: 'https://example.com/mcp',
+          headers: [{ name: 'Authorization', value: 'Bearer\r\nsuper-secret' }],
+        },
+      },
+    })
+  );
+  assert(!newlineArrayHeader.ok, 'array header values cannot contain newlines');
+  assert(
+    !JSON.stringify(newlineArrayHeader).includes('super-secret'),
+    'array header errors do not echo values'
+  );
+  const kept = [{ name: 'keep', url: 'https://example.com/mcp' }];
+  const rejectedHeaders = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: { docs: { url: 'https://example.com/mcp', headers: { '': 'x' } } },
+    })
+  );
+  const storedHeaders = rejectedHeaders.ok ? rejectedHeaders.servers : kept;
+  assert(storedHeaders === kept, 'invalid headers do not replace the saved servers');
+
+  const mixedTransport = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: { docs: { url: 'https://example.com/mcp', type: 'http', transport: 'sse' } },
+    })
+  );
+  assert(
+    !mixedTransport.ok && mixedTransport.issues.some((item) => item.code === 'sse'),
+    'http plus sse is rejected'
+  );
+
+  const equivalent = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: {
+        docs: { url: 'https://example.com/mcp', type: 'http', transport: 'streamable-http' },
+      },
+    })
+  );
+  assert(equivalent.ok, 'http and streamable-http name the same transport');
+  const onlyTransport = parseMcpServersDocument(
+    JSON.stringify({
+      mcpServers: { docs: { url: 'https://example.com/mcp', transport: 'streamable-http' } },
+    })
+  );
+  assert(onlyTransport.ok, 'transport streamable-http is accepted without type');
+
   const previous = [{ name: 'keep', url: 'https://example.com/mcp' }];
   const rejected = parseMcpServersDocument('{');
   const stored = rejected.ok ? rejected.servers : previous;

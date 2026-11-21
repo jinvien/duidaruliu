@@ -46,12 +46,36 @@ export function normalizeHeaders(raw: unknown): McpHeader[] {
   );
 }
 
+const HTTP_HEADER_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+
+/** HTTP 字段名是 token。空名、空格和换行都不是合法名字。 */
+export function isHttpHeaderName(name: string): boolean {
+  return HTTP_HEADER_NAME.test(name);
+}
+
+/** 字段值只能是一行可见字符。换行和 NUL 不能保存，避免把凭据写进错误信息。 */
+export function isHttpHeaderValue(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code === 0x09) continue;
+    if (code < 0x20 || code === 0x7f) return false;
+  }
+  return true;
+}
+
+function assignOwn(target: Record<string, string>, key: string, value: string) {
+  Object.defineProperty(target, key, {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
 export function headerRecord(headers: McpHeader[]): Record<string, string> {
-  const result: Record<string, string> = {};
+  const result = Object.create(null) as Record<string, string>;
   for (const header of headers) {
-    const name = header.name.trim();
-    if (!name) continue;
-    result[name] = header.value;
+    assignOwn(result, header.name, header.value);
   }
   return result;
 }
