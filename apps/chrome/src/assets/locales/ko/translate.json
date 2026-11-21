@@ -39,7 +39,37 @@
   "settingMenu": {
     "ollamaSetting": "Ollama 설정",
     "customPromptSetting": "사용자 정의 프롬프트",
-    "customLinkSetting": "빠른 링크 설정"
+    "customLinkSetting": "빠른 링크 설정",
+    "mcp": "도구 / MCP"
+  },
+  "mcpSetting": {
+    "title": "도구 / MCP",
+    "storageNotice": "이 값은 확장 프로그램의 로컬 저장소에만 남습니다. 확장 프로그램 저장소는 비밀 보관함이 아닙니다.",
+    "name": "이름",
+    "namePlaceholder": "영문, 숫자, 밑줄 또는 하이픈",
+    "url": "Streamable HTTP 주소",
+    "headers": "요청 헤더",
+    "headerName": "이름",
+    "headerValue": "값",
+    "addHeader": "헤더 추가",
+    "enabled": "사용",
+    "timeout": "시간 제한(초)",
+    "rewriteOrigin": "Origin 다시 쓰기",
+    "rewriteOriginExtra": "127.0.0.1 과 localhost 는 기본적으로 요청 Origin 을 해당 서버 자신의 origin 으로 바꿉니다. 원격 https 는 기본적으로 바꾸지 않습니다.",
+    "statusIdle": "연결 안 됨",
+    "statusConnecting": "연결 중",
+    "statusConnected": "연결됨",
+    "statusError": "연결 실패",
+    "statusErrorDetail": "연결 실패: {{detail}}",
+    "authRequired": "로그인이 필요합니다. 이 버전은 미리 입력한 요청 헤더만 지원합니다.",
+    "stdioOnly": "이 버전은 Streamable HTTP만 지원합니다.",
+    "tools": "도구",
+    "noTools": "도구 없음",
+    "addServer": "서버 추가",
+    "removeServer": "삭제",
+    "saved": "저장됨",
+    "duplicateName": "이름이 중복되었습니다",
+    "invalid": "구성이 올바르지 않습니다: {{detail}}"
   },
   "customLinkSetting": {
     "linkSetting": "링크 설정",

@@ -39,7 +39,37 @@
   "settingMenu": {
     "ollamaSetting": "Настройки Ollama",
     "customPromptSetting": "Пользовательские подсказки",
-    "customLinkSetting": "Быстрые ссылки"
+    "customLinkSetting": "Быстрые ссылки",
+    "mcp": "Инструменты / MCP"
+  },
+  "mcpSetting": {
+    "title": "Инструменты / MCP",
+    "storageNotice": "Эти значения хранятся только в локальном хранилище расширения. Хранилище расширения — не сейф для секретов.",
+    "name": "Имя",
+    "namePlaceholder": "Буквы, цифры, подчёркивания или дефисы",
+    "url": "Адрес Streamable HTTP",
+    "headers": "Заголовки запроса",
+    "headerName": "Имя",
+    "headerValue": "Значение",
+    "addHeader": "Добавить заголовок",
+    "enabled": "Включено",
+    "timeout": "Таймаут (секунды)",
+    "rewriteOrigin": "Подменять Origin",
+    "rewriteOriginExtra": "Для 127.0.0.1 и localhost Origin запроса по умолчанию подменяется на origin этого сервера. Для удалённого https подмена выключена.",
+    "statusIdle": "Не подключено",
+    "statusConnecting": "Подключение",
+    "statusConnected": "Подключено",
+    "statusError": "Ошибка подключения",
+    "statusErrorDetail": "Ошибка подключения: {{detail}}",
+    "authRequired": "Нужен вход. Эта версия поддерживает только заранее указанные заголовки запроса.",
+    "stdioOnly": "Эта версия поддерживает только Streamable HTTP.",
+    "tools": "Инструменты",
+    "noTools": "Нет инструментов",
+    "addServer": "Добавить сервер",
+    "removeServer": "Удалить",
+    "saved": "Сохранено",
+    "duplicateName": "Имена не должны повторяться",
+    "invalid": "Неверная конфигурация: {{detail}}"
   },
   "customLinkSetting": {
     "linkSetting": "Настройки ссылок",

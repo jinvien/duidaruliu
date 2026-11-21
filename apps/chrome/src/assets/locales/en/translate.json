@@ -39,7 +39,37 @@
   "settingMenu": {
     "ollamaSetting": "Ollama Settings",
     "customPromptSetting": "Custom Prompts",
-    "customLinkSetting": "Quick Access Settings"
+    "customLinkSetting": "Quick Access Settings",
+    "mcp": "Tools / MCP"
+  },
+  "mcpSetting": {
+    "title": "Tools / MCP",
+    "storageNotice": "These values stay in local extension storage only. Extension storage is not a secret vault.",
+    "name": "Name",
+    "namePlaceholder": "Letters, digits, underscores, or hyphens",
+    "url": "Streamable HTTP URL",
+    "headers": "Request headers",
+    "headerName": "Name",
+    "headerValue": "Value",
+    "addHeader": "Add header",
+    "enabled": "Enabled",
+    "timeout": "Timeout (seconds)",
+    "rewriteOrigin": "Rewrite Origin",
+    "rewriteOriginExtra": "127.0.0.1 and localhost rewrite the request Origin to that server's own origin by default. Remote https does not.",
+    "statusIdle": "Not connected",
+    "statusConnecting": "Connecting",
+    "statusConnected": "Connected",
+    "statusError": "Connection failed",
+    "statusErrorDetail": "Connection failed: {{detail}}",
+    "authRequired": "Sign-in required. This version only supports request headers filled in ahead of time.",
+    "stdioOnly": "This version only supports Streamable HTTP.",
+    "tools": "Tools",
+    "noTools": "No tools",
+    "addServer": "Add server",
+    "removeServer": "Remove",
+    "saved": "Saved",
+    "duplicateName": "Names must be unique",
+    "invalid": "Invalid configuration: {{detail}}"
   },
   "customLinkSetting": {
     "linkSetting": "Link Settings",

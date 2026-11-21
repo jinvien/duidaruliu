@@ -10,10 +10,12 @@ import Setting from '@/pages/setting';
 import { toggleTheme, updateAppSettings, initializeApp } from '@/store/appSlice';
 import { initializePrompts } from '@/store/promptSlice';
 import { initializeOllama, setOllamaModelParams, setOllamaUrl } from '@/store/ollamaSlice';
+import { initializeMcp } from '@/store/mcpSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/useStore';
 
 // tools
-import { rewriteOrigin } from '@/utils/rewriteOrigin';
+import { closeMcpSessions, syncMcpSessions } from '@/mcp/session';
+import { rewriteOrigin, syncMcpOriginRules } from '@/utils/rewriteOrigin';
 
 // constants
 import { SYNC_VALUE_CHANGED } from '@/constants/command';
@@ -120,9 +122,22 @@ const App: React.FC = () => {
 
     // 初始化提示词
     dispatch(initializePrompts());
+
+    dispatch(initializeMcp());
+    return () => {
+      void closeMcpSessions();
+    };
   }, [dispatch]);
 
   const { ollamaUrl } = useAppSelector((state) => state.ollama);
+  const mcpServers = useAppSelector((state) => state.mcp.servers);
+  const mcpLoaded = useAppSelector((state) => state.mcp.loaded);
+
+  useEffect(() => {
+    if (!mcpLoaded) return;
+    void syncMcpSessions(mcpServers);
+    void syncMcpOriginRules(mcpServers);
+  }, [mcpLoaded, mcpServers]);
   if (!ollamaUrl) {
     return null;
   }

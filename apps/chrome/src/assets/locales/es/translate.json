@@ -39,7 +39,37 @@
   "settingMenu": {
     "ollamaSetting": "Configuración Ollama",
     "customPromptSetting": "Comandos personalizados",
-    "customLinkSetting": "Configuración de acceso rápido"
+    "customLinkSetting": "Configuración de acceso rápido",
+    "mcp": "Herramientas / MCP"
+  },
+  "mcpSetting": {
+    "title": "Herramientas / MCP",
+    "storageNotice": "Estos valores solo se guardan en el almacenamiento local de la extensión. El almacenamiento de la extensión no es una caja fuerte de secretos.",
+    "name": "Nombre",
+    "namePlaceholder": "Letras, números, guiones bajos o guiones",
+    "url": "Dirección Streamable HTTP",
+    "headers": "Cabeceras de solicitud",
+    "headerName": "Nombre",
+    "headerValue": "Valor",
+    "addHeader": "Añadir cabecera",
+    "enabled": "Activado",
+    "timeout": "Tiempo de espera (segundos)",
+    "rewriteOrigin": "Reescribir Origin",
+    "rewriteOriginExtra": "127.0.0.1 y localhost reescriben por defecto el Origin de la solicitud al origin de ese servidor. https remoto no lo hace.",
+    "statusIdle": "Sin conexión",
+    "statusConnecting": "Conectando",
+    "statusConnected": "Conectado",
+    "statusError": "Error de conexión",
+    "statusErrorDetail": "Error de conexión: {{detail}}",
+    "authRequired": "Hace falta iniciar sesión. Esta versión solo admite cabeceras de solicitud escritas de antemano.",
+    "stdioOnly": "Esta versión solo admite Streamable HTTP.",
+    "tools": "Herramientas",
+    "noTools": "No hay herramientas",
+    "addServer": "Añadir servidor",
+    "removeServer": "Eliminar",
+    "saved": "Guardado",
+    "duplicateName": "Los nombres no pueden repetirse",
+    "invalid": "Configuración no válida: {{detail}}"
   },
   "customLinkSetting": {
     "linkSetting": "Configuración de enlaces",

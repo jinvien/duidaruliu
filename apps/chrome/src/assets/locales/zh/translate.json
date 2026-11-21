@@ -39,7 +39,37 @@
   "settingMenu": {
     "ollamaSetting": "Ollama 设置",
     "customPromptSetting": "自定义提示词",
-    "customLinkSetting": "快捷入口设置"
+    "customLinkSetting": "快捷入口设置",
+    "mcp": "工具 / MCP"
+  },
+  "mcpSetting": {
+    "title": "工具 / MCP",
+    "storageNotice": "这些值只保存在本机扩展的本地存储里。扩展存储不是密钥保险库。",
+    "name": "名称",
+    "namePlaceholder": "字母、数字、下划线或短横线",
+    "url": "Streamable HTTP 地址",
+    "headers": "请求头",
+    "headerName": "名称",
+    "headerValue": "值",
+    "addHeader": "添加请求头",
+    "enabled": "启用",
+    "timeout": "超时（秒）",
+    "rewriteOrigin": "改写 Origin",
+    "rewriteOriginExtra": "127.0.0.1 和 localhost 默认把请求 Origin 改写成该服务自己的 origin。远程 https 默认不改写。",
+    "statusIdle": "未连接",
+    "statusConnecting": "连接中",
+    "statusConnected": "已连接",
+    "statusError": "连接失败",
+    "statusErrorDetail": "连接失败：{{detail}}",
+    "authRequired": "需要登录；当前版本只支持预先填写的请求头",
+    "stdioOnly": "当前版本只支持 Streamable HTTP",
+    "tools": "工具",
+    "noTools": "没有工具",
+    "addServer": "添加服务器",
+    "removeServer": "删除",
+    "saved": "已保存",
+    "duplicateName": "名称不能重复",
+    "invalid": "配置无效：{{detail}}"
   },
   "customLinkSetting": {
     "linkSetting": "链接设置",

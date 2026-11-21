@@ -4,6 +4,7 @@ import chatSlice from './chatSlice';
 import ollamaSlice from './ollamaSlice';
 import historySlice from './historySlice';
 import promptSlice from './promptSlice';
+import mcpSlice from './mcpSlice';
 
 // 创建 store
 const store = configureStore({
@@ -13,6 +14,7 @@ const store = configureStore({
     ollama: ollamaSlice.reducer,
     history: historySlice.reducer,
     prompt: promptSlice.reducer,
+    mcp: mcpSlice.reducer,
   },
 });
 

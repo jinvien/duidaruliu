@@ -39,7 +39,37 @@
   "settingMenu": {
     "ollamaSetting": "Ollama設定",
     "customPromptSetting": "カスタムプロンプト",
-    "customLinkSetting": "クイックリンク設定"
+    "customLinkSetting": "クイックリンク設定",
+    "mcp": "ツール / MCP"
+  },
+  "mcpSetting": {
+    "title": "ツール / MCP",
+    "storageNotice": "これらの値は拡張機能のローカルストレージにだけ保存されます。拡張機能のストレージは秘密情報の保管庫ではありません。",
+    "name": "名前",
+    "namePlaceholder": "英数字、アンダースコア、ハイフン",
+    "url": "Streamable HTTP の URL",
+    "headers": "リクエストヘッダー",
+    "headerName": "名前",
+    "headerValue": "値",
+    "addHeader": "ヘッダーを追加",
+    "enabled": "有効",
+    "timeout": "タイムアウト（秒）",
+    "rewriteOrigin": "Origin を書き換える",
+    "rewriteOriginExtra": "127.0.0.1 と localhost は、既定でリクエストの Origin をそのサーバー自身の origin に書き換えます。リモートの https は既定では書き換えません。",
+    "statusIdle": "未接続",
+    "statusConnecting": "接続中",
+    "statusConnected": "接続済み",
+    "statusError": "接続失敗",
+    "statusErrorDetail": "接続失敗：{{detail}}",
+    "authRequired": "ログインが必要です。このバージョンは、あらかじめ記入したリクエストヘッダーだけに対応しています。",
+    "stdioOnly": "このバージョンは Streamable HTTP のみ対応しています。",
+    "tools": "ツール",
+    "noTools": "ツールはありません",
+    "addServer": "サーバーを追加",
+    "removeServer": "削除",
+    "saved": "保存しました",
+    "duplicateName": "名前が重複しています",
+    "invalid": "設定が無効です：{{detail}}"
   },
   "customLinkSetting": {
     "linkSetting": "リンク設定",

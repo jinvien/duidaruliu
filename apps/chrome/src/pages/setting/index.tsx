@@ -3,6 +3,7 @@ import { Layout, Menu } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import OllamaSetting from './components/ollama';
+import McpSetting from './components/mcp';
 import CustomLink from './components/customLink';
 import CustomPrompt from './components/customPrompt';
 
@@ -26,6 +27,7 @@ const OptionsPage: React.FC = () => {
 
   const items: MenuItem[] = [
     getItem(t('settingMenu.ollamaSetting'), 'ollamaSetting'),
+    getItem(t('settingMenu.mcp'), 'mcp'),
     getItem(t('settingMenu.customPromptSetting'), 'customPrompt'),
     getItem(t('settingMenu.customLinkSetting'), 'customLink'),
   ];
@@ -45,6 +47,7 @@ const OptionsPage: React.FC = () => {
       <Layout>
         <Content className={Styles.content}>
           {currentPage === 'ollamaSetting' && <OllamaSetting />}
+          {currentPage === 'mcp' && <McpSetting />}
           {currentPage === 'customLink' && <CustomLink />}
           {currentPage === 'customPrompt' && <CustomPrompt />}
         </Content>
