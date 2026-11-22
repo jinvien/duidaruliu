@@ -6,8 +6,11 @@ body,
 }
 
 .preview-page {
-  min-height: 100%;
-  background: #f3f3f3;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
 }
 
 .preview-note {
@@ -15,11 +18,11 @@ body,
   padding: 12px 16px;
   color: #333;
   font: 14px/1.5 sans-serif;
+  background: #fff7e6;
 }
 
 .preview-frame {
-  width: 440px;
-  height: 100vh;
-  margin: 0 auto;
-  background: #fff;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }

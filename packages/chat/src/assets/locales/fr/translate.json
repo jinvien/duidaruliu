@@ -83,7 +83,7 @@
     "jsonSaved": "Enregistré. Le panneau de discussion ouvert se reconnecte avec.",
     "savedServers": "Serveurs enregistrés",
     "noServers": "Aucun serveur enregistré.",
-    "connectionIsNotChat": "Connecté ici signifie seulement que le serveur répond. Cela ne signifie pas que cette conversation enverra des outils au modèle. Cet avis est au-dessus du champ de saisie.",
+    "connectionIsNotChat": "Connecté ici signifie seulement que le serveur répond. Cela ne signifie pas que cette conversation enverra des outils au modèle. Cela dépend de l'interrupteur et de la capacité tools du modèle. Une confirmation est demandée avant chaque appel.",
     "issueJson": "Le JSON n'a pas pu être lu.",
     "issueShape": "Il faut un objet comme {\"mcpServers\":{\"nom\":{\"url\":\"https://.../mcp\"}}}. Un ancien tableau de serveurs est aussi accepté.",
     "issueName": "Le nom {{server}} ne peut contenir que des lettres, chiffres, tirets bas ou tirets, et doit être identique à la clé.",

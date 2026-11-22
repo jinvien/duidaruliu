@@ -3,12 +3,7 @@ import { useState, useEffect } from 'react';
 import { App as AntdApp, Button, Form, Input, Space, Divider, Radio, Flex } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import {
-  AddRectangleIcon,
-  MinusRectangleIcon,
-  Filter2Icon,
-  Filter3Icon,
-} from 'tdesign-icons-react';
+import { BulbOutlined, MessageOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons';
 
 const CustomPrompt: React.FC = () => {
   const { message: antdMessage } = AntdApp.useApp();
@@ -99,7 +94,7 @@ const CustomPrompt: React.FC = () => {
                             value: 'quick',
                             label: (
                               <Flex align="center" gap="small">
-                                <Filter2Icon /> {t('customPromptSetting.quickPrompt')}
+                                <BulbOutlined /> {t('customPromptSetting.quickPrompt')}
                               </Flex>
                             ),
                           },
@@ -107,7 +102,7 @@ const CustomPrompt: React.FC = () => {
                             value: 'system',
                             label: (
                               <Flex align="center" gap="small">
-                                <Filter3Icon /> {t('customPromptSetting.systemPrompt')}
+                                <MessageOutlined /> {t('customPromptSetting.systemPrompt')}
                               </Flex>
                             ),
                           },
@@ -117,12 +112,12 @@ const CustomPrompt: React.FC = () => {
 
                     <Form.Item>
                       <Space.Compact>
-                        <Button onClick={() => remove(name)} icon={<MinusRectangleIcon />}>
+                        <Button onClick={() => remove(name)} icon={<MinusOutlined />}>
                           {t('formAction.delete')}
                         </Button>
                         <Button
                           onClick={() => add({ type: 'quick' }, index + 1)}
-                          icon={<AddRectangleIcon />}
+                          icon={<PlusOutlined />}
                         >
                           {t('formAction.add')}
                         </Button>
@@ -136,7 +131,7 @@ const CustomPrompt: React.FC = () => {
                   block
                   style={{ marginBottom: 'var(--ant-margin)' }}
                   onClick={() => add({ type: 'quick' })}
-                  icon={<AddRectangleIcon />}
+                  icon={<PlusOutlined />}
                 >
                   {t('formAction.add')}
                 </Button>

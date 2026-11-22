@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { App as AntdApp, Button, Form, Input, Space, Divider } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import { AddRectangleIcon, MinusRectangleIcon } from 'tdesign-icons-react';
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 
 const CustomLink: React.FC = () => {
   const { message: antdMessage } = AntdApp.useApp();
@@ -71,12 +71,12 @@ const CustomLink: React.FC = () => {
                     >
                       <Input placeholder={t('customLinkSetting.linkAddress')} />
                     </Form.Item>
-                    <Button onClick={() => remove(name)} icon={<MinusRectangleIcon />} />
+                    <Button onClick={() => remove(name)} icon={<MinusOutlined />} />
                   </Space.Compact>
                 </Form.Item>
               ))}
               <Form.Item>
-                <Button onClick={() => add()} block icon={<AddRectangleIcon />}>
+                <Button onClick={() => add()} block icon={<PlusOutlined />}>
                   {t('customLinkSetting.addLink')}
                 </Button>
               </Form.Item>

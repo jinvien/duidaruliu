@@ -1,14 +1,19 @@
 import { storageSet } from '../../../host';
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { App as AntdApp, Button, Space, Select, Badge, Tooltip } from 'antd';
-import { MenuApplicationIcon, ChatAddIcon } from 'tdesign-icons-react';
+import { MenuOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
-import { agentIsStreaming, resetAgentTranscript } from '../../../agent/runtime';
+import { agentIsStreaming, getAgentActivity, resetAgentTranscript, subscribeAgentActivity } from '../../../agent/runtime';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
-import { setOllamaModelParams } from '../../../store/ollamaSlice';
+import { bumpModelsNonce, checkOllamaStatus, setOllamaModelParams } from '../../../store/ollamaSlice';
 import { setMessages } from '../../../store/chatSlice';
-import { setIsShowHistoryPanel, setIsViewHistoryMode } from '../../../store/historySlice';
+import {
+  initializeConversations,
+  setIsShowHistoryPanel,
+  setIsViewHistoryMode,
+  storeCurrentMessagesFunc,
+} from '../../../store/historySlice';
 
 import { useOllamaTags } from '../../../hooks/useOllama';
 import { getMcpRuntime, subscribeMcpRuntime } from '../../../mcp/session';
@@ -28,11 +33,11 @@ const HeaderSection: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const { ollamaModelParams, ollamaUrl, ollamaIsRunning, modelsStatus } = useAppSelector(
-    (state) => state.ollama
-  );
+  const { ollamaModelParams, ollamaUrl, ollamaIsRunning, modelsStatus, serviceError } =
+    useAppSelector((state) => state.ollama);
+  useSyncExternalStore(subscribeAgentActivity, getAgentActivity, getAgentActivity);
   const messages = useAppSelector((state) => state.chat.messages);
-  const { isViewHistoryMode } = useAppSelector((state) => state.history);
+  const { isViewHistoryMode, isShowHistoryPanel } = useAppSelector((state) => state.history);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const mcpToolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
   const mcpServers = useAppSelector((state) => state.mcp.servers);
@@ -49,6 +54,11 @@ const HeaderSection: React.FC = () => {
     dispatch(setOllamaModelParams({ ...ollamaModelParams, model: ollamaTags[0].name }));
   }, [ollamaTags]);
 
+  const retryService = () => {
+    dispatch(checkOllamaStatus(ollamaUrl));
+    dispatch(bumpModelsNonce());
+  };
+
   const createNewChat = async () => {
     if (agentIsStreaming() || responseStatus !== 'end') {
       antdMessage.warning(t('chat.waitingForEnd'));
@@ -63,12 +73,12 @@ const HeaderSection: React.FC = () => {
       dispatch(setIsViewHistoryMode(false));
     }
     if (!resetAgentTranscript()) return;
-    dispatch(
-      setMessages({
-        messages: [],
-        isSaveCurrent: !isViewHistoryMode,
-      })
-    );
+    const saved = messages;
+    dispatch(setMessages({ messages: [], isSaveCurrent: false }));
+    if (!isViewHistoryMode) {
+      await storeCurrentMessagesFunc(saved);
+      dispatch(initializeConversations());
+    }
   };
 
   const listState = modelsStatus === 'idle' ? 'loading' : modelsStatus;
@@ -118,6 +128,13 @@ const HeaderSection: React.FC = () => {
         mcpRuntime.find((item) => item.name === server.name)?.status !== 'connected'
     );
 
+  const serviceProblem = !ollamaIsRunning || modelsStatus === 'error';
+  const serviceText = !ollamaIsRunning
+    ? serviceError
+      ? t('chat.serviceUnreachableDetail', { url: ollamaUrl, detail: serviceError })
+      : t('chat.serviceUnreachable', { url: ollamaUrl })
+    : t('chat.modelsLoadFailed', { url: ollamaUrl });
+
   return (
     <header className={Styles.header}>
       <div className={Styles.left}>
@@ -125,9 +142,10 @@ const HeaderSection: React.FC = () => {
           <Button
             variant="text"
             color="default"
-            icon={<MenuApplicationIcon />}
+            icon={<MenuOutlined />}
+            aria-label={t('chat.openSideMenu')}
             onClick={() => {
-              dispatch(setIsShowHistoryPanel(true));
+              dispatch(setIsShowHistoryPanel(!isShowHistoryPanel));
             }}
           />
         </Tooltip>
@@ -142,7 +160,7 @@ const HeaderSection: React.FC = () => {
         <Select
           disabled={!ollamaIsRunning}
           variant="borderless"
-          value={ollamaIsRunning ? ollamaModelParams.model : t('chat.serverNotStart')}
+          value={ollamaIsRunning ? ollamaModelParams.model : t('chat.serviceUnreachable', { url: ollamaUrl })}
           popupMatchSelectWidth={false}
           options={ollamaTags.map(({ name }) => ({
             value: name,
@@ -160,11 +178,20 @@ const HeaderSection: React.FC = () => {
           <Button
             variant="text"
             color="default"
-            icon={<ChatAddIcon />}
+            icon={<PlusOutlined />}
+            aria-label={t('chat.newChat')}
             onClick={() => createNewChat()}
           />
         </Tooltip>
       </Space>
+      {serviceProblem ? (
+        <div className={Styles.serviceRow} role="status">
+          <span>{serviceText}</span>
+          <Button size="small" icon={<ReloadOutlined />} onClick={retryService}>
+            {t('chat.serviceRetry')}
+          </Button>
+        </div>
+      ) : null}
     </header>
   );
 };

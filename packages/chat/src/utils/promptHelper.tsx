@@ -1,11 +1,11 @@
-import { Filter3Icon } from 'tdesign-icons-react';
+import { MessageOutlined } from '@ant-design/icons';
 
 // 侧边栏消息渲染，带系统提示词的消息，添加对应的 icon
 export const contentWithPromptTag = (systemPrompt: string, userContent: string) => {
   void systemPrompt;
   return (
     <span>
-      <Filter3Icon style={{ marginTop: -3 }} /> {userContent}
+      <MessageOutlined /> {userContent}
     </span>
   );
 };

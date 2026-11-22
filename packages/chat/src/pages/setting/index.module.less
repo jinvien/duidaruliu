@@ -1,8 +1,32 @@
-.layout {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding-top: 80px;
+.page {
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ant-color-bg-container);
 }
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ant-padding-sm);
+  padding: var(--ant-padding-xs) var(--ant-padding-sm);
+  border-bottom: 1px solid var(--ant-color-border);
+}
+
+.layout {
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+}
+
+.sider {
+  background: var(--ant-color-bg-elevated);
+  border-right: 1px solid var(--ant-color-border);
+}
+
 .content {
-  padding-left: 32px;
+  padding: 16px 28px 40px;
+  overflow: auto;
+  max-width: 880px;
 }

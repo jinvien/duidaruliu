@@ -83,6 +83,7 @@ async function fetchShowCapabilities(
 export const useOllamaTags = (ollamaUrl: string) => {
   const dispatch = useAppDispatch();
   const ollamaTags = useAppSelector((state) => state.ollama.listedModels);
+  const modelsNonce = useAppSelector((state) => state.ollama.modelsNonce);
 
   useEffect(() => {
     if (!ollamaUrl) {
@@ -156,7 +157,7 @@ export const useOllamaTags = (ollamaUrl: string) => {
       active = false;
       controller.abort();
     };
-  }, [dispatch, ollamaUrl]);
+  }, [dispatch, ollamaUrl, modelsNonce]);
 
   return { ollamaTags };
 };

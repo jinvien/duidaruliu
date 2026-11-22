@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-import { forwardLoopback, parseLoopbackTarget } from '../dev/loopbackProxy';
+import { forwardLoopback, handleLoopbackProxy, parseLoopbackTarget } from '../dev/loopbackProxy';
 
 let failed = 0;
 
@@ -88,6 +88,69 @@ async function main() {
   await new Promise((resolve) => setTimeout(resolve, 50));
   assert(closed, 'abort closes the upstream socket');
 
+  const chunked = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/x-ndjson' });
+    res.write('{"message":{"content":"a"}}\n');
+    req.on('close', () => {
+      if (!res.writableEnded) res.end();
+    });
+    setTimeout(() => {
+      if (!res.writableEnded) res.end('{"done":true,"done_reason":"stop"}\n');
+    }, 40);
+  });
+  const streamPort = await listen(chunked);
+  const proxy = http.createServer((req, res) => handleLoopbackProxy(req, res));
+  const proxyPort = await listen(proxy);
+  const streamUrl = `http://127.0.0.1:${streamPort}/api/chat`;
+  const first = await fetch(
+    `http://127.0.0.1:${proxyPort}/__ddrl/proxy?target=${encodeURIComponent(streamUrl)}`,
+    { method: 'POST', headers: { 'content-type': 'application/json', origin: `http://127.0.0.1:${proxyPort}` }, body: '{}' },
+  );
+  assert(first.status === 200, `stream status ${first.status}`);
+  const text = await first.text();
+  assert(text.includes('"content":"a"') && text.includes('"done":true'), 'ndjson stream completes through the proxy');
+
+  const options = await fetch(
+    `http://127.0.0.1:${proxyPort}/__ddrl/proxy?target=${encodeURIComponent(streamUrl)}`,
+    {
+      method: 'OPTIONS',
+      headers: {
+        origin: `http://127.0.0.1:${proxyPort}`,
+        'access-control-request-headers': 'content-type',
+      },
+    },
+  );
+  assert(options.status === 204, 'same-origin preflight is answered locally');
+
+  const blocked = await fetch(
+    `http://127.0.0.1:${proxyPort}/__ddrl/proxy?target=${encodeURIComponent('https://example.com/api/chat')}`,
+  );
+  assert(blocked.status === 400, 'public targets stay blocked');
+
+  let upstreamClosed = false;
+  const hang = http.createServer((req) => {
+    req.on('close', () => {
+      upstreamClosed = true;
+    });
+  });
+  const slowPort = await listen(hang);
+  const abort = new AbortController();
+  const hangingFetch = fetch(
+    `http://127.0.0.1:${proxyPort}/__ddrl/proxy?target=${encodeURIComponent(`http://127.0.0.1:${slowPort}/api/chat`)}`,
+    { method: 'POST', body: '{}', signal: abort.signal },
+  );
+  await new Promise((resolve) => hang.once('request', () => resolve(undefined)));
+  abort.abort();
+  await hangingFetch.then(
+    () => assert(false, 'aborted proxy fetch should fail'),
+    () => assert(true, 'proxy fetch aborted'),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert(upstreamClosed, 'aborting the browser fetch closes the upstream');
+
+  chunked.close();
+  proxy.close();
+  hang.close();
   target.close();
   hanging.close();
   target.unref();

@@ -142,6 +142,9 @@ importers:
 
   packages/chat:
     dependencies:
+      '@ant-design/icons':
+        specifier: 6.3.4
+        version: 6.3.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@ant-design/x':
         specifier: ^2.10.0
         version: 2.10.0(antd@6.7.1(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -190,9 +193,6 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
-      tdesign-icons-react:
-        specifier: ^0.4.3
-        version: 0.4.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: 19.3.0

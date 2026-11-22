@@ -7,9 +7,7 @@ import {
   store,
   SHELL_MODE_EVENT,
 } from '@ddrl/chat';
-import { requestNeedsOriginRewrite } from '@ddrl/chat/mcp/origin';
-
-import { parseLoopbackTarget } from '../dev/loopback';
+import { createWebServiceFetch } from '../dev/serviceFetch';
 import { createIndexedDbStorage } from './idbStorage';
 
 import './preview.css';
@@ -22,6 +20,7 @@ const localHost =
 
 installChatHost({
   storage: createIndexedDbStorage(),
+  layout: 'desktop',
   openSettings() {
     const url = new URL(window.location.href);
     url.searchParams.set('appMode', 'setting');
@@ -30,22 +29,12 @@ installChatHost({
   },
 });
 
-setServiceFetch((input, init) => {
-  const url =
-    typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-  if (!parseLoopbackTarget(url)) return globalThis.fetch(input, init);
-  const state = store.getState();
-  const headers = new Headers(init?.headers);
-  if (requestNeedsOriginRewrite(url, state.ollama.ollamaUrl, state.mcp.servers)) {
-    headers.set('x-ddrl-rewrite-origin', '1');
-  }
-  return globalThis.fetch(`/__ddrl/proxy?target=${encodeURIComponent(url)}`, {
-    method: init?.method,
-    headers,
-    body: init?.body,
-    signal: init?.signal,
-  });
-});
+setServiceFetch(
+  createWebServiceFetch(() => {
+    const state = store.getState();
+    return { ollamaUrl: state.ollama.ollamaUrl, servers: state.mcp.servers };
+  }),
+);
 
 const Preview = () => (
   <div className="preview-page">

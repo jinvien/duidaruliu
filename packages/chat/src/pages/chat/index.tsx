@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Layout } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +24,7 @@ import { PROMPTS } from '../../constants/prompt';
 // import styles
 import Styles from './index.module.less';
 
+import { useChatLayout, useMinWidth } from '../../shell/layout';
 import type { SetAppMode } from '../../shell/types';
 import type { Message } from '../../store/chatSlice';
 
@@ -35,6 +36,16 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
 
   const { ollamaModelParams } = useAppSelector((state) => state.ollama);
   const { isViewHistoryMode } = useAppSelector((state) => state.history);
+  const layout = useChatLayout();
+  const wide = useMinWidth(960);
+  const dockHistory = layout === 'desktop' && wide;
+  const openedDock = useRef(false);
+
+  useEffect(() => {
+    if (!dockHistory || openedDock.current) return;
+    openedDock.current = true;
+    dispatch(setIsShowHistoryPanel(true));
+  }, [dispatch, dockHistory]);
 
   const handleContextMenus = async (bgMessage: { type: string; text?: string }) => {
     if (bgMessage.type !== SELECTION_COMMANDS.TRANSLATE_SELECTED) {
@@ -77,17 +88,22 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   }, [ollamaModelParams]);
 
   return (
-    <main>
+    <main className={Styles.page}>
+      {dockHistory ? <HistoryPanel docked setAppMode={setAppMode} /> : null}
       <Layout className={Styles.layout}>
         <HeaderSection />
         <Layout.Content className={Styles.content}>
-          <ChatContent />
+          <div className={layout === 'desktop' ? Styles.reading : undefined} style={{ height: '100%' }}>
+            <ChatContent />
+          </div>
         </Layout.Content>
         <footer className={Styles.footer}>
-          <ChatSender />
+          <div className={layout === 'desktop' ? Styles.reading : undefined}>
+            <ChatSender />
+          </div>
         </footer>
       </Layout>
-      <HistoryPanel setAppMode={setAppMode} />
+      {dockHistory ? null : <HistoryPanel setAppMode={setAppMode} />}
     </main>
   );
 };

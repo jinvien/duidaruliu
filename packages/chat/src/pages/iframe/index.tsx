@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react';
-import { RollbackIcon } from 'tdesign-icons-react';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { Flex } from 'antd';
 import type { SetAppMode } from '../../shell/types';
 
@@ -28,7 +28,7 @@ const IframePage: React.FC<{ setAppMode: SetAppMode; url: string }> = ({ setAppM
         justify="space-between"
         onClick={() => setAppMode('chat')}
       >
-        <RollbackIcon />
+        <ArrowLeftOutlined />
         <span
           style={{
             fontSize: 'var(--ant-font-size-sm)',

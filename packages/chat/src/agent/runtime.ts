@@ -279,6 +279,7 @@ export function setAgentTools(tools: AgentTool[]) {
 setMcpToolsChangedListener(() => refreshAgentTools());
 
 agent.subscribe((event) => {
+  try {
   if (!runIsCurrent()) return;
 
   if (event.type === 'agent_start') {
@@ -377,10 +378,32 @@ agent.subscribe((event) => {
   }
   console.error('onChatError', error);
   reportChatError(error);
+  } finally {
+    // finishRun 在监听返回后才把 isStreaming 清掉，微任务里再读才是停稳的状态。
+    queueMicrotask(publishAgentActivity);
+  }
 });
 
 export function setChatErrorReporter(reporter: (error: unknown) => void) {
   reportChatError = reporter;
+}
+
+let activityVersion = 0;
+const activityListeners = new Set<() => void>();
+
+function publishAgentActivity() {
+  activityVersion += 1;
+  for (const listener of activityListeners) listener();
+}
+
+/** 循环在 agent_end 监听返回之后才把 isStreaming 清掉。晚一拍再通知界面。 */
+export function subscribeAgentActivity(listener: () => void) {
+  activityListeners.add(listener);
+  return () => activityListeners.delete(listener);
+}
+
+export function getAgentActivity() {
+  return activityVersion;
 }
 
 export function agentIsStreaming(): boolean {

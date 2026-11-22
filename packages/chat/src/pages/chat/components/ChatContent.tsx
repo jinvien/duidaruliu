@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { App as AntdApp, Flex, Button, Space, Badge, Collapse } from 'antd';
-import { Bubble } from '@ant-design/x';
-import { FileCopyIcon, RefreshIcon, Filter3Icon } from 'tdesign-icons-react';
+import { App as AntdApp, Badge, Button, Flex } from 'antd';
+import { Actions, Bubble, Think, ThoughtChain, Welcome } from '@ant-design/x';
+import { CopyOutlined, MessageOutlined, SyncOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -16,7 +16,6 @@ import { useChat } from '../../../hooks/useChat';
 // import store
 import { setIsViewHistoryMode } from '../../../store/historySlice';
 import { setMessages } from '../../../store/chatSlice';
-import { foldAssistantText } from '../../../agent/ollamaStream';
 import { dropLastAssistantTurn } from '../../../utils/chatTurn';
 import { groupChatBlocks, readableToolName, type AssistantSegment } from '../../../utils/chatView';
 
@@ -70,20 +69,6 @@ const ChatContent: React.FC = () => {
     await sendMessage();
   };
 
-  const ThinkTag = ({ children }: any) => (
-    <Collapse
-      bordered={false}
-      items={[
-        {
-          key: '1',
-          label: t('chat.think'),
-          children: <p>{children}</p>,
-        },
-      ]}
-      defaultActiveKey={['1']}
-    />
-  );
-
   const renderMarkdown = (content: string) => {
     // 预处理函数
     const escapeThinkContent = (raw: string) => {
@@ -100,13 +85,7 @@ const ChatContent: React.FC = () => {
       );
     };
 
-    let processedContent = escapeThinkContent(content);
-
-    // 处理换行符问题，ollama deepseek 输出的 think 结束符只有一个\n的时候，无法被 rehypeRaw 准确渲染，所以正则识别下
-    if (processedContent.includes('\n</think>') && !processedContent.includes('\n\n</think>')) {
-      // 使用 (?<=) 后行断言确保换行符在 <think> 标签内部末尾
-      processedContent = processedContent.replace(/(\n)(?=<\/think>)/g, '\n\n');
-    }
+    const processedContent = escapeThinkContent(content);
 
     try {
       return (
@@ -116,8 +95,13 @@ const ChatContent: React.FC = () => {
           rehypePlugins={[rehypeRaw]}
           remarkPlugins={[remarkGfm]}
           components={{
-            // @ts-ignore
-            think: ({ node, ...props }) => <ThinkTag {...props} />,
+            // rehype-raw 会把模型输出的 think 标签交给这个自定义渲染。
+            // @ts-expect-error think 不是 Markdown 的内置标签。
+            think: ({ children: thought }: { children?: React.ReactNode }) => (
+              <Think title={t('chat.thinkDone')} defaultExpanded={false} blink={false}>
+                {thought}
+              </Think>
+            ),
 
             code({ node, className, children, style, ...rest }) {
               const match = /language-(\w+)/.exec(className || '');
@@ -130,7 +114,7 @@ const ChatContent: React.FC = () => {
                   <Button
                     className={Styles.codeBlockCopy}
                     size="small"
-                    icon={<FileCopyIcon fill="red" />}
+                    icon={<CopyOutlined />}
                     onClick={() => {
                       copyToClipboard(childrenString);
                       antdMessage.success(t('chat.codeCopy'));
@@ -202,7 +186,7 @@ const ChatContent: React.FC = () => {
 
   const renderPrompt = (systemPrompt: string) => (
     <>
-      <Filter3Icon style={{ marginTop: -3 }} /> {systemPrompt}
+      <MessageOutlined /> {systemPrompt}
     </>
   );
 
@@ -216,8 +200,64 @@ const ChatContent: React.FC = () => {
     }
   };
 
+  const renderAssistantBody = (segments: AssistantSegment[], thinkingLive: boolean) => (
+    <div>
+      {segments.map((segment, segmentIndex) => {
+        if (segment.type === 'text') {
+          const thinking = segment.thinking?.trim();
+          return (
+            <div key={segmentIndex}>
+              {thinking ? (
+                <Think
+                  title={thinkingLive && !segment.text ? t('chat.think') : t('chat.thinkDone')}
+                  loading={thinkingLive && !segment.text}
+                  defaultExpanded={false}
+                  blink={false}
+                >
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{thinking}</p>
+                </Think>
+              ) : null}
+              {segment.text ? renderMarkdown(segment.text) : null}
+            </div>
+          );
+        }
+        const title = segment.pending
+          ? t('chat.toolRunning', { name: segment.name })
+          : segment.name || t('chat.toolResult');
+        return (
+          <ThoughtChain
+            key={segmentIndex}
+            style={{ marginTop: segmentIndex === 0 ? 0 : 8 }}
+            items={[
+              {
+                key: `tool-${segmentIndex}`,
+                title,
+                status: segment.pending ? 'loading' : segment.isError ? 'error' : 'success',
+                collapsible: !segment.pending && segment.content.length > 0,
+                content: segment.pending ? null : (
+                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {segment.content.length > 1200
+                      ? `${segment.content.slice(0, 1200)}…`
+                      : segment.content}
+                  </pre>
+                ),
+              },
+            ]}
+          />
+        );
+      })}
+    </div>
+  );
+
   return (
     <Flex gap="middle" vertical style={{ height: '100%', minHeight: 0 }}>
+      {messages.length === 0 ? (
+        <Welcome
+          title={t('chat.welcomeTitle')}
+          description={t('chat.welcomeDescription')}
+          variant="borderless"
+        />
+      ) : null}
       <Bubble.List
         className={Styles.bubbleList}
         ref={listRef}
@@ -257,84 +297,49 @@ const ChatContent: React.FC = () => {
                     },
                   ]
                 : block.segments;
-            const hasVisibleText = segments.some((segment) => segment.type === 'text');
+            const hasVisibleText = segments.some(
+              (segment) => segment.type === 'text' && (segment.text || segment.thinking)
+            );
+            const thinkingLive = isLast && (responseStatus === 'outputting' || responseStatus === 'waiting');
+            const actions = [
+              block.copyText
+                ? {
+                    key: 'copy',
+                    icon: <CopyOutlined />,
+                    label: t('chat.messageCopy'),
+                  }
+                : null,
+              isLast && responseStatus === 'end'
+                ? {
+                    key: 'retry',
+                    icon: <SyncOutlined />,
+                    label: t('chat.regenerate'),
+                  }
+                : null,
+            ].filter((item) => item !== null);
             return [
               {
                 key: `assistant-${block.lastIndex}`,
                 role: 'assistant' as const,
-                content: (
-                  <div>
-                    {segments.map((segment, segmentIndex) =>
-                      segment.type === 'text' ? (
-                        <div key={segmentIndex}>
-                          {renderMarkdown(foldAssistantText(segment.thinking ?? '', segment.text))}
-                        </div>
-                      ) : (
-                        <Collapse
-                          key={segmentIndex}
-                          bordered={false}
-                          style={{ marginTop: segmentIndex === 0 ? 0 : 8 }}
-                          items={[
-                            {
-                              key: 'tool',
-                              label: (
-                                <span
-                                  style={
-                                    segment.isError
-                                      ? { color: 'var(--ant-color-error)' }
-                                      : undefined
-                                  }
-                                >
-                                  {segment.pending ? <Badge status="processing" /> : null}{' '}
-                                  {segment.pending
-                                    ? t('chat.toolRunning', { name: segment.name })
-                                    : segment.name || t('chat.toolResult')}
-                                </span>
-                              ),
-                              children: segment.pending ? null : (
-                                <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                                  {segment.content.length > 1200
-                                    ? `${segment.content.slice(0, 1200)}…`
-                                    : segment.content}
-                                </pre>
-                              ),
-                            },
-                          ]}
-                        />
-                      )
-                    )}
-                  </div>
-                ),
+                content: renderAssistantBody(segments, thinkingLive),
                 contentRender: (content: React.ReactNode) => content,
                 loadingRender: () => <Badge status="processing" className="loadingDot" />,
                 loading: waiting && !hasVisibleText && !pendingTool,
                 header: renderHeader('assistant', block.model || selectedModel),
-                footer:
-                  block.copyText || (isLast && responseStatus === 'end') ? (
-                    <Space>
-                      {block.copyText ? (
-                        <Button
-                          color="default"
-                          variant="text"
-                          size="small"
-                          icon={<FileCopyIcon />}
-                          onClick={() => {
-                            copyToClipboard(block.copyText);
-                            antdMessage.success(t('chat.messageCopy'));
-                          }}
-                        />
-                      ) : null}
-                      {isLast && responseStatus === 'end' && (
-                        <Button
-                          color="default"
-                          variant="text"
-                          size="small"
-                          icon={<RefreshIcon />}
-                          onClick={() => reGenerator()}
-                        />
-                      )}
-                    </Space>
-                  ) : null,
+                footer: actions.length ? (
+                  <Actions
+                    fadeIn={false}
+                    fadeInLeft={false}
+                    items={actions}
+                    onClick={({ key }) => {
+                      if (key === 'copy') {
+                        copyToClipboard(block.copyText);
+                        antdMessage.success(t('chat.messageCopy'));
+                      }
+                      if (key === 'retry') void reGenerator();
+                    }}
+                  />
+                ) : null,
               },
             ];
           }

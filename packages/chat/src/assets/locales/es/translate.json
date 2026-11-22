@@ -83,7 +83,7 @@
     "jsonSaved": "Guardado. El panel de chat abierto se vuelve a conectar con él.",
     "savedServers": "Servidores guardados",
     "noServers": "Todavía no hay servidores guardados.",
-    "connectionIsNotChat": "Conectado aquí solo significa que el servidor responde. No significa que esta conversación enviará herramientas al modelo. Ese aviso está encima del campo de chat.",
+    "connectionIsNotChat": "Conectado aquí solo significa que el servidor responde. No significa que esta conversación enviará herramientas al modelo. Depende del interruptor y de la capacidad tools del modelo. Antes de cada llamada se pide permiso.",
     "issueJson": "No se pudo analizar el JSON.",
     "issueShape": "Hace falta un objeto como {\"mcpServers\":{\"nombre\":{\"url\":\"https://.../mcp\"}}}. También vale un array antiguo.",
     "issueName": "El nombre {{server}} solo puede tener letras, números, guiones bajos o guiones, y debe coincidir con la clave.",

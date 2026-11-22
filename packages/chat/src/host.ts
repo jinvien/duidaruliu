@@ -17,8 +17,12 @@ export type HostCommand = { type: string; text?: string };
 
 export type McpRuntimeListener = (runtime: unknown[]) => void;
 
+export type ChatLayout = 'compact' | 'desktop';
+
 export type ChatHost = {
   storage: KeyValueStorage;
+  /** 不写时按紧凑侧栏排。Web 日常使用传 desktop，Chrome 不要传。 */
+  layout?: ChatLayout;
   openSettings: () => void;
   /** 扩展右键菜单等宿主命令。Web 预览不接。 */
   subscribeHostCommand?: (listener: (command: HostCommand) => void) => () => void;

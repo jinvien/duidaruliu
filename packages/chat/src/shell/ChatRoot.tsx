@@ -19,6 +19,7 @@ import { closeMcpSessions, syncMcpSessions } from '../mcp/session';
 import { getChatHost } from '../host';
 import { loadStoredLanguage } from '../i18n';
 import { seedStorageDefaults } from '../storage/seed';
+import { ChatLayoutProvider } from './layout';
 import { appModeFromLocation, SHELL_MODE_EVENT, type AppMode, type SetAppMode } from './types';
 
 import './main.less';
@@ -78,7 +79,7 @@ const SidePanelMain: React.FC<{ setAppMode: SetAppMode; appMode: AppMode }> = ({
   if (/^https?:\/\//.test(appMode)) {
     return <Iframe setAppMode={setAppMode} url={appMode} />;
   }
-  if (appMode === 'setting') return <Setting />;
+  if (appMode === 'setting') return <Setting setAppMode={setAppMode} />;
   if (appMode === 'chat') return <Chat setAppMode={setAppMode} />;
   return <div>404</div>;
 };
@@ -87,6 +88,20 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
   const dispatch = useAppDispatch();
   const { isDarkMode } = useAppSelector((state) => state.app);
   const [appMode, setAppMode] = useState<AppMode>(() => appModeFromLocation());
+  const setMode: SetAppMode = (value) => {
+    setAppMode((current) => {
+      const next = typeof value === 'function' ? value(current) : value;
+      if ((next === 'chat' || next === 'setting') && typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        if (next === 'chat') url.searchParams.delete('appMode');
+        else url.searchParams.set('appMode', 'setting');
+        const nextSearch = `${url.pathname}${url.search}`;
+        const currentSearch = `${window.location.pathname}${window.location.search}`;
+        if (nextSearch !== currentSearch) window.history.pushState({}, '', url);
+      }
+      return next;
+    });
+  };
   const { ollamaUrl } = useAppSelector((state) => state.ollama);
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpLoaded = useAppSelector((state) => state.mcp.loaded);
@@ -150,7 +165,11 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
       }}
     >
       <AntdApp message={{ top: 57 }}>
-        <SidePanelMain setAppMode={setAppMode} appMode={appMode} />
+        <ChatLayoutProvider layout={getChatHost().layout ?? 'compact'}>
+          <div className={`chat-shell chat-shell-${getChatHost().layout ?? 'compact'}`}>
+            <SidePanelMain setAppMode={setMode} appMode={appMode} />
+          </div>
+        </ChatLayoutProvider>
       </AntdApp>
     </XProvider>
   );

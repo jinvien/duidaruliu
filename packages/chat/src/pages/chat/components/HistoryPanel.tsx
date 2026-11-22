@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { App as AntdApp, Drawer, Upload, Button, Flex, Tooltip, Divider, Tag } from 'antd';
 import { Conversations as ConversationsPanel } from '@ant-design/x';
 import {
-  FileDownloadIcon,
-  FileImportIcon,
-  ModeDarkIcon,
-  ModeLightIcon,
-  SettingIcon,
-  Translate1Icon,
-} from 'tdesign-icons-react';
+  DownloadOutlined,
+  MoonOutlined,
+  SettingOutlined,
+  SunOutlined,
+  TranslationOutlined,
+  UploadOutlined,
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 
@@ -44,7 +44,10 @@ import type { ConversationsProps } from '@ant-design/x';
 import type { SetAppMode } from '../../../shell/types';
 import type { Message } from '../../../store/chatSlice';
 
-const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
+const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
+  setAppMode,
+  docked = false,
+}) => {
   const { message: antdMessage } = AntdApp.useApp();
   const dispatch = useAppDispatch();
   const { t, i18n } = useTranslation();
@@ -206,103 +209,118 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     }
   );
 
-  return (
-    <main>
-      <Drawer
-        //todo 在 title 中绘制 关闭、标题、新对话入口
-        // title={renderHeader()}
-        placement="left"
-        open={isShowHistoryPanel}
-        size={260}
-        closable={false}
-        onClose={() => {
-          dispatch(setIsShowHistoryPanel(false));
-        }}
-        footer={
-          <section>
-            <Links setAppMode={setAppMode} />
-            <Divider style={{ margin: 0 }} />
-            <Flex
-              style={{ padding: 'var(--ant-padding-sm) var(--ant-padding-xxs)' }}
-              justify="space-between"
+  const panel = (
+    <>
+      <Flex vertical style={{ flex: 1, minHeight: 0 }}>
+        {conversations && (
+          <ConversationsPanel
+            items={chatHistoryItems}
+            onActiveChange={(key) => onHistoryItemChange(Number(key))}
+            groupable
+            style={{ flex: 1, overflow: 'auto' }}
+          />
+        )}
+      </Flex>
+      <section>
+        <Links setAppMode={setAppMode} />
+        <Divider style={{ margin: 0 }} />
+        <Flex
+          style={{ padding: 'var(--ant-padding-sm) var(--ant-padding-xxs)' }}
+          justify="space-between"
+        >
+          <div>
+            <Tooltip title={t('chat.openSettingPanel')}>
+              <Button
+                variant="text"
+                color="default"
+                aria-label={t('chat.openSettingPanel')}
+                icon={<SettingOutlined />}
+                onClick={() => getChatHost().openSettings()}
+              />
+            </Tooltip>
+            <Tooltip title={t('chat.toggleTheme')}>
+              <Button
+                variant="text"
+                color="default"
+                aria-label={t('chat.toggleTheme')}
+                onClick={() => dispatch(toggleTheme())}
+                icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+              />
+            </Tooltip>
+            <Tooltip title={t('chat.toggleLang')}>
+              <Button
+                variant="text"
+                color="default"
+                aria-label={t('chat.toggleLang')}
+                icon={<TranslationOutlined />}
+                onClick={() => changeLanguage()}
+              />
+            </Tooltip>
+          </div>
+          <div>
+            <Upload
+              customRequest={({ file }: any) => {
+                uploadHistoryMessages({
+                  file,
+                  onSuccess: () => {
+                    antdMessage.success(t('chat.uploadSuccess'));
+                    dispatch(initializeConversations());
+                  },
+                  onError: () => antdMessage.error(t('chat.fileExtFailed')),
+                  onValidFailed: () => antdMessage.error(t('chat.chatHistoryFailed')),
+                });
+              }}
+              accept=".json"
+              showUploadList={false}
             >
-              <div>
-                <Tooltip title={t('chat.openSettingPanel')}>
-                  <Button
-                    variant="text"
-                    color="default"
-                    icon={<SettingIcon />}
-                    onClick={() => getChatHost().openSettings()}
-                  />
-                </Tooltip>
-                <Tooltip title={t('chat.toggleTheme')}>
-                  <Button
-                    variant="text"
-                    color="default"
-                    onClick={() => dispatch(toggleTheme())}
-                    icon={isDarkMode ? <ModeLightIcon /> : <ModeDarkIcon />}
-                  />
-                </Tooltip>
-                <Tooltip title={t('chat.toggleLang')}>
-                  <Button
-                    variant="text"
-                    color="default"
-                    icon={<Translate1Icon />}
-                    onClick={() => changeLanguage()}
-                  />
-                </Tooltip>
-              </div>
-              <div>
-                <Upload
-                  customRequest={({ file }: any) => {
-                    uploadHistoryMessages({
-                      file,
-                      onSuccess: () => {
-                        antdMessage.success(t('chat.uploadSuccess'));
-                        dispatch(initializeConversations());
-                      },
-                      onError: () => antdMessage.error(t('chat.fileExtFailed')),
-                      onValidFailed: () => antdMessage.error(t('chat.chatHistoryFailed')),
-                    });
-                  }}
-                  accept=".json"
-                  showUploadList={false}
-                >
-                  <Tooltip title={t('chat.uploadConversation')}>
-                    <Button color="default" variant="text" icon={<FileImportIcon />} />
-                  </Tooltip>
-                </Upload>
-                <Tooltip title={t('chat.exportConversation')}>
-                  <Button
-                    color="default"
-                    variant="text"
-                    icon={<FileDownloadIcon />}
-                    onClick={() => {
-                      exportJsonArrayToFile(
-                        conversations,
-                        `ddrl_history_${dayjs().format('YYYY_MM_DD')}.json`
-                      );
-                      antdMessage.success(t('chat.exportSuccess'));
-                    }}
-                  />
-                </Tooltip>
-              </div>
-            </Flex>
-          </section>
-        }
-      >
-        <Flex vertical style={{ height: '100%' }}>
-          {conversations && (
-            <ConversationsPanel
-              items={chatHistoryItems}
-              onActiveChange={(key) => onHistoryItemChange(Number(key))}
-              groupable
-              style={{ flex: 1 }}
-            />
-          )}
+              <Tooltip title={t('chat.uploadConversation')}>
+                <Button
+                  color="default"
+                  variant="text"
+                  aria-label={t('chat.uploadConversation')}
+                  icon={<UploadOutlined />}
+                />
+              </Tooltip>
+            </Upload>
+            <Tooltip title={t('chat.exportConversation')}>
+              <Button
+                color="default"
+                variant="text"
+                aria-label={t('chat.exportConversation')}
+                icon={<DownloadOutlined />}
+                onClick={() => {
+                  exportJsonArrayToFile(
+                    conversations,
+                    `ddrl_history_${dayjs().format('YYYY_MM_DD')}.json`
+                  );
+                  antdMessage.success(t('chat.exportSuccess'));
+                }}
+              />
+            </Tooltip>
+          </div>
         </Flex>
-      </Drawer>
-    </main>
+      </section>
+    </>
+  );
+
+  if (docked) {
+    if (!isShowHistoryPanel) return null;
+    return <aside className={Styles.historyDock}>{panel}</aside>;
+  }
+
+  return (
+    <Drawer
+      placement="left"
+      open={isShowHistoryPanel}
+      size={280}
+      closable={false}
+      onClose={() => {
+        dispatch(setIsShowHistoryPanel(false));
+      }}
+      styles={{ body: { display: 'flex', flexDirection: 'column', padding: 0 } }}
+    >
+      {panel}
+    </Drawer>
   );
 };
 

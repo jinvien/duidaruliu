@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node test/configLoad.mjs && tsx --tsconfig tsconfig.node.json test/loopbackProxy.test.ts && tsx --tsconfig tsconfig.app.json test/idbStorage.test.ts"
+    "test": "node test/configLoad.mjs && tsx --tsconfig tsconfig.node.json test/loopbackProxy.test.ts && tsx --tsconfig tsconfig.app.json test/serviceFetch.test.ts && tsx --tsconfig tsconfig.app.json test/idbStorage.test.ts"
   },
   "dependencies": {
     "@ddrl/chat": "workspace:*",

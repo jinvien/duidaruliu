@@ -1,13 +1,19 @@
 import { FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
-import { EnterIcon, Filter2Icon, Filter3Icon, CloseIcon, ImageAddIcon } from 'tdesign-icons-react';
+import {
+  ArrowUpOutlined,
+  BulbOutlined,
+  CloseOutlined,
+  MessageOutlined,
+  PictureOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { agentIsStreaming } from '../../../agent/runtime';
+import { agentIsStreaming, getAgentActivity, subscribeAgentActivity } from '../../../agent/runtime';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useStore';
 import { getMcpRuntime, subscribeMcpRuntime } from '../../../mcp/session';
 import { explainChatTools, modelToolCapability } from '../../../mcp/toolGate';
-import { composerCanSend } from '../composer';
+import { composerCanSend, composerStopVisible } from '../composer';
 import { modelHasTools, modelToolsMark } from '../../../utils/modelCapability';
 import store from '../../../store';
 import { setIsViewHistoryMode } from '../../../store/historySlice';
@@ -37,7 +43,7 @@ const ChatSender: FC = () => {
   const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
   const prompts = useAppSelector((state) => state.prompt).map((prompt) => ({
     ...prompt,
-    icon: prompt.type === 'quick' ? <Filter2Icon /> : <Filter3Icon />,
+    icon: prompt.type === 'quick' ? <BulbOutlined /> : <MessageOutlined />,
   }));
 
   const [userContent, setUserContent] = useState<string>('');
@@ -50,6 +56,7 @@ const ChatSender: FC = () => {
   const visionEnabledRef = useRef(false);
 
   const { sendMessage, abortControl } = useChat();
+  useSyncExternalStore(subscribeAgentActivity, getAgentActivity, getAgentActivity);
   const capabilityMark = modelCapabilityMark(
     listedModels,
     ollamaModelParams.model,
@@ -100,7 +107,9 @@ const ChatSender: FC = () => {
     [antdMessage, pendingImages.length, t]
   );
 
-  const turnBusy = responseStatus !== 'end' || agentIsStreaming();
+  const streaming = agentIsStreaming();
+  const stopVisible = composerStopVisible(responseStatus);
+  const turnBusy = stopVisible || streaming;
 
   const handleSubmit = useCallback(() => {
     const status = store.getState().chat.responseStatus;
@@ -158,14 +167,14 @@ const ChatSender: FC = () => {
               align="center"
               style={{ fontSize: 'var(--ant-font-size)', fontWeight: 'bold' }}
             >
-              <Filter3Icon /> {selectedSystemPrompt.label}
+              <MessageOutlined /> {selectedSystemPrompt.label}
             </Flex>
           }
           description={selectedSystemPrompt.value}
           type="info"
           closable={{
             'aria-label': 'close',
-            closeIcon: <CloseIcon fontSize="16" />,
+            closeIcon: <CloseOutlined />,
           }}
           onClose={() => setSelectedSystemPrompt(null)}
         />
@@ -184,7 +193,7 @@ const ChatSender: FC = () => {
                   setPendingImages((current) => current.filter((item) => item.id !== image.id))
                 }
               >
-                <CloseIcon fontSize={12} />
+                <CloseOutlined />
               </button>
             </div>
           ))}
@@ -240,7 +249,7 @@ const ChatSender: FC = () => {
         {({ onTrigger, onKeyDown, open }) => {
           return (
             <Sender
-              loading={responseStatus === 'outputting' || responseStatus === 'tool'}
+              loading={stopVisible}
               submitType="enter"
               value={userContent}
               prefix={
@@ -250,7 +259,7 @@ const ChatSender: FC = () => {
                       variant="text"
                       color="default"
                       aria-label={attachTitle}
-                      icon={<ImageAddIcon />}
+                      icon={<PictureOutlined />}
                       disabled={!visionEnabled || imageLimitReached || turnBusy}
                       onMouseDown={(event) => event.stopPropagation()}
                       onClick={() => fileInputRef.current?.click()}
@@ -296,13 +305,17 @@ const ChatSender: FC = () => {
                 const { SendButton, LoadingButton } = info.components;
                 return (
                   <>
-                    {turnBusy ? (
-                      <LoadingButton type="default" />
+                    {stopVisible ? (
+                      <LoadingButton
+                        type="default"
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={() => abortControl()}
+                      />
                     ) : (
                       <SendButton
                         color="primary"
                         variant="solid"
-                        icon={<EnterIcon style={{ fontSize: 16 }} />}
+                        icon={<ArrowUpOutlined />}
                         shape="default"
                         type="default"
                         disabled={
@@ -328,16 +341,12 @@ const ChatSender: FC = () => {
 
 function ToolAvailabilityNotice({ notice }: { notice: ReturnType<typeof explainChatTools> }) {
   const { t } = useTranslation();
-  if (notice.kind === 'hidden') return null;
-  const message =
-    notice.kind === 'active'
-      ? t('chat.toolsActive', { count: notice.count })
-      : t(`chat.toolsGate.${notice.kind}`);
+  if (notice.kind === 'hidden' || notice.kind === 'active') return null;
   return (
     <Alert
-      type={notice.kind === 'active' ? 'info' : 'warning'}
+      type="warning"
       showIcon
-      message={message}
+      message={t(`chat.toolsGate.${notice.kind}`)}
       style={{ marginBottom: 8 }}
     />
   );
