@@ -45,7 +45,7 @@ const CustomPrompt: React.FC = () => {
         layout="vertical"
         initialValues={{ prompts }}
       >
-        <Divider orientation="left">{t('customPromptSetting.promptSetting')}</Divider>
+        <Divider titlePlacement="left">{t('customPromptSetting.promptSetting')}</Divider>
         <p>{t('customPromptSetting.usedForQuickOpen')}</p>
         <Form.List name="prompts">
           {(fields, { add, remove }) => (

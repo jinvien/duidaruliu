@@ -74,7 +74,7 @@ const OllamaSetting: React.FC = () => {
   return (
     <section>
       <Form form={ollamaForm} name="ollama-setting" onFinish={onOllamaFinish} layout="vertical">
-        <Divider orientation="left">{t('ollamaSetting.baseSetting')}</Divider>
+        <Divider titlePlacement="left">{t('ollamaSetting.baseSetting')}</Divider>
         <Form.Item name="url" label="Ollama URL" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
@@ -91,7 +91,7 @@ const OllamaSetting: React.FC = () => {
         </Form.Item>
       </Form>
       <Form form={modelForm} name="ollama-model-setting" onFinish={onModelFinish} layout="vertical">
-        <Divider orientation="left">{t('ollamaSetting.modelParamsTip')}</Divider>
+        <Divider titlePlacement="left">{t('ollamaSetting.modelParamsTip')}</Divider>
         <div
           style={{ color: 'var(--ant-color-text-description)', marginBottom: 'var(--ant-margin)' }}
         >

@@ -42,7 +42,6 @@ const ChatSender: FC = () => {
 
   const [userContent, setUserContent] = useState<string>('');
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-  const [submitType, setSubmitType] = useState<'enter' | 'shiftEnter' | false>('enter');
   const [selectedSystemPrompt, setSelectedSystemPrompt] = useState<{
     label: string;
     value: string;
@@ -236,15 +235,13 @@ const ChatSender: FC = () => {
           } else {
             setUserContent(prompt);
           }
-
-          setSubmitType('enter');
         }}
       >
-        {({ onTrigger, onKeyDown }) => {
+        {({ onTrigger, onKeyDown, open }) => {
           return (
             <Sender
               loading={responseStatus === 'outputting' || responseStatus === 'tool'}
-              submitType={submitType}
+              submitType="enter"
               value={userContent}
               prefix={
                 showAttach ? (
@@ -273,19 +270,29 @@ const ChatSender: FC = () => {
               }}
               onChange={(nextVal) => {
                 if (nextVal === '/' && prompts.length) {
-                  setSubmitType(false);
                   onTrigger();
                 } else if (!nextVal) {
-                  setSubmitType('enter');
                   onTrigger(false);
                 }
 
                 setUserContent(nextVal);
               }}
-              onKeyDown={onKeyDown}
+              onKeyDown={(event) => {
+                const result = onKeyDown(event);
+                // X 2 去掉了建议列表里回车直接选中的回调，只返回 false 来拦住发送。
+                // 回车时点当前高亮项，仍走 Suggestion 自己的 onSelect。
+                if (open && event.key === 'Enter') {
+                  const active = document.querySelector<HTMLElement>(
+                    '.ant-cascader-dropdown.ant-suggestion .ant-cascader-menu-item-active'
+                  );
+                  active?.click();
+                  return false;
+                }
+                return result;
+              }}
               onSubmit={() => handleSubmit()}
               onCancel={() => abortControl()}
-              actions={(_, info) => {
+              suffix={(_, info) => {
                 const { SendButton, LoadingButton } = info.components;
                 return (
                   <>

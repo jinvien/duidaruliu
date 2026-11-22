@@ -40,7 +40,7 @@ const CustomLink: React.FC = () => {
         layout="vertical"
         initialValues={{ links }}
       >
-        <Divider orientation="left">{t('customLinkSetting.linkSetting')}</Divider>
+        <Divider titlePlacement="left">{t('customLinkSetting.linkSetting')}</Divider>
         <p>{t('customLinkSetting.usedForQuickOpen')}</p>
         <Form.List name="links">
           {(fields, { add, remove }) => (
