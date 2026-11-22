@@ -108,7 +108,7 @@ const McpSetting: React.FC = () => {
 
   return (
     <section className={Styles.page}>
-      <Divider orientation="left">{t('mcpSetting.title')}</Divider>
+      <Divider titlePlacement="left">{t('mcpSetting.title')}</Divider>
 
       <div className={Styles.switchRow}>
         <div>

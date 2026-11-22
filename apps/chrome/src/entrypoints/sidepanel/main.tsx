@@ -19,7 +19,8 @@ const Root = () => {
   return (
     <XProvider
       theme={{
-        cssVar: true,
+        // antd 6 的 cssVar 只接受配置对象。固定 key，沿用原来的变量作用域类名。
+        cssVar: { key: 'css-var-r1' },
         hashed: false,
         algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
       }}

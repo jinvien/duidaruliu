@@ -85,7 +85,7 @@ const ChatContent: React.FC = () => {
     />
   );
 
-  const messageRender: BubbleProps['messageRender'] = (content) => {
+  const renderMarkdown = (content: string) => {
     // 预处理函数
     const escapeThinkContent = (raw: string) => {
       return (
@@ -178,20 +178,21 @@ const ChatContent: React.FC = () => {
     );
   };
 
-  const roles: GetProp<typeof Bubble.List, 'roles'> = {
-    system: {
+  // X 2 把 role 为 system 的项渲染成居中的 SystemBubble。系统提示仍走普通气泡，沿用原来的描边和标题。
+  const roles: GetProp<typeof Bubble.List, 'role'> = {
+    systemMessage: {
       variant: 'outlined',
     },
     assistant: {
       placement: 'start',
       shape: 'corner',
       variant: 'outlined',
-      messageRender,
+      contentRender: (content) => (typeof content === 'string' ? renderMarkdown(content) : content),
     },
     user: {
       placement: 'end',
       shape: 'corner',
-      messageRender: userContentRender,
+      contentRender: userContentRender,
     },
     tool: {
       placement: 'start',
@@ -206,7 +207,7 @@ const ChatContent: React.FC = () => {
     </>
   );
 
-  const renderHeader = (role: keyof typeof roles, model: string | undefined) => {
+  const renderHeader = (role: 'assistant' | 'system' | 'user' | 'tool', model?: string) => {
     if (role === 'assistant') {
       if (!model || model === 'unknown') return null;
       return <strong>{model}</strong>;
@@ -217,12 +218,13 @@ const ChatContent: React.FC = () => {
   };
 
   return (
-    <Flex gap="middle" vertical style={{ height: '100%' }}>
+    <Flex gap="middle" vertical style={{ height: '100%', minHeight: 0 }}>
       <Bubble.List
         className={Styles.bubbleList}
         ref={listRef}
-        style={{ maxHeight: '100%' }}
-        roles={roles}
+        // 列表自己托管滚动，必须有确定高度；不传 streaming / typing，避免打字机改写已经流出的正文。
+        style={{ height: '100%', minHeight: 0 }}
+        role={roles}
         items={groupChatBlocks(messages, selectedModel).flatMap(
           (block, blockIndex, blocks): any => {
             const isLast = blockIndex === blocks.length - 1;
@@ -231,7 +233,7 @@ const ChatContent: React.FC = () => {
               return [
                 {
                   key: block.index,
-                  role,
+                  role: role === 'system' ? 'systemMessage' : role,
                   content: role === 'system' ? renderPrompt(content) : { text: content, images },
                   loadingRender: () => <Badge status="processing" className="loadingDot" />,
                   loading: false,
@@ -266,7 +268,7 @@ const ChatContent: React.FC = () => {
                     {segments.map((segment, segmentIndex) =>
                       segment.type === 'text' ? (
                         <div key={segmentIndex}>
-                          {messageRender(foldAssistantText(segment.thinking ?? '', segment.text))}
+                          {renderMarkdown(foldAssistantText(segment.thinking ?? '', segment.text))}
                         </div>
                       ) : (
                         <Collapse
@@ -304,7 +306,7 @@ const ChatContent: React.FC = () => {
                     )}
                   </div>
                 ),
-                messageRender: (content: React.ReactNode) => content,
+                contentRender: (content: React.ReactNode) => content,
                 loadingRender: () => <Badge status="processing" className="loadingDot" />,
                 loading: waiting && !hasVisibleText && !pendingTool,
                 header: renderHeader('assistant', block.model || selectedModel),

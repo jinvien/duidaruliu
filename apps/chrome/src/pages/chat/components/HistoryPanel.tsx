@@ -185,7 +185,7 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
             placement="right"
             color="var(--ant-color-bg-elevated)"
             styles={{
-              body: {
+              container: {
                 color: 'var(--ant-color-text-description)',
                 fontSize: 'var(--ant-font-size)',
                 lineHeight: 'var(--ant-line-height)',
@@ -228,7 +228,7 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
         // title={renderHeader()}
         placement="left"
         open={isShowHistoryPanel}
-        width="260"
+        size={260}
         closable={false}
         onClose={() => {
           dispatch(setIsShowHistoryPanel(false));
