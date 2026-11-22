@@ -2,10 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
+import { piMcpBrowserPlugins } from '@ddrl/chat/vite/pi-mcp';
+
+import { loopbackProxyPlugin } from './dev/loopbackProxy';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), loopbackProxyPlugin(), ...piMcpBrowserPlugins()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -24,5 +27,11 @@ export default defineConfig({
   },
   build: {
     outDir: path.resolve(__dirname, './dist'),
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        app: path.resolve(__dirname, 'app.html'),
+      },
+    },
   },
 });

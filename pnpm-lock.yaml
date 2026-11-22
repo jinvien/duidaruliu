@@ -17,57 +17,15 @@ importers:
 
   apps/chrome:
     dependencies:
-      '@ant-design/x':
-        specifier: ^2.10.0
-        version: 2.10.0(antd@6.7.1(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@earendil-works/pi-agent-core':
-        specifier: 1.6.0
-        version: 1.6.0(@aws-sdk/credential-provider-node@3.972.98)(@smithy/signature-v4@5.7.5)(google-auth-library@10.9.1)
-      '@earendil-works/pi-ai':
-        specifier: 1.6.0
-        version: 1.6.0(@aws-sdk/credential-provider-node@3.972.98)(@smithy/signature-v4@5.7.5)(google-auth-library@10.9.1)
-      '@earendil-works/pi-mcp':
-        specifier: 1.6.0
-        version: 1.6.0
-      '@reduxjs/toolkit':
-        specifier: ^2.6.0
-        version: 2.6.0(react-redux@9.2.0(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1))(react@19.3.1)
-      antd:
-        specifier: ^6.7.1
-        version: 6.7.1(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      dayjs:
-        specifier: ^1.11.13
-        version: 1.11.13
-      i18next:
-        specifier: ^24.2.3
-        version: 24.2.3(typescript@5.7.3)
+      '@ddrl/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
       react:
         specifier: 19.3.1
         version: 19.3.1
       react-dom:
         specifier: 19.3.1
         version: 19.3.1(react@19.3.1)
-      react-i18next:
-        specifier: ^15.4.1
-        version: 15.4.1(i18next@24.2.3(typescript@5.7.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      react-markdown:
-        specifier: ^9.0.3
-        version: 9.0.3(@types/react@19.3.0)(react@19.3.1)
-      react-redux:
-        specifier: ^9.2.0
-        version: 9.2.0(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1)
-      react-syntax-highlighter:
-        specifier: ^15.6.1
-        version: 15.6.1(react@19.3.1)
-      rehype-raw:
-        specifier: ^7.0.0
-        version: 7.0.0
-      remark-gfm:
-        specifier: ^4.0.1
-        version: 4.0.1
-      tdesign-icons-react:
-        specifier: ^0.4.3
-        version: 0.4.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/chrome':
         specifier: ^0.0.280
@@ -78,12 +36,6 @@ importers:
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
-      '@types/react-redux':
-        specifier: ^7.1.34
-        version: 7.1.34
-      '@types/react-syntax-highlighter':
-        specifier: ^15.5.13
-        version: 15.5.13
       '@wxt-dev/module-react':
         specifier: ^1.1.2
         version: 1.1.3(vite@6.2.2(@types/node@22.13.11)(jiti@1.21.7)(less@4.2.2)(lightningcss@1.29.2)(tsx@4.20.6))(wxt@0.19.27(@types/node@22.13.11)(less@4.2.2)(lightningcss@1.29.2)(rollup@4.34.7)(tsx@4.20.6))
@@ -105,6 +57,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@ddrl/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
       '@radix-ui/react-slot':
         specifier: ^1.1.2
         version: 1.1.2(@types/react@19.3.0)(react@19.3.1)
@@ -163,9 +118,18 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.4.19
         version: 0.4.19(eslint@9.23.0(jiti@2.4.2))
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.8
       globals:
         specifier: ^15.15.0
         version: 15.15.0
+      less:
+        specifier: ^4.2.0
+        version: 4.2.2
+      tsx:
+        specifier: 4.20.6
+        version: 4.20.6
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
@@ -175,6 +139,76 @@ importers:
       vite:
         specifier: ^6.2.0
         version: 6.2.2(@types/node@22.13.11)(jiti@2.4.2)(less@4.2.2)(lightningcss@1.29.2)(tsx@4.20.6)
+
+  packages/chat:
+    dependencies:
+      '@ant-design/x':
+        specifier: ^2.10.0
+        version: 2.10.0(antd@6.7.1(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@earendil-works/pi-agent-core':
+        specifier: 1.6.0
+        version: 1.6.0(@aws-sdk/credential-provider-node@3.972.98)(@smithy/signature-v4@5.7.5)(google-auth-library@10.9.1)
+      '@earendil-works/pi-ai':
+        specifier: 1.6.0
+        version: 1.6.0(@aws-sdk/credential-provider-node@3.972.98)(@smithy/signature-v4@5.7.5)(google-auth-library@10.9.1)
+      '@earendil-works/pi-mcp':
+        specifier: 1.6.0
+        version: 1.6.0
+      '@reduxjs/toolkit':
+        specifier: ^2.6.0
+        version: 2.6.0(react-redux@9.2.0(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1))(react@19.3.1)
+      antd:
+        specifier: ^6.7.1
+        version: 6.7.1(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.23
+      i18next:
+        specifier: ^24.2.3
+        version: 24.2.3(typescript@5.7.3)
+      react:
+        specifier: '>=18'
+        version: 19.3.1
+      react-dom:
+        specifier: '>=18'
+        version: 19.3.1(react@19.3.1)
+      react-i18next:
+        specifier: ^15.4.1
+        version: 15.4.1(i18next@24.2.3(typescript@5.7.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      react-markdown:
+        specifier: ^9.0.3
+        version: 9.0.3(@types/react@19.3.0)(react@19.3.1)
+      react-redux:
+        specifier: ^9.2.0
+        version: 9.2.0(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1)
+      react-syntax-highlighter:
+        specifier: ^15.6.1
+        version: 15.6.1(react@19.3.1)
+      rehype-raw:
+        specifier: ^7.0.0
+        version: 7.0.0
+      remark-gfm:
+        specifier: ^4.0.1
+        version: 4.0.1
+      tdesign-icons-react:
+        specifier: ^0.4.3
+        version: 0.4.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@types/react-syntax-highlighter':
+        specifier: ^15.5.13
+        version: 15.5.13
+      tsx:
+        specifier: 4.20.6
+        version: 4.20.6
+      typescript:
+        specifier: ^5.6.3
+        version: 5.7.3
 
 packages:
 
@@ -404,10 +438,6 @@ packages:
 
   '@babel/runtime@7.24.7':
     resolution: {integrity: sha512-UwgBRMjJP+xv857DCngvqXI3Iq6J4v0wXmwc6sapg+zyhbwmQX67LUEFrkK5tbyJ30jGuG3ZvWpBiB9LCy1kWw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/runtime@7.26.10':
-    resolution: {integrity: sha512-2WJMeRQPHKSPemqk/awGrAiuFfzBmOIPXKizAsVhWH9YJqLZ0H+HS4c8loHGgW6utJ3E/ejXQUsiGaQy2NZ9Fw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/runtime@7.26.9':
@@ -1827,9 +1857,6 @@ packages:
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
-  '@types/hoist-non-react-statics@3.3.6':
-    resolution: {integrity: sha512-lPByRJUer/iN/xa4qpyL0qmL11DqNW81iU/IG1S3uvRUq4oKagz8VCxZjiWkumgt66YT3vOdDgZ0o32sGKtCEw==}
-
   '@types/http-cache-semantics@4.0.4':
     resolution: {integrity: sha512-1m0bIFVc7eJWyve9S0RnuRgcQqF/Xd5QsUZAZeQFr1Q3/p9JWoQQEqmVy+DPTNpGXwhgIetAoYF8JSc33q29QA==}
 
@@ -1858,9 +1885,6 @@ packages:
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
     peerDependencies:
       '@types/react': ^19.3.0
-
-  '@types/react-redux@7.1.34':
-    resolution: {integrity: sha512-GdFaVjEbYv4Fthm2ZLvj1VSCedV7TqE5y1kNwnjSdBOTXuRSgowux6J8TAct15T3CKBr63UMk+2CO7ilRhyrAQ==}
 
   '@types/react-syntax-highlighter@15.5.13':
     resolution: {integrity: sha512-uLGJ87j6Sz8UaBAooU0T6lWJ0dBmjZgN1PZTrj05TNql2/XpC6+4HhMT5syIdFUUt+FASfCeLLv4kBygNU+8qA==}
@@ -2355,9 +2379,6 @@ packages:
   cssom@0.5.0:
     resolution: {integrity: sha512-iKuQcq+NdHqlAcwUY0o/HL69XQrUaQdMjmStJ8JFmUaiiQErlhrmuigkg/CU4E2J0IyUKUrMAgl36TvN67MqTw==}
 
-  csstype@3.1.3:
-    resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
-
   csstype@3.2.4:
     resolution: {integrity: sha512-PoKaoPzQapnEoqUSnHx1u6W6ku8CVEgKsnpmmzU3m1nwkidpPBQ8V/Zq2+bWNrsOKoKLwTGdbx6xF7BXP1zLVQ==}
 
@@ -2520,9 +2541,6 @@ packages:
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
     engines: {node: '>= 12'}
-
-  dayjs@1.11.13:
-    resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
 
   dayjs@1.11.23:
     resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
@@ -2819,6 +2837,10 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
 
+  fake-indexeddb@6.2.8:
+    resolution: {integrity: sha512-mpVW/HLUqwKXJ6F/s0hMgdK1eQfM4ncTHDioNGHWL0WKV3VcZCoZq1NKgboBbAge07aRCO7L48yziKssL59XEQ==}
+    engines: {node: '>=18'}
+
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
@@ -3062,9 +3084,6 @@ packages:
 
   highlightjs-vue@1.0.0:
     resolution: {integrity: sha512-PDEfEF102G23vHmPhLyPboFCD+BkMGu+GuJe2d9/eH4FsCwvgBpnc9n0pGE+ffKdph38s6foEZiEjdgHdzp+IA==}
-
-  hoist-non-react-statics@3.3.2:
-    resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
@@ -4148,10 +4167,6 @@ packages:
     resolution: {integrity: sha512-t13BGPUlFDR7wRB5kQDG4jjl7XeuH6jbJGt11JHPL96qwsEHNX2+68tFXqc1/k+/jALsbSWJKUOT/hcYAZ5LkA==}
     engines: {node: '>=6'}
 
-  prismjs@1.29.0:
-    resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}
-    engines: {node: '>=6'}
-
   prismjs@1.30.0:
     resolution: {integrity: sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==}
     engines: {node: '>=6'}
@@ -4243,9 +4258,6 @@ packages:
       react-native:
         optional: true
 
-  react-is@16.13.1:
-    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
-
   react-is@19.3.1:
     resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
 
@@ -4314,9 +4326,6 @@ packages:
     resolution: {integrity: sha512-NW2r5T6ksUKXCabzhL9z+h206HQw/NJkcLm1GPImRQ8IzfXwRGqjVhKJGauHirT0DAuyy6hjdnMZaRoAcy0Klw==}
     peerDependencies:
       redux: ^5.0.0
-
-  redux@4.2.1:
-    resolution: {integrity: sha512-LAUYz4lc+Do8/g7aeRa8JkyDErK6ekstQaqWQrNRW//MY1TvCEpMtpTWvlQ+FPbWCx+Xixu/6SHt5N0HR+SB4w==}
 
   redux@5.0.1:
     resolution: {integrity: sha512-M9/ELqF6fy8FwmkpnF0S3YKOqMyoWJ4+CS5Efg2ct3oY9daQvd/Pc71FpGZsVsbl3Cpb+IIcjBDUnnyBdQbq4w==}
@@ -5110,7 +5119,7 @@ snapshots:
   '@ant-design/cssinjs-utils@2.1.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@ant-design/cssinjs': 2.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.29.15
       '@rc-component/util': 1.14.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
@@ -5122,19 +5131,19 @@ snapshots:
       '@emotion/unitless': 0.7.5
       '@rc-component/util': 1.14.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       clsx: 2.1.1
-      csstype: 3.1.3
+      csstype: 3.2.4
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       stylis: 4.3.6
 
   '@ant-design/cssinjs@2.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.29.15
       '@emotion/hash': 0.8.0
       '@emotion/unitless': 0.7.5
       '@rc-component/util': 1.14.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       clsx: 2.1.1
-      csstype: 3.1.3
+      csstype: 3.2.4
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       stylis: 4.3.6
@@ -5168,7 +5177,7 @@ snapshots:
       '@ant-design/cssinjs-utils': 2.1.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@ant-design/fast-color': 3.0.1
       '@ant-design/icons': 6.3.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.29.15
       '@rc-component/motion': 1.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/resize-observer': 1.1.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/util': 1.14.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -5460,10 +5469,6 @@ snapshots:
       '@babel/helper-plugin-utils': 7.26.5
 
   '@babel/runtime@7.24.7':
-    dependencies:
-      regenerator-runtime: 0.14.1
-
-  '@babel/runtime@7.26.10':
     dependencies:
       regenerator-runtime: 0.14.1
 
@@ -6121,7 +6126,7 @@ snapshots:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@rc-component/picker@1.17.0(dayjs@1.11.13)(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@rc-component/picker@1.17.0(dayjs@1.11.23)(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@rc-component/overflow': 1.0.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/resize-observer': 1.1.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -6131,7 +6136,7 @@ snapshots:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
     optionalDependencies:
-      dayjs: 1.11.13
+      dayjs: 1.11.23
       moment: 2.30.1
 
   '@rc-component/portal@2.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
@@ -6704,11 +6709,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
-  '@types/hoist-non-react-statics@3.3.6':
-    dependencies:
-      '@types/react': 19.3.0
-      hoist-non-react-statics: 3.3.2
-
   '@types/http-cache-semantics@4.0.4': {}
 
   '@types/json-schema@7.0.15': {}
@@ -6734,13 +6734,6 @@ snapshots:
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
       '@types/react': 19.3.0
-
-  '@types/react-redux@7.1.34':
-    dependencies:
-      '@types/hoist-non-react-statics': 3.3.6
-      '@types/react': 19.3.0
-      hoist-non-react-statics: 3.3.2
-      redux: 4.2.1
 
   '@types/react-syntax-highlighter@15.5.13':
     dependencies:
@@ -6957,7 +6950,7 @@ snapshots:
       '@rc-component/mutate-observer': 2.0.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/notification': 2.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/pagination': 1.7.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@rc-component/picker': 1.17.0(dayjs@1.11.13)(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@rc-component/picker': 1.17.0(dayjs@1.11.23)(moment@2.30.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/progress': 1.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/qrcode': 2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/rate': 1.0.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -6977,7 +6970,7 @@ snapshots:
       '@rc-component/upload': 1.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@rc-component/util': 1.14.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       clsx: 2.1.1
-      dayjs: 1.11.13
+      dayjs: 1.11.23
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       scroll-into-view-if-needed: 3.2.1
@@ -7320,8 +7313,6 @@ snapshots:
 
   cssom@0.5.0: {}
 
-  csstype@3.1.3: {}
-
   csstype@3.2.4: {}
 
   cytoscape-cose-bilkent@4.1.0(cytoscape@3.35.0):
@@ -7510,8 +7501,6 @@ snapshots:
       lodash-es: 4.18.1
 
   data-uri-to-buffer@4.0.1: {}
-
-  dayjs@1.11.13: {}
 
   dayjs@1.11.23: {}
 
@@ -7888,6 +7877,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  fake-indexeddb@6.2.8: {}
+
   fast-deep-equal@3.1.3: {}
 
   fast-glob@3.3.3:
@@ -8206,10 +8197,6 @@ snapshots:
 
   highlightjs-vue@1.0.0: {}
 
-  hoist-non-react-statics@3.3.2:
-    dependencies:
-      react-is: 16.13.1
-
   hookable@5.5.3: {}
 
   html-escaper@3.0.3: {}
@@ -8269,7 +8256,7 @@ snapshots:
 
   i18next@24.2.3(typescript@5.7.3):
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.29.15
     optionalDependencies:
       typescript: 5.7.3
 
@@ -8458,7 +8445,7 @@ snapshots:
 
   json-schema-to-ts@3.1.1:
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.29.15
       ts-algebra: 2.0.0
 
   json-schema-traverse@0.4.1: {}
@@ -9446,8 +9433,6 @@ snapshots:
 
   prismjs@1.27.0: {}
 
-  prismjs@1.29.0: {}
-
   prismjs@1.30.0: {}
 
   process-nextick-args@2.0.1: {}
@@ -9544,14 +9529,12 @@ snapshots:
 
   react-i18next@15.4.1(i18next@24.2.3(typescript@5.7.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
-      '@babel/runtime': 7.26.9
+      '@babel/runtime': 7.29.15
       html-parse-stringify: 3.0.1
       i18next: 24.2.3(typescript@5.7.3)
       react: 19.3.1
     optionalDependencies:
       react-dom: 19.3.1(react@19.3.1)
-
-  react-is@16.13.1: {}
 
   react-is@19.3.1: {}
 
@@ -9597,11 +9580,11 @@ snapshots:
 
   react-syntax-highlighter@15.6.1(react@19.3.1):
     dependencies:
-      '@babel/runtime': 7.26.9
+      '@babel/runtime': 7.29.15
       highlight.js: 10.7.3
       highlightjs-vue: 1.0.0
       lowlight: 1.20.0
-      prismjs: 1.29.0
+      prismjs: 1.30.0
       react: 19.3.1
       refractor: 3.6.0
 
@@ -9640,10 +9623,6 @@ snapshots:
   redux-thunk@3.1.0(redux@5.0.1):
     dependencies:
       redux: 5.0.1
-
-  redux@4.2.1:
-    dependencies:
-      '@babel/runtime': 7.26.9
 
   redux@5.0.1: {}
 

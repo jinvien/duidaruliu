@@ -1,40 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider } from 'react-redux';
-import { theme } from 'antd';
-import { XProvider } from '@ant-design/x';
+import { ChatRoot, installChatHost, mcpPageOwnsRuntime } from '@ddrl/chat';
 
-import App from './App.tsx';
+import {
+  bindChromeOriginRules,
+  clearMcpOriginRules,
+  createChromeHost,
+  startChromeMcpBridge,
+} from '@/platform/chromeHost';
 
-import store from '@/store';
-import { useAppSelector } from '@/hooks/useStore.ts';
-import '@/i18n';
+const ownsRuntime = mcpPageOwnsRuntime(new URLSearchParams(window.location.search).get('appMode'));
 
-import './main.less';
+installChatHost(createChromeHost(ownsRuntime));
 
-const { darkAlgorithm, defaultAlgorithm } = theme;
+const ChromeShell = () => {
+  useEffect(() => {
+    const unbindOrigin = bindChromeOriginRules(ownsRuntime);
+    const stopBridge = ownsRuntime ? startChromeMcpBridge() : undefined;
+    return () => {
+      unbindOrigin();
+      stopBridge?.();
+    };
+  }, []);
 
-const Root = () => {
-  const { isDarkMode } = useAppSelector((state) => state.app);
   return (
-    <XProvider
-      theme={{
-        // antd 6 的 cssVar 只接受配置对象。固定 key，沿用原来的变量作用域类名。
-        cssVar: { key: 'css-var-r1' },
-        hashed: false,
-        algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
-      }}
-    >
-      <App />
-    </XProvider>
+    <ChatRoot
+      ownsRuntime={ownsRuntime}
+      onRuntimeStop={ownsRuntime ? clearMcpOriginRules : undefined}
+    />
   );
 };
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  // 开发模式下会存在hooks重复调用的问题
   <React.StrictMode>
-    <Provider store={store}>
-      <Root />
-    </Provider>
-  </React.StrictMode>
+    <ChromeShell />
+  </React.StrictMode>,
 );
