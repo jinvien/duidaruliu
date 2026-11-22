@@ -8,7 +8,11 @@
     "./constants": "./src/constants/index.ts",
     "./storage": "./src/storage/seed.ts",
     "./mcp/origin": "./src/mcp/origin.ts",
-    "./vite/pi-mcp": "./src/vite/piMcpBrowserPlugin.ts"
+    "./vite/pi-mcp": {
+      "types": "./src/vite/piMcpBrowserPlugin.d.ts",
+      "import": "./src/vite/piMcpBrowserPlugin.mjs",
+      "default": "./src/vite/piMcpBrowserPlugin.mjs"
+    }
   },
   "scripts": {
     "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/keptPartial.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts && tsx --tsconfig tsconfig.json test/stage3.test.ts && tsx --tsconfig tsconfig.json test/stage3Runtime.test.ts && tsx --tsconfig tsconfig.json test/reviewFixes.test.ts && tsx --tsconfig tsconfig.json test/mcpJson.test.ts && tsx --tsconfig tsconfig.json test/toolGate.test.ts && tsx --tsconfig tsconfig.json test/serverSummary.test.ts && tsx --tsconfig tsconfig.json test/chatView.test.ts && tsx --tsconfig tsconfig.json test/storageHost.test.ts && tsx --tsconfig tsconfig.json test/originRewrite.test.ts",

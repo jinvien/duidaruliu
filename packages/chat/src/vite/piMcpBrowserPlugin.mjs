@@ -1,3 +1,5 @@
+// 这个文件必须是 JavaScript。Vite 和 WXT 会用 Node 直接加载它，
+// 不能指向 .ts：Node 20 以及未打开类型剥离的 Node 22 会报 ERR_UNKNOWN_FILE_EXTENSION。
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -103,8 +105,8 @@ export function piMcpBrowserPlugins() {
   return [
     {
       name: 'pi-mcp-browser-entry',
-      enforce: 'pre' as const,
-      resolveId(id: string, importer: string | undefined) {
+      enforce: 'pre',
+      resolveId(id, importer) {
         if (id === '@earendil-works/pi-mcp') return '\0pi-mcp-browser';
         if (id === '@earendil-works/pi-mcp/oauth' || id.startsWith('@earendil-works/pi-mcp/oauth/')) {
           return '\0pi-mcp-oauth-blocked';
@@ -114,13 +116,13 @@ export function piMcpBrowserPlugins() {
         }
         return null;
       },
-      load(id: string) {
+      load(id) {
         if (id === '\0pi-mcp-oauth-blocked') {
           throw new Error('@earendil-works/pi-mcp/oauth is not available in this extension');
         }
         if (id === '\0pi-mcp-sha256') return sha256Module;
         if (id !== '\0pi-mcp-browser') return null;
-        const file = (name: string) => JSON.stringify(piMcpRoot + '/dist/' + name);
+        const file = (name) => JSON.stringify(piMcpRoot + '/dist/' + name);
         return [
           `export { McpClient } from ${file('client.js')};`,
           `export { validateMcpServerConfig } from ${file('config.js')};`,
@@ -134,8 +136,8 @@ export function piMcpBrowserPlugins() {
     },
     {
       name: 'buffer-bytelength-shim',
-      enforce: 'pre' as const,
-      transform(code: string, id: string) {
+      enforce: 'pre',
+      transform(code, id) {
         if (!id.includes('pi-mcp') || (!code.includes('Buffer.byteLength') && !code.includes('Buffer.from'))) {
           return null;
         }
