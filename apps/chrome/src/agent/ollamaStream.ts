@@ -196,11 +196,12 @@ function createPartial(model: Model<Api>): AssistantMessage {
 function failureMessage(
   model: Model<Api>,
   reason: Extract<StopReason, 'aborted' | 'error'>,
-  message: string
+  message: string,
+  content: AssistantMessage['content']
 ): AssistantMessage {
   return {
     role: 'assistant',
-    content: [{ type: 'text', text: '' }],
+    content,
     api: model.api,
     provider: model.provider,
     model: model.id,
@@ -244,10 +245,21 @@ export function streamOllamaChat(
 
   const fail = (error: unknown) => {
     const aborted = isAbortError(error) || options?.signal?.aborted === true;
+    // 停止和请求失败不能丢掉已经流出的正文、思考。未完成的工具调用不记入这条消息。
+    const kept: AssistantMessage['content'] = [];
+    for (const part of partial.content) {
+      if (part.type === 'text') kept.push({ type: 'text', text: part.text });
+      else if (part.type === 'thinking') kept.push({ type: 'thinking', thinking: part.thinking });
+    }
     finish({
       type: 'error',
       reason: aborted ? 'aborted' : 'error',
-      error: failureMessage(model, aborted ? 'aborted' : 'error', errorText(error)),
+      error: failureMessage(
+        model,
+        aborted ? 'aborted' : 'error',
+        errorText(error),
+        kept.length ? kept : [{ type: 'text', text: '' }]
+      ),
     });
   };
 

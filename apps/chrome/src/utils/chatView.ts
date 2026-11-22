@@ -14,10 +14,25 @@ export type ChatBlock =
       lastIndex: number;
     };
 
+/** Pi 默认模型 id 是 unknown。它不是 Ollama 模型，历史标签和重新打开会话都要跳过。 */
+export function answerModelName(model?: string): string {
+  const value = model?.trim() ?? '';
+  return value && value !== 'unknown' ? value : '';
+}
+
 function usableModel(model: string | undefined, fallback: string): string {
-  const value = model?.trim();
-  if (!value || value === 'unknown') return fallback === 'unknown' ? '' : fallback;
-  return value;
+  return answerModelName(model) || (fallback === 'unknown' ? '' : fallback);
+}
+
+/** 从后往前找一条真正的助手模型。跟进消息上的 unknown 不能盖住前面的模型名，也不能当标签。 */
+export function lastAnswerModel(messages: readonly Message[], lastModel?: string): string {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== 'assistant') continue;
+    const name = answerModelName(message.model);
+    if (name) return name;
+  }
+  return answerModelName(lastModel);
 }
 
 /** 展示名优先。没有标题时去掉 mcp__服务器__ 前缀，不再把 unknown 或整段协议名直接给用户。 */

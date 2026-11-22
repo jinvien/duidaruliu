@@ -321,7 +321,10 @@ agent.subscribe((event) => {
     const message = event.message;
     ensureStreamingAssistant(message.model);
     const { text, thinking, toolCalls } = assistantParts(message);
-    store.dispatch(updateLastMessage(text));
+    // 停止或失败的收尾消息可能没有正文。空串不能盖掉已经流出来的 partial。
+    // 换会话时 run 已经失效，这里也不会把这次取消写进下一通。
+    const failed = message.stopReason === 'aborted' || message.stopReason === 'error';
+    if (!(failed && text.length === 0)) store.dispatch(updateLastMessage(text));
     store.dispatch(patchLastAssistant({ ...(thinking ? { thinking } : {}), toolCalls }));
     return;
   }

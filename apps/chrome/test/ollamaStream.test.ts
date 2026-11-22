@@ -233,6 +233,60 @@ async function main() {
       events.every((event) => event.type !== 'done'),
       'abort is not done'
     );
+    if (error?.type === 'error') {
+      const text = error.error.content
+        .map((part) => (part.type === 'text' ? part.text : ''))
+        .join('');
+      assert(text === '', 'abort before tokens does not invent text');
+    }
+  }
+
+  {
+    const controller = new AbortController();
+    capturedSignal = controller.signal;
+    const messages: Message[] = [{ role: 'user', content: '停', timestamp: 1 }];
+    const { events } = await run(messages, [], {}, () => {
+      const bytes = new TextEncoder().encode(
+        `${JSON.stringify({
+          message: { role: 'assistant', content: '部分', thinking: '想' },
+          done: false,
+        })}\n`
+      );
+      return new Response(
+        new ReadableStream({
+          async start(streamController) {
+            streamController.enqueue(bytes);
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            controller.abort();
+            streamController.error(new DOMException('The operation was aborted.', 'AbortError'));
+          },
+        })
+      );
+    });
+    capturedSignal = undefined;
+    const error = events.find((event) => event.type === 'error');
+    assert(
+      error?.type === 'error' && error.reason === 'aborted',
+      `partial abort, got ${error?.type}`
+    );
+    if (error?.type === 'error') {
+      const text = error.error.content
+        .map((part) => (part.type === 'text' ? part.text : ''))
+        .join('');
+      const thinking = error.error.content
+        .map((part) => (part.type === 'thinking' ? part.thinking : ''))
+        .join('');
+      assert(text === '部分', `abort keeps partial text, got ${text}`);
+      assert(thinking === '想', `abort keeps partial thinking, got ${thinking}`);
+      assert(
+        !error.error.content.some((part) => part.type === 'toolCall'),
+        'abort does not keep an unfinished tool call'
+      );
+    }
+    assert(
+      events.every((event) => event.type !== 'done'),
+      'partial abort is not done'
+    );
   }
 
   {
@@ -245,6 +299,31 @@ async function main() {
     assert(
       error?.type === 'error' && error.error.errorMessage === 'model not found',
       `http detail, got ${error?.type === 'error' ? error.error.errorMessage : ''}`
+    );
+  }
+
+  {
+    const messages: Message[] = [{ role: 'user', content: '坏了', timestamp: 1 }];
+    const { events } = await run(messages, [
+      { message: { role: 'assistant', content: '已经', thinking: '先' }, done: false },
+      { error: 'model not found' },
+    ]);
+    const error = events.find((event) => event.type === 'error');
+    assert(error?.type === 'error' && error.reason === 'error', 'stream error after partial');
+    if (error?.type === 'error') {
+      const text = error.error.content
+        .map((part) => (part.type === 'text' ? part.text : ''))
+        .join('');
+      const thinking = error.error.content
+        .map((part) => (part.type === 'thinking' ? part.thinking : ''))
+        .join('');
+      assert(text === '已经', `failure keeps partial text, got ${text}`);
+      assert(thinking === '先', `failure keeps partial thinking, got ${thinking}`);
+      assert(error.error.errorMessage === 'model not found', 'failure keeps the detail');
+    }
+    assert(
+      events.every((event) => event.type !== 'done'),
+      'stream error is not done'
     );
   }
 
@@ -324,7 +403,9 @@ async function main() {
       calls += 1;
       if (calls > 1) {
         return new Response(
-          ndjson([{ message: { role: 'assistant', content: '好' }, done: true, done_reason: 'stop' }]),
+          ndjson([
+            { message: { role: 'assistant', content: '好' }, done: true, done_reason: 'stop' },
+          ]),
           { status: 200 }
         );
       }

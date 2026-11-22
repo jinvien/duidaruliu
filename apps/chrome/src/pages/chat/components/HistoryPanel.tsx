@@ -33,6 +33,7 @@ import { getTimeGroup, classifyHistoryListTime } from '@/utils/date';
 import { exportJsonArrayToFile, uploadHistoryMessages } from '@/utils/filesHelper';
 import { queryCurrentTab } from '@/utils/tab';
 import { contentWithPromptTag } from '@/utils/promptHelper';
+import { answerModelName, lastAnswerModel } from '@/utils/chatView';
 
 // import styles
 import Styles from '../index.module.less';
@@ -90,8 +91,9 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
       dispatch(setIsViewHistoryMode(true));
     }
 
-    if (conversation.lastModel) {
-      dispatch(setOllamaModelParams({ ...ollamaModelParams, model: conversation.lastModel }));
+    const restoredModel = answerModelName(conversation.lastModel);
+    if (restoredModel) {
+      dispatch(setOllamaModelParams({ ...ollamaModelParams, model: restoredModel }));
     }
     dispatch(setMessages({ messages: conversation.messages }));
     loadAgentTranscript(conversation.messages);
@@ -130,16 +132,6 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
       case 'full':
         return value.text;
     }
-  };
-
-  const lastAnswerModel = (conversationMessages: Message[], lastModel?: string) => {
-    for (let index = conversationMessages.length - 1; index >= 0; index -= 1) {
-      const message = conversationMessages[index];
-      if (message.role === 'assistant' && message.model?.trim()) {
-        return message.model.trim();
-      }
-    }
-    return lastModel?.trim() || '';
   };
 
   const chatHistoryItems: GetProp<ConversationsProps, 'items'> = conversations?.map(
