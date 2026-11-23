@@ -21,6 +21,11 @@ import { addMessage } from '../../../store/chatSlice';
 import { useChat } from '../../../hooks/useChat';
 import { ChatImageError, MAX_CHAT_IMAGES, fileToChatImage } from '../../../utils/chatImage';
 import { modelCapabilityMark, modelHasVision } from '../../../utils/modelCapability';
+import {
+  selectBackendReady,
+  selectCombinedModels,
+  selectSelectedModelKey,
+} from '../../../models/selection';
 
 import ToolApprovalCard from './ToolApproval';
 
@@ -34,9 +39,11 @@ const ChatSender: FC = () => {
   const { message: antdMessage } = AntdApp.useApp();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const { ollamaIsRunning, ollamaModelParams, listedModels, modelsStatus } = useAppSelector(
-    (state) => state.ollama
-  );
+  const modelsStatus = useAppSelector((state) => state.ollama.modelsStatus);
+  // 选中自定义模型时不依赖本机 Ollama，能力来自模型自己的声明。
+  const backendReady = useAppSelector(selectBackendReady);
+  const allModels = useAppSelector(selectCombinedModels);
+  const selectedKey = useAppSelector(selectSelectedModelKey);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const toolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
   const mcpServers = useAppSelector((state) => state.mcp.servers);
@@ -58,13 +65,13 @@ const ChatSender: FC = () => {
   const { sendMessage, abortControl } = useChat();
   useSyncExternalStore(subscribeAgentActivity, getAgentActivity, getAgentActivity);
   const capabilityMark = modelCapabilityMark(
-    listedModels,
-    ollamaModelParams.model,
+    allModels,
+    selectedKey,
     modelsStatus === 'idle' ? 'loading' : modelsStatus
   );
-  const visionEnabled = ollamaIsRunning && modelHasVision(listedModels, ollamaModelParams.model);
+  const visionEnabled = backendReady && modelHasVision(allModels, selectedKey);
   const showAttach =
-    ollamaIsRunning &&
+    backendReady &&
     (visionEnabled || capabilityMark === 'pending' || capabilityMark === 'unknown');
   visionEnabledRef.current = visionEnabled;
 
@@ -113,7 +120,7 @@ const ChatSender: FC = () => {
 
   const handleSubmit = useCallback(() => {
     const status = store.getState().chat.responseStatus;
-    if (!composerCanSend(status, agentIsStreaming(), userContent.length > 0, ollamaIsRunning)) {
+    if (!composerCanSend(status, agentIsStreaming(), userContent.length > 0, backendReady)) {
       return;
     }
 
@@ -142,7 +149,7 @@ const ChatSender: FC = () => {
     sendMessage();
   }, [
     dispatch,
-    ollamaIsRunning,
+    backendReady,
     pendingImages,
     selectedSystemPrompt,
     sendMessage,
@@ -223,10 +230,10 @@ const ChatSender: FC = () => {
             0
           ),
           capability: modelToolCapability({
-            hasTools: modelHasTools(listedModels, ollamaModelParams.model),
+            hasTools: modelHasTools(allModels, selectedKey),
             mark: modelToolsMark(
-              listedModels,
-              ollamaModelParams.model,
+              allModels,
+              selectedKey,
               modelsStatus === 'idle' ? 'loading' : modelsStatus
             ),
           }),
@@ -323,7 +330,7 @@ const ChatSender: FC = () => {
                             responseStatus,
                             agentIsStreaming(),
                             userContent.length > 0,
-                            ollamaIsRunning
+                            backendReady
                           )
                         }
                       />

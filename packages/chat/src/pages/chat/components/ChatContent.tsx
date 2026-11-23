@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { App as AntdApp, Badge, Button, Flex } from 'antd';
-import { Actions, Bubble, Think, ThoughtChain, Welcome } from '@ant-design/x';
+import { Actions, Bubble, Think, ThoughtChain } from '@ant-design/x';
 import { CopyOutlined, MessageOutlined, SyncOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -16,6 +16,7 @@ import { useChat } from '../../../hooks/useChat';
 // import store
 import { setIsViewHistoryMode } from '../../../store/historySlice';
 import { setMessages } from '../../../store/chatSlice';
+import { selectSelectedModelLabel } from '../../../models/selection';
 import { dropLastAssistantTurn } from '../../../utils/chatTurn';
 import { groupChatBlocks, readableToolName, type AssistantSegment } from '../../../utils/chatView';
 
@@ -55,7 +56,7 @@ const ChatContent: React.FC = () => {
   // store
   const messages = useAppSelector((state) => state.chat.messages);
   const pendingTool = useAppSelector((state) => state.chat.pendingTool);
-  const selectedModel = useAppSelector((state) => state.ollama.ollamaModelParams.model);
+  const selectedModel = useAppSelector(selectSelectedModelLabel);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const { isDarkMode } = useAppSelector((state) => state.app);
 
@@ -251,13 +252,6 @@ const ChatContent: React.FC = () => {
 
   return (
     <Flex gap="middle" vertical style={{ height: '100%', minHeight: 0 }}>
-      {messages.length === 0 ? (
-        <Welcome
-          title={t('chat.welcomeTitle')}
-          description={t('chat.welcomeDescription')}
-          variant="borderless"
-        />
-      ) : null}
       <Bubble.List
         className={Styles.bubbleList}
         ref={listRef}

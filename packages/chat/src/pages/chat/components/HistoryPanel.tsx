@@ -25,6 +25,8 @@ import {
   initializeConversations,
 } from '../../../store/historySlice';
 import { setOllamaModelParams } from '../../../store/ollamaSlice';
+import { setActiveCustomModel } from '../../../store/customModelSlice';
+import { selectCustomModels } from '../../../models/selection';
 import { setMessages } from '../../../store/chatSlice';
 import { toggleTheme } from '../../../store/appSlice';
 
@@ -64,7 +66,8 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
     (state) => state.history
   );
   const messages = useAppSelector((state) => state.chat.messages);
-  const { ollamaModelParams } = useAppSelector((state) => state.ollama);
+  const { ollamaModelParams, listedModels } = useAppSelector((state) => state.ollama);
+  const customModels = useAppSelector(selectCustomModels);
   const { isDarkMode, lang } = useAppSelector((state) => state.app);
 
   const [listOpenedAt, setListOpenedAt] = useState(() => Date.now());
@@ -96,7 +99,16 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
 
     const restoredModel = answerModelName(conversation.lastModel);
     if (restoredModel) {
-      dispatch(setOllamaModelParams({ ...ollamaModelParams, model: restoredModel }));
+      // 历史里只记了模型名。Ollama 里有同名模型时优先恢复它，否则看是不是自定义模型。
+      const custom = listedModels.some((item) => item.name === restoredModel)
+        ? undefined
+        : customModels.find((item) => item.model === restoredModel);
+      if (custom) {
+        void dispatch(setActiveCustomModel(custom.id));
+      } else {
+        dispatch(setOllamaModelParams({ ...ollamaModelParams, model: restoredModel }));
+        void dispatch(setActiveCustomModel(null));
+      }
     }
     dispatch(setMessages({ messages: conversation.messages }));
     loadAgentTranscript(conversation.messages);
