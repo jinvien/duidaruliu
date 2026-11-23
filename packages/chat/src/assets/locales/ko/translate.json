@@ -50,6 +50,25 @@
       "modelUnsupported": "이 모델은 tools 능력이 없습니다. 이 대화는 도구를 보내지 않습니다. 설정의 연결됨은 서버가 연결되었다는 뜻이지, 모델이 도구를 호출할 수 있다는 뜻이 아닙니다.",
       "modelUnsupportedShort": "도구 없음",
       "noTools": "스위치는 켜져 있고 이 모델은 도구를 지원하지만, 연결된 사용 가능한 도구가 없습니다. 이 대화는 도구를 보내지 않습니다."
+    },
+    "page": {
+      "attach": "현재 페이지 인용",
+      "loading": "페이지 내용을 추출하는 중",
+      "unsupported": "이 페이지는 추출할 수 없습니다",
+      "failed": "페이지 추출에 실패했습니다",
+      "remove": "페이지 인용 제거",
+      "preview": "미리보기",
+      "previewTitle": "페이지 내용 미리보기",
+      "tokens": "약 {{count}} 토큰",
+      "overContext": "컨텍스트 창({{limit}} 토큰)을 초과했습니다. 모델이 전문을 보지 못할 수 있습니다",
+      "truncated": "본문이 너무 길어 잘렸습니다",
+      "chipSummary": "전문 요약",
+      "chipSummaryPrompt": "이 글의 전문을 핵심 정보를 유지하며 요약해 주세요.",
+      "chipPoints": "요점 추출",
+      "chipPointsPrompt": "이 글의 요점을 목록으로 추출해 주세요.",
+      "chipTranslate": "전문 번역",
+      "chipTranslatePrompt": "이 글의 본문 전체를 한국어로 번역해 주세요.",
+      "sourceLabel": "인용 페이지"
     }
   },
   "links": {

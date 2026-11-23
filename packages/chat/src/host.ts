@@ -1,3 +1,5 @@
+import type { PageSnapshot } from './page/types';
+
 export type StorageArea = 'local' | 'sync';
 
 /** 与 chrome.storage 一样，值是本应用自己写入的 JSON。 */
@@ -15,6 +17,8 @@ export type KeyValueStorage = {
 
 export type HostCommand = { type: string; text?: string };
 
+export type PageRequest = { tabId: number };
+
 export type McpRuntimeListener = (runtime: unknown[]) => void;
 
 export type ChatLayout = 'compact' | 'desktop';
@@ -26,6 +30,10 @@ export type ChatHost = {
   openSettings: () => void;
   /** 扩展右键菜单等宿主命令。Web 预览不接。 */
   subscribeHostCommand?: (listener: (command: HostCommand) => void) => () => void;
+  /** 采集页面快照。不传 tabId 时取当前窗口的活动标签页。Web 预览不实现。 */
+  capturePage?: (tabId?: number) => Promise<PageSnapshot>;
+  /** 右键菜单等入口请求引用某个页面。 */
+  subscribePageRequest?: (listener: (request: PageRequest) => void) => () => void;
   /** 设置页和聊天页不在同一份文档时，用它看 MCP 连接状态。 */
   watchMcpRuntime?: (listener: (runtime: unknown[]) => void) => () => void;
 };

@@ -50,6 +50,25 @@
       "modelUnsupported": "Este modelo no tiene la capacidad tools. Esta conversación no le enviará herramientas. Conectado en Ajustes solo significa que el servidor responde, no que el modelo pueda llamarlas.",
       "modelUnsupportedShort": "Sin herramientas",
       "noTools": "El interruptor está activo y el modelo admite herramientas, pero no hay ninguna conectada. Esta conversación no enviará herramientas."
+    },
+    "page": {
+      "attach": "Citar la página actual",
+      "loading": "Extrayendo el contenido de la página",
+      "unsupported": "No se puede extraer esta página",
+      "failed": "Error al extraer la página",
+      "remove": "Quitar la referencia de página",
+      "preview": "Vista previa",
+      "previewTitle": "Vista previa del contenido",
+      "tokens": "Aprox. {{count}} tokens",
+      "overContext": "Supera la ventana de contexto ({{limit}} tokens); el modelo puede no ver el texto completo",
+      "truncated": "Contenido demasiado largo, truncado",
+      "chipSummary": "Resumir",
+      "chipSummaryPrompt": "Resume el texto completo de este artículo conservando la información clave.",
+      "chipPoints": "Puntos clave",
+      "chipPointsPrompt": "Extrae los puntos clave de este artículo en forma de lista.",
+      "chipTranslate": "Traducir",
+      "chipTranslatePrompt": "Traduce el texto completo de este artículo al español.",
+      "sourceLabel": "Página citada"
     }
   },
   "links": {

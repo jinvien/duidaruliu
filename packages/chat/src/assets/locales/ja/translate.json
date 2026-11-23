@@ -50,6 +50,25 @@
       "modelUnsupported": "このモデルには tools 能力がありません。この会話はツールを送りません。設定の接続済みはサーバーがつながっていることだけで、モデルがツールを呼べるという意味ではありません。",
       "modelUnsupportedShort": "ツールなし",
       "noTools": "スイッチはオンで、このモデルはツールに対応していますが、接続済みの使えるツールがありません。この会話はツールを送りません。"
+    },
+    "page": {
+      "attach": "現在のページを引用",
+      "loading": "ページの内容を抽出しています",
+      "unsupported": "このページは抽出できません",
+      "failed": "ページの抽出に失敗しました",
+      "remove": "ページ引用を削除",
+      "preview": "プレビュー",
+      "previewTitle": "ページ内容のプレビュー",
+      "tokens": "約 {{count}} トークン",
+      "overContext": "コンテキストウィンドウ（{{limit}} トークン）を超えています。モデルが全文を参照できない可能性があります",
+      "truncated": "本文が長すぎるため切り詰めました",
+      "chipSummary": "全文を要約",
+      "chipSummaryPrompt": "この記事の全文を、重要な情報を残して要約してください。",
+      "chipPoints": "要点を抽出",
+      "chipPointsPrompt": "この記事の要点を箇条書きで抽出してください。",
+      "chipTranslate": "全文を翻訳",
+      "chipTranslatePrompt": "この記事の本文全体を日本語に翻訳してください。",
+      "sourceLabel": "引用ページ"
     }
   },
   "links": {

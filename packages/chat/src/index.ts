@@ -17,9 +17,13 @@ export {
   storageSet,
 } from './host';
 
+export { PageCaptureError } from './page/types';
+
+export type { PageSnapshot, PageRef } from './page/types';
 export type {
   ChatHost,
   HostCommand,
+  PageRequest,
   KeyValueStorage,
   StorageArea,
   StorageChange,

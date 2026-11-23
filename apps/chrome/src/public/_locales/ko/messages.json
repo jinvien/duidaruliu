@@ -10,5 +10,8 @@
   },
   "translateSelected": {
     "message": "선택한 텍스트 번역"
+  },
+  "sendToDDRL": {
+    "message": "DDRL로 보내기"
   }
 }

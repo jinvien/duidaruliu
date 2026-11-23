@@ -58,6 +58,25 @@
       "modelUnsupported": "This model is confirmed to have no tools capability, so this chat will not send tools to it. Connected in Settings only means the server is up, not that the model can call tools.",
       "modelUnsupportedShort": "No tools",
       "noTools": "The switch is on and this model supports tools, but no connected tool is available. This chat will not send tools."
+    },
+    "page": {
+      "attach": "Quote current page",
+      "loading": "Extracting page content",
+      "unsupported": "This page cannot be extracted",
+      "failed": "Failed to extract the page",
+      "remove": "Remove page reference",
+      "preview": "Preview",
+      "previewTitle": "Page content preview",
+      "tokens": "About {{count}} tokens",
+      "overContext": "Exceeds the context window ({{limit}} tokens); the model may not see the full text",
+      "truncated": "Content too long, truncated",
+      "chipSummary": "Summarize",
+      "chipSummaryPrompt": "Please summarize the full text of this article and keep the key information.",
+      "chipPoints": "Key points",
+      "chipPointsPrompt": "Please extract the key points of this article as a list.",
+      "chipTranslate": "Translate",
+      "chipTranslatePrompt": "Please translate the full text of this article into English.",
+      "sourceLabel": "Quoted page"
     }
   },
   "links": {

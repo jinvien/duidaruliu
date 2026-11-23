@@ -21,6 +21,7 @@ export default defineConfig({
       'contextMenus',
       'declarativeNetRequest',
       'activeTab',
+      'scripting',
     ],
     host_permissions: ['http://*/*', 'https://*/*'],
     commands: {

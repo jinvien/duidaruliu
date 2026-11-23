@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { App as AntdApp, Badge, Button, Flex } from 'antd';
+import { App as AntdApp, Badge, Button, Flex, Typography } from 'antd';
 import { Actions, Bubble, Think, ThoughtChain } from '@ant-design/x';
 import { CopyOutlined, MessageOutlined, SyncOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
@@ -8,6 +8,8 @@ import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/pris
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useTranslation } from 'react-i18next';
+
+import { hostnameOf } from './PageRefCard';
 
 // import hooks
 import { useAppSelector, useAppDispatch } from '../../../hooks/useStore';
@@ -29,6 +31,7 @@ import Styles from '../index.module.less';
 // import types
 import type { GetProp, GetRef } from 'antd';
 import type { ChatImage } from '../../../store/chatSlice';
+import type { PageRef } from '../../../page/types';
 
 // 依赖里存在两份 @types/react，直接作为 JSX 使用会在类型检查时报错。运行时仍是原来的组件。
 const Highlighter = SyntaxHighlighter as unknown as React.ComponentType<{
@@ -145,11 +148,28 @@ const ChatContent: React.FC = () => {
     }
   };
 
-  const userContentRender = (content: string | { text: string; images?: ChatImage[] }) => {
+  const userContentRender = (
+    content: string | { text: string; images?: ChatImage[]; page?: PageRef }
+  ) => {
     const text = typeof content === 'string' ? content : content.text;
     const images = typeof content === 'string' ? undefined : content.images;
+    const page = typeof content === 'string' ? undefined : content.page;
     return (
       <div>
+        {page ? (
+          <div className={Styles.userPage}>
+            <Typography.Link
+              href={page.url}
+              target="_blank"
+              rel="noreferrer"
+              ellipsis
+              className={Styles.userPageTitle}
+            >
+              {page.title}
+            </Typography.Link>
+            <span className={Styles.userPageHost}>{hostnameOf(page.url)}</span>
+          </div>
+        ) : null}
         {images?.length ? (
           <div className={Styles.userImages}>
             {images.map((image, index) => (
@@ -262,12 +282,12 @@ const ChatContent: React.FC = () => {
           (block, blockIndex, blocks): any => {
             const isLast = blockIndex === blocks.length - 1;
             if (block.kind === 'message') {
-              const { role, content, model, images } = block.message;
+              const { role, content, model, images, page } = block.message;
               return [
                 {
                   key: block.index,
                   role: role === 'system' ? 'systemMessage' : role,
-                  content: role === 'system' ? renderPrompt(content) : { text: content, images },
+                  content: role === 'system' ? renderPrompt(content) : { text: content, images, page },
                   loadingRender: () => <Badge status="processing" className="loadingDot" />,
                   loading: false,
                   header: role === 'user' ? null : renderHeader(role, model),

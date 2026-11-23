@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from '../../hooks/useStore';
 // import store
 import { setIsViewHistoryMode, setIsShowHistoryPanel } from '../../store/historySlice';
 import { replaceConversationForTranslate } from './translateConversation';
+import { loadPageRef } from '../../store/pageSlice';
 
 // import constants
 import { getChatHost } from '../../host';
@@ -88,6 +89,13 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   useEffect(() => {
     return getChatHost().subscribeHostCommand?.(handleContextMenus);
   }, [ollamaModelParams, modelLabel]);
+
+  // 右键菜单等入口请求引用页面。订阅时宿主会补发还没处理的请求。
+  useEffect(() => {
+    return getChatHost().subscribePageRequest?.((request) => {
+      void loadPageRef(dispatch, request.tabId);
+    });
+  }, [dispatch]);
 
   return (
     <main className={Styles.page}>

@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, current } from '@reduxjs/toolkit';
 import { storeCurrentMessagesFunc } from './historySlice';
+import type { PageRef } from '../page/types';
 
 // waiting 接口尚未响应 | outputting 流式输出中 | tool 工具执行中 | end 输出结束
 export type ResponseStatus = 'waiting' | 'outputting' | 'tool' | 'end';
@@ -24,6 +25,8 @@ export type Message = {
   createdAt: number;
   model?: string;
   images?: ChatImage[];
+  /** 用户引用的网页。正文只在发给模型时拼进去，气泡里只显示卡片。 */
+  page?: PageRef;
   thinking?: string;
   toolCalls?: ToolCallRecord[];
   toolCallId?: string;

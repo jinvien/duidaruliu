@@ -5,6 +5,8 @@ import {
   ArrowUpOutlined,
   BulbOutlined,
   CloseOutlined,
+  FileTextOutlined,
+  LoadingOutlined,
   MessageOutlined,
   PictureOutlined,
 } from '@ant-design/icons';
@@ -18,6 +20,9 @@ import { modelHasTools, modelToolsMark } from '../../../utils/modelCapability';
 import store from '../../../store';
 import { setIsViewHistoryMode } from '../../../store/historySlice';
 import { addMessage } from '../../../store/chatSlice';
+import { discardPage, loadPageRef } from '../../../store/pageSlice';
+import { getChatHost } from '../../../host';
+import { selectContextLimit } from '../../../page/contextLimit';
 import { useChat } from '../../../hooks/useChat';
 import { ChatImageError, MAX_CHAT_IMAGES, fileToChatImage } from '../../../utils/chatImage';
 import { modelCapabilityMark, modelHasVision } from '../../../utils/modelCapability';
@@ -28,6 +33,7 @@ import {
 } from '../../../models/selection';
 
 import ToolApprovalCard from './ToolApproval';
+import PageRefCard, { type PageChip } from './PageRefCard';
 
 import Styles from '../index.module.less';
 
@@ -52,6 +58,10 @@ const ChatSender: FC = () => {
     ...prompt,
     icon: prompt.type === 'quick' ? <BulbOutlined /> : <MessageOutlined />,
   }));
+
+  const page = useAppSelector((state) => state.page);
+  const contextLimit = useAppSelector(selectContextLimit);
+  const canCapturePage = Boolean(getChatHost().capturePage);
 
   const [userContent, setUserContent] = useState<string>('');
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
@@ -118,44 +128,74 @@ const ChatSender: FC = () => {
   const stopVisible = composerStopVisible(responseStatus);
   const turnBusy = stopVisible || streaming;
 
-  const handleSubmit = useCallback(() => {
-    const status = store.getState().chat.responseStatus;
-    if (!composerCanSend(status, agentIsStreaming(), userContent.length > 0, backendReady)) {
-      return;
-    }
+  // content 默认取输入框。页面卡片上的快捷选项传入自己的指令，不动输入框里已有的文字。
+  const handleSubmit = useCallback(
+    (content: string = userContent) => {
+      const status = store.getState().chat.responseStatus;
+      if (!composerCanSend(status, agentIsStreaming(), content.length > 0, backendReady)) {
+        return;
+      }
 
-    const images: ChatImage[] | undefined =
-      visionEnabled && pendingImages.length
-        ? pendingImages.map(({ dataUrl }) => ({ dataUrl }))
-        : undefined;
+      const images: ChatImage[] | undefined =
+        visionEnabled && pendingImages.length
+          ? pendingImages.map(({ dataUrl }) => ({ dataUrl }))
+          : undefined;
+      const pageRef = store.getState().page.ref;
 
-    dispatch(setIsViewHistoryMode(false));
-    setUserContent('');
-    setPendingImages([]);
-    setSelectedSystemPrompt(null);
+      dispatch(setIsViewHistoryMode(false));
+      if (content === userContent) setUserContent('');
+      setPendingImages([]);
+      setSelectedSystemPrompt(null);
+      discardPage(dispatch);
 
-    if (selectedSystemPrompt) {
-      dispatch(
-        addMessage({ role: 'system', content: selectedSystemPrompt.value, createdAt: Date.now() })
-      );
-    }
-    const userMessage: Message = {
-      role: 'user',
-      content: userContent,
-      createdAt: Date.now(),
-    };
-    if (images?.length) userMessage.images = images;
-    dispatch(addMessage(userMessage));
-    sendMessage();
-  }, [
-    dispatch,
-    backendReady,
-    pendingImages,
-    selectedSystemPrompt,
-    sendMessage,
-    userContent,
-    visionEnabled,
-  ]);
+      if (selectedSystemPrompt) {
+        dispatch(
+          addMessage({ role: 'system', content: selectedSystemPrompt.value, createdAt: Date.now() })
+        );
+      }
+      const userMessage: Message = {
+        role: 'user',
+        content,
+        createdAt: Date.now(),
+      };
+      if (images?.length) userMessage.images = images;
+      if (pageRef) userMessage.page = pageRef;
+      dispatch(addMessage(userMessage));
+      sendMessage();
+    },
+    [
+      dispatch,
+      backendReady,
+      pendingImages,
+      selectedSystemPrompt,
+      sendMessage,
+      userContent,
+      visionEnabled,
+    ]
+  );
+
+  // 快捷选项：内置几个，再追加用户自己的快捷提示词。
+  const pageChips: PageChip[] = [
+    { key: 'summary', label: t('chat.page.chipSummary'), text: t('chat.page.chipSummaryPrompt') },
+    { key: 'points', label: t('chat.page.chipPoints'), text: t('chat.page.chipPointsPrompt') },
+    {
+      key: 'translate',
+      label: t('chat.page.chipTranslate'),
+      text: t('chat.page.chipTranslatePrompt'),
+    },
+    ...prompts
+      .filter((prompt) => prompt.type === 'quick')
+      .map((prompt, index) => ({
+        key: `quick-${index}`,
+        label: prompt.label,
+        text: prompt.value,
+      })),
+  ];
+
+  const pageErrorText =
+    page.status === 'error'
+      ? t(page.error === 'unsupported' ? 'chat.page.unsupported' : 'chat.page.failed')
+      : '';
 
   const imageLimitReached = pendingImages.length >= MAX_CHAT_IMAGES;
   const attachTitle = !visionEnabled
@@ -184,6 +224,29 @@ const ChatSender: FC = () => {
             closeIcon: <CloseOutlined />,
           }}
           onClose={() => setSelectedSystemPrompt(null)}
+        />
+      )}
+
+      {page.status === 'loading' && (
+        <Alert type="info" showIcon icon={<LoadingOutlined />} message={t('chat.page.loading')} />
+      )}
+      {pageErrorText && (
+        <Alert
+          type="warning"
+          showIcon
+          message={pageErrorText}
+          closable={{ 'aria-label': 'close', closeIcon: <CloseOutlined /> }}
+          onClose={() => discardPage(dispatch)}
+        />
+      )}
+      {page.ref && (
+        <PageRefCard
+          page={page.ref}
+          chips={pageChips}
+          contextLimit={contextLimit}
+          disabled={!composerCanSend(responseStatus, streaming, true, backendReady)}
+          onRemove={() => discardPage(dispatch)}
+          onChip={(text) => handleSubmit(text)}
         />
       )}
 
@@ -260,18 +323,35 @@ const ChatSender: FC = () => {
               submitType="enter"
               value={userContent}
               prefix={
-                showAttach ? (
-                  <Tooltip title={attachTitle}>
-                    <Button
-                      variant="text"
-                      color="default"
-                      aria-label={attachTitle}
-                      icon={<PictureOutlined />}
-                      disabled={!visionEnabled || imageLimitReached || turnBusy}
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onClick={() => fileInputRef.current?.click()}
-                    />
-                  </Tooltip>
+                showAttach || canCapturePage ? (
+                  <Flex gap="small">
+                    {canCapturePage ? (
+                      <Tooltip title={t('chat.page.attach')}>
+                        <Button
+                          variant="text"
+                          color="default"
+                          aria-label={t('chat.page.attach')}
+                          icon={<FileTextOutlined />}
+                          loading={page.status === 'loading'}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onClick={() => void loadPageRef(dispatch)}
+                        />
+                      </Tooltip>
+                    ) : null}
+                    {showAttach ? (
+                      <Tooltip title={attachTitle}>
+                        <Button
+                          variant="text"
+                          color="default"
+                          aria-label={attachTitle}
+                          icon={<PictureOutlined />}
+                          disabled={!visionEnabled || imageLimitReached || turnBusy}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onClick={() => fileInputRef.current?.click()}
+                        />
+                      </Tooltip>
+                    ) : null}
+                  </Flex>
                 ) : undefined
               }
               onPaste={(event) => {

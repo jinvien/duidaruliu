@@ -10,6 +10,9 @@ import {
 import { clearMcpOriginRules, rewriteOrigin, syncMcpOriginRules } from '@/utils/rewriteOrigin';
 import { queryCurrentTab } from '@/utils/tab';
 
+import { captureTab } from './pageCapture';
+import { subscribePageRequest } from './pageRequest';
+
 import { chromeStorage } from './chromeStorage';
 
 export function openChromeSettings() {
@@ -58,6 +61,9 @@ export function createChromeHost(ownsRuntime: boolean): ChatHost {
     openSettings: openChromeSettings,
     subscribeHostCommand: ownsRuntime ? subscribeChromeCommands : undefined,
     watchMcpRuntime: ownsRuntime ? undefined : watchChromeMcpRuntime,
+    // 设置页不聊天，也不该消费右键发来的页面请求。
+    capturePage: ownsRuntime ? captureTab : undefined,
+    subscribePageRequest: ownsRuntime ? subscribePageRequest : undefined,
   };
 }
 

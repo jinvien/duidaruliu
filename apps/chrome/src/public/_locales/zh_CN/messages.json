@@ -10,5 +10,8 @@
   },
   "translateSelected": {
     "message": "翻译所选内容"
+  },
+  "sendToDDRL": {
+    "message": "发送到对答如流"
   }
 }

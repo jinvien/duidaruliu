@@ -6,6 +6,7 @@ import customModelSlice from './customModelSlice';
 import historySlice from './historySlice';
 import promptSlice from './promptSlice';
 import mcpSlice from './mcpSlice';
+import pageSlice from './pageSlice';
 
 // 创建 store
 const store = configureStore({
@@ -17,6 +18,7 @@ const store = configureStore({
     history: historySlice.reducer,
     prompt: promptSlice.reducer,
     mcp: mcpSlice.reducer,
+    page: pageSlice.reducer,
   },
 });
 

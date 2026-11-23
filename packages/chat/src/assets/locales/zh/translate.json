@@ -58,6 +58,25 @@
       "modelUnsupported": "当前模型已确认没有 tools 能力，这次对话不会把工具发给它。设置里的已连接只表示服务器连上了，和模型能不能调用工具不是一回事。",
       "modelUnsupportedShort": "无工具",
       "noTools": "总开关已打开，当前模型也支持工具，但还没有已连接的可用工具。这次对话不会带上工具。"
+    },
+    "page": {
+      "attach": "引用当前页面",
+      "loading": "正在提取页面内容",
+      "unsupported": "当前页面不支持提取",
+      "failed": "页面提取失败",
+      "remove": "移除页面引用",
+      "preview": "预览",
+      "previewTitle": "页面内容预览",
+      "tokens": "约 {{count}} tokens",
+      "overContext": "超出上下文窗口（{{limit}} tokens），模型可能看不到全文",
+      "truncated": "正文过长，已截断",
+      "chipSummary": "总结全文",
+      "chipSummaryPrompt": "请总结这篇文章的全文，保留关键信息。",
+      "chipPoints": "提取要点",
+      "chipPointsPrompt": "请提取这篇文章的要点，用条目列出。",
+      "chipTranslate": "翻译全文",
+      "chipTranslatePrompt": "请把这篇文章的正文完整翻译成中文。",
+      "sourceLabel": "引用页面"
     }
   },
   "links": {

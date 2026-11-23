@@ -9,6 +9,7 @@ import {
   updateLastMessage,
 } from '../store/chatSlice';
 import { imageDataUrlToBase64 } from '../utils/chatImage';
+import { formatPageForModel } from '../page/format';
 import { shouldExposeTools } from '../mcp/toolGate';
 import { modelHasTools, modelHasVision } from '../utils/modelCapability';
 import {
@@ -79,16 +80,18 @@ function toAgentMessages(messages: Message[]): AgentMessage[] {
     }
 
     if (message.role === 'user') {
+      // 页面引用在这里拼进文本，Ollama 和自定义模型都从这里取消息。
+      const text = message.page ? formatPageForModel(message.page, message.content) : message.content;
       const images: ImageContent[] = (message.images ?? []).map((image) => ({
         type: 'image',
         data: imageDataUrlToBase64(image.dataUrl),
         mimeType: mimeTypeFromDataUrl(image.dataUrl),
       }));
       if (!images.length) {
-        return { role: 'user', content: message.content, timestamp: message.createdAt };
+        return { role: 'user', content: text, timestamp: message.createdAt };
       }
       const content: Array<TextContent | ImageContent> = [];
-      if (message.content) content.push({ type: 'text', text: message.content });
+      if (text) content.push({ type: 'text', text });
       content.push(...images);
       return { role: 'user', content, timestamp: message.createdAt };
     }

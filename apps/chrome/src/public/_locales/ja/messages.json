@@ -10,5 +10,8 @@
   },
   "translateSelected": {
     "message": "選択したテキストを翻訳"
+  },
+  "sendToDDRL": {
+    "message": "対答如流に送信"
   }
 }
