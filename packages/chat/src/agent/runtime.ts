@@ -417,7 +417,11 @@ agent.subscribe((event) => {
   console.error('onChatError', error);
   reportChatError(error);
   } finally {
-    queueMicrotask(publishAgentActivity);
+    // 每个流式片段都通知的话，输入框和顶栏会跟着整棵重渲染。
+    // 那里的受控列表会在 layout 里再次 setState，和气泡列表的更新叠在同一次同步渲染里，
+    // 嵌套次数超过 React 的上限后，这个异常会被收成对话失败。
+    // isStreaming 只在开跑和收尾变化，按钮只需要这两次。
+    if (event.type === 'agent_start') queueMicrotask(publishAgentActivity);
     // agent_end 之后还要经过好几层 await 才会 finishRun 清掉 isStreaming，一个微任务等不到。
     // 通知得太早，界面最后一次渲染就停在「仍在流式」，依赖它的按钮（如添加图片）会一直灰着。
     // waitForIdle 在 finishRun 里 resolve，此时 isStreaming 已经是 false。

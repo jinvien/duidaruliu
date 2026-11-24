@@ -46,20 +46,15 @@ const PageRefCard: FC<Props> = ({ page, chips, contextLimit, disabled, onRemove,
             href={page.url}
             target="_blank"
             rel="noreferrer"
-            ellipsis
             className={Styles.pageCardTitle}
           >
             {page.title}
           </Typography.Link>
-          <Typography.Text type="secondary" ellipsis className={Styles.pageCardMeta}>
+          <Typography.Text type="secondary" className={Styles.pageCardMeta}>
             {hostnameOf(page.url)}
           </Typography.Text>
           {page.description ? (
-            <Typography.Paragraph
-              type="secondary"
-              ellipsis={{ rows: 2 }}
-              className={Styles.pageCardDesc}
-            >
+            <Typography.Paragraph type="secondary" className={Styles.pageCardDesc}>
               {page.description}
             </Typography.Paragraph>
           ) : null}

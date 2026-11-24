@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
 import {
@@ -56,7 +56,8 @@ const ChatSender: FC = () => {
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
   const quickCategories = useAppSelector((state) => state.quickCommand.categories);
-  const quickOptions = toSuggestionOptions(quickCategories);
+  // 每次渲染都新建数组的话，建议列表会在 layout 里跟着 setState，流式输出时会叠进同一轮同步更新。
+  const quickOptions = useMemo(() => toSuggestionOptions(quickCategories), [quickCategories]);
 
   const page = useAppSelector((state) => state.page);
   const contextLimit = useAppSelector(selectContextLimit);

@@ -162,7 +162,6 @@ const ChatContent: React.FC = () => {
               href={page.url}
               target="_blank"
               rel="noreferrer"
-              ellipsis
               className={Styles.userPageTitle}
             >
               {page.title}

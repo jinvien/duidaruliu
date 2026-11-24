@@ -360,16 +360,30 @@
 }
 
 .pageCardTitle {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pageCardMeta {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   font-size: var(--ant-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pageCardDesc {
+  display: -webkit-box;
   margin-bottom: 0 !important;
+  overflow: hidden;
   font-size: var(--ant-font-size-sm);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .pagePreview {
@@ -405,8 +419,12 @@
 }
 
 .userPageTitle {
+  display: block;
   max-width: 100%;
+  overflow: hidden;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .userPageHost {

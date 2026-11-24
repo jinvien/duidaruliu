@@ -18,6 +18,7 @@ import Links from './Links';
 // store
 import { loadAgentTranscript, settleAgent } from '../../../agent/runtime';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useStore';
+import store from '../../../store';
 import {
   setIsShowHistoryPanel,
   setIsViewHistoryMode,
@@ -65,7 +66,6 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
   const { isShowHistoryPanel, conversations, isViewHistoryMode } = useAppSelector(
     (state) => state.history
   );
-  const messages = useAppSelector((state) => state.chat.messages);
   const { ollamaModelParams, listedModels } = useAppSelector((state) => state.ollama);
   const customModels = useAppSelector(selectCustomModels);
   const { isDarkMode, lang } = useAppSelector((state) => state.app);
@@ -89,7 +89,8 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
     if (!conversation) return;
 
     const viewingHistory = isViewHistoryMode;
-    const currentMessages = messages;
+    // 点历史时再读当前消息。订阅整段消息的话，每个流式片段都会重画历史列表。
+    const currentMessages = store.getState().chat.messages;
     await settleAgent();
 
     if (!viewingHistory) {
