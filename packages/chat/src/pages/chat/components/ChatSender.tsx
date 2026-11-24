@@ -3,11 +3,9 @@ import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
 import {
   ArrowUpOutlined,
-  BulbOutlined,
   CloseOutlined,
   FileTextOutlined,
   LoadingOutlined,
-  MessageOutlined,
   PictureOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +30,8 @@ import {
   selectSelectedModelKey,
 } from '../../../models/selection';
 
+import { articleCommands, findQuickCommand, toSuggestionOptions } from '../../../utils/quickCommand';
+
 import ModelPicker from './ModelPicker';
 import ToolApprovalCard from './ToolApproval';
 import PageRefCard, { type PageChip } from './PageRefCard';
@@ -55,10 +55,8 @@ const ChatSender: FC = () => {
   const toolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
-  const prompts = useAppSelector((state) => state.prompt).map((prompt) => ({
-    ...prompt,
-    icon: prompt.type === 'quick' ? <BulbOutlined /> : <MessageOutlined />,
-  }));
+  const quickCategories = useAppSelector((state) => state.quickCommand.categories);
+  const quickOptions = toSuggestionOptions(quickCategories);
 
   const page = useAppSelector((state) => state.page);
   const contextLimit = useAppSelector(selectContextLimit);
@@ -66,10 +64,6 @@ const ChatSender: FC = () => {
 
   const [userContent, setUserContent] = useState<string>('');
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-  const [selectedSystemPrompt, setSelectedSystemPrompt] = useState<{
-    label: string;
-    value: string;
-  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const visionEnabledRef = useRef(false);
 
@@ -146,14 +140,8 @@ const ChatSender: FC = () => {
       dispatch(setIsViewHistoryMode(false));
       if (content === userContent) setUserContent('');
       setPendingImages([]);
-      setSelectedSystemPrompt(null);
       discardPage(dispatch);
 
-      if (selectedSystemPrompt) {
-        dispatch(
-          addMessage({ role: 'system', content: selectedSystemPrompt.value, createdAt: Date.now() })
-        );
-      }
       const userMessage: Message = {
         role: 'user',
         content,
@@ -168,30 +156,18 @@ const ChatSender: FC = () => {
       dispatch,
       backendReady,
       pendingImages,
-      selectedSystemPrompt,
       sendMessage,
       userContent,
       visionEnabled,
     ]
   );
 
-  // 快捷选项：内置几个，再追加用户自己的快捷提示词。
-  const pageChips: PageChip[] = [
-    { key: 'summary', label: t('chat.page.chipSummary'), text: t('chat.page.chipSummaryPrompt') },
-    { key: 'points', label: t('chat.page.chipPoints'), text: t('chat.page.chipPointsPrompt') },
-    {
-      key: 'translate',
-      label: t('chat.page.chipTranslate'),
-      text: t('chat.page.chipTranslatePrompt'),
-    },
-    ...prompts
-      .filter((prompt) => prompt.type === 'quick')
-      .map((prompt, index) => ({
-        key: `quick-${index}`,
-        label: prompt.label,
-        text: prompt.value,
-      })),
-  ];
+  // 页面卡片上的快捷按钮，来自快捷指令里的默认分类（文章快捷指令）。
+  const pageChips: PageChip[] = articleCommands(quickCategories).map((command) => ({
+    key: command.id,
+    label: command.title,
+    text: command.content,
+  }));
 
   const pageErrorText =
     page.status === 'error'
@@ -207,27 +183,6 @@ const ChatSender: FC = () => {
 
   return (
     <Flex vertical gap="small">
-      {selectedSystemPrompt && (
-        <Alert
-          message={
-            <Flex
-              gap="small"
-              align="center"
-              style={{ fontSize: 'var(--ant-font-size)', fontWeight: 'bold' }}
-            >
-              <MessageOutlined /> {selectedSystemPrompt.label}
-            </Flex>
-          }
-          description={selectedSystemPrompt.value}
-          type="info"
-          closable={{
-            'aria-label': 'close',
-            closeIcon: <CloseOutlined />,
-          }}
-          onClose={() => setSelectedSystemPrompt(null)}
-        />
-      )}
-
       {page.status === 'loading' && (
         <Alert type="info" showIcon icon={<LoadingOutlined />} message={t('chat.page.loading')} />
       )}
@@ -304,17 +259,28 @@ const ChatSender: FC = () => {
         })}
       />
       <ToolApprovalCard />
+      {canCapturePage ? (
+        // 输入框上方的功能区，后续的输入辅助功能都放这里。
+        <Flex wrap gap="small" align="center" className={Styles.composerToolbar}>
+          <Button
+            size="small"
+            variant="text"
+            color="default"
+            aria-label={t('chat.page.attach')}
+            icon={<FileTextOutlined />}
+            loading={page.status === 'loading'}
+            onClick={() => void loadPageRef(dispatch)}
+          >
+            {t('chat.page.attach')}
+          </Button>
+        </Flex>
+      ) : null}
       <Suggestion
-        items={prompts}
-        onSelect={(prompt) => {
-          // 判断的是否为系统提示词
-          const item = prompts.find((item) => item.value === prompt);
-          if (item?.type === 'system') {
-            setSelectedSystemPrompt(item);
-            setUserContent('');
-          } else {
-            setUserContent(prompt);
-          }
+        items={quickOptions}
+        onSelect={(commandId) => {
+          // 选中一条快捷指令：正文放进输入框，可以改完再发。
+          const command = findQuickCommand(quickCategories, commandId);
+          if (command) setUserContent(command.content);
         }}
       >
         {({ onTrigger, onKeyDown, open }) => {
@@ -325,35 +291,18 @@ const ChatSender: FC = () => {
               value={userContent}
               footer={<ModelPicker />}
               prefix={
-                showAttach || canCapturePage ? (
-                  <Flex gap="small">
-                    {canCapturePage ? (
-                      <Tooltip title={t('chat.page.attach')}>
-                        <Button
-                          variant="text"
-                          color="default"
-                          aria-label={t('chat.page.attach')}
-                          icon={<FileTextOutlined />}
-                          loading={page.status === 'loading'}
-                          onMouseDown={(event) => event.stopPropagation()}
-                          onClick={() => void loadPageRef(dispatch)}
-                        />
-                      </Tooltip>
-                    ) : null}
-                    {showAttach ? (
-                      <Tooltip title={attachTitle}>
-                        <Button
-                          variant="text"
-                          color="default"
-                          aria-label={attachTitle}
-                          icon={<PictureOutlined />}
-                          disabled={!visionEnabled || imageLimitReached || turnBusy}
-                          onMouseDown={(event) => event.stopPropagation()}
-                          onClick={() => fileInputRef.current?.click()}
-                        />
-                      </Tooltip>
-                    ) : null}
-                  </Flex>
+                showAttach ? (
+                  <Tooltip title={attachTitle}>
+                    <Button
+                      variant="text"
+                      color="default"
+                      aria-label={attachTitle}
+                      icon={<PictureOutlined />}
+                      disabled={!visionEnabled || imageLimitReached || turnBusy}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onClick={() => fileInputRef.current?.click()}
+                    />
+                  </Tooltip>
                 ) : undefined
               }
               onPaste={(event) => {
@@ -367,7 +316,7 @@ const ChatSender: FC = () => {
                 void addImageFiles(files);
               }}
               onChange={(nextVal) => {
-                if (nextVal === '/' && prompts.length) {
+                if (nextVal === '/' && quickOptions.length) {
                   onTrigger();
                 } else if (!nextVal) {
                   onTrigger(false);
@@ -380,10 +329,11 @@ const ChatSender: FC = () => {
                 // X 2 去掉了建议列表里回车直接选中的回调，只返回 false 来拦住发送。
                 // 回车时点当前高亮项，仍走 Suggestion 自己的 onSelect。
                 if (open && event.key === 'Enter') {
-                  const active = document.querySelector<HTMLElement>(
+                  // 分类和指令是两级菜单，每一级都有高亮项，取最后一级的那个。
+                  const actives = document.querySelectorAll<HTMLElement>(
                     '.ant-cascader-dropdown.ant-suggestion .ant-cascader-menu-item-active'
                   );
-                  active?.click();
+                  actives[actives.length - 1]?.click();
                   return false;
                 }
                 return result;

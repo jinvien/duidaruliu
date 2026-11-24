@@ -62,12 +62,6 @@
       "tokens": "Около {{count}} токенов",
       "overContext": "Превышает контекстное окно ({{limit}} токенов); модель может не увидеть текст целиком",
       "truncated": "Текст слишком длинный и был обрезан",
-      "chipSummary": "Кратко пересказать",
-      "chipSummaryPrompt": "Кратко перескажи полный текст этой статьи, сохранив ключевую информацию.",
-      "chipPoints": "Ключевые мысли",
-      "chipPointsPrompt": "Выдели ключевые мысли этой статьи списком.",
-      "chipTranslate": "Перевести",
-      "chipTranslatePrompt": "Переведи полный текст этой статьи на русский язык.",
       "sourceLabel": "Цитируемая страница"
     },
     "modelPicker": {
@@ -89,7 +83,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Настройки Ollama",
-    "customPromptSetting": "Пользовательские подсказки",
+    "quickCommandSetting": "Быстрые команды",
     "customLinkSetting": "Быстрые ссылки",
     "mcp": "Инструменты / MCP"
   },
@@ -141,16 +135,22 @@
     "linkAddress": "Адрес ссылки",
     "addLink": "Добавить ссылку"
   },
-  "customPromptSetting": {
-    "promptSetting": "Настройки подсказок",
-    "usedForQuickOpen": "Введите / для выбора подсказок",
-    "prompt": "Подсказка",
-    "inputLabelTip": "Название обязательно",
-    "inputLabelPlaceholder": "Короткое название",
-    "inputValueTip": "Содержание обязательно",
-    "inputValuePlaceholder": "Полная подсказка",
-    "linkAddress": "Адрес ссылки",
-    "addPrompt": "Добавить подсказку"
+  "quickCommandSetting": {
+    "title": "Быстрые команды",
+    "description": "Введите / в поле чата, чтобы выбрать команду. Команды из категории по умолчанию «Команды для статей» после цитирования страницы показываются кнопками; нажмите, чтобы отправить.",
+    "categoryNamePlaceholder": "Название категории",
+    "categoryNameRequired": "Название категории обязательно",
+    "deleteCategory": "Удалить категорию",
+    "defaultCategoryTip": "Категорию по умолчанию нельзя удалить",
+    "addCategory": "Добавить категорию",
+    "commandTitlePlaceholder": "Название команды (коротко)",
+    "commandTitleRequired": "Название команды обязательно",
+    "commandContentPlaceholder": "Текст команды",
+    "commandContentRequired": "Текст команды обязателен",
+    "addCommand": "Добавить команду",
+    "emptyCategory": "В этой категории пока нет команд",
+    "restoreDefault": "Восстановить по умолчанию",
+    "restored": "Значения по умолчанию восстановлены. Нажмите «Сохранить», чтобы применить."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Конфигурация Ollama успешно сохранена",

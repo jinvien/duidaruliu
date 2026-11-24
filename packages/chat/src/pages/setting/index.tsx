@@ -8,7 +8,7 @@ import OllamaSetting from './components/ollama';
 import CustomModelSetting from './components/customModel';
 import McpSetting from './components/mcp';
 import CustomLink from './components/customLink';
-import CustomPrompt from './components/customPrompt';
+import QuickCommandSetting from './components/quickCommand';
 
 import Styles from './index.module.less';
 import type { MenuProps } from 'antd';
@@ -36,7 +36,7 @@ const OptionsPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
     getItem(t('settingMenu.ollamaSetting'), 'ollamaSetting'),
     getItem(t('settingMenu.customModel'), 'customModel'),
     getItem(t('settingMenu.mcp'), 'mcp'),
-    getItem(t('settingMenu.customPromptSetting'), 'customPrompt'),
+    getItem(t('settingMenu.quickCommandSetting'), 'quickCommand'),
     getItem(t('settingMenu.customLinkSetting'), 'customLink'),
   ];
 
@@ -71,7 +71,7 @@ const OptionsPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
           {currentPage === 'customModel' && <CustomModelSetting />}
           {currentPage === 'mcp' && <McpSetting />}
           {currentPage === 'customLink' && <CustomLink />}
-          {currentPage === 'customPrompt' && <CustomPrompt />}
+          {currentPage === 'quickCommand' && <QuickCommandSetting />}
         </Content>
       </Layout>
     </section>

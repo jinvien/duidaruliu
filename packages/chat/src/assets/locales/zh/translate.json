@@ -70,12 +70,6 @@
       "tokens": "约 {{count}} tokens",
       "overContext": "超出上下文窗口（{{limit}} tokens），模型可能看不到全文",
       "truncated": "正文过长，已截断",
-      "chipSummary": "总结全文",
-      "chipSummaryPrompt": "请总结这篇文章的全文，保留关键信息。",
-      "chipPoints": "提取要点",
-      "chipPointsPrompt": "请提取这篇文章的要点，用条目列出。",
-      "chipTranslate": "翻译全文",
-      "chipTranslatePrompt": "请把这篇文章的正文完整翻译成中文。",
       "sourceLabel": "引用页面"
     },
     "modelPicker": {
@@ -97,7 +91,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama 设置",
-    "customPromptSetting": "自定义提示词",
+    "quickCommandSetting": "快捷指令",
     "customLinkSetting": "快捷入口设置",
     "mcp": "工具 / MCP",
     "customModel": "自定义模型"
@@ -150,16 +144,22 @@
     "linkAddress": "链接地址",
     "addLink": "新增链接"
   },
-  "customPromptSetting": {
-    "promptSetting": "提示词设置",
-    "usedForQuickOpen": "在对话框输入 / 即可快速选取提示词",
-    "prompt": "提示词",
-    "inputLabelTip": "提示词简称必填",
-    "inputLabelPlaceholder": "提示词简称，尽量简短",
-    "inputValueTip": "提示词内容必填",
-    "inputValuePlaceholder": "请输入完整提示词",
-    "linkAddress": "链接地址",
-    "addPrompt": "新增提示词"
+  "quickCommandSetting": {
+    "title": "快捷指令",
+    "description": "在对话框输入 / 即可选择指令。默认分类「文章快捷指令」里的指令，会在引用页面后显示为快捷按钮，点击直接发送。",
+    "categoryNamePlaceholder": "分类名称",
+    "categoryNameRequired": "分类名称必填",
+    "deleteCategory": "删除分类",
+    "defaultCategoryTip": "默认分类，不能删除",
+    "addCategory": "新增分类",
+    "commandTitlePlaceholder": "指令标题，尽量简短",
+    "commandTitleRequired": "指令标题必填",
+    "commandContentPlaceholder": "指令正文",
+    "commandContentRequired": "指令正文必填",
+    "addCommand": "添加指令",
+    "emptyCategory": "这个分类下还没有指令",
+    "restoreDefault": "恢复默认",
+    "restored": "已恢复默认，点保存后生效"
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama 配置保存成功",

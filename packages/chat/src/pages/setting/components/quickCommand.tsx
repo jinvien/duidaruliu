@@ -1,153 +1,187 @@
 import { storageGet, storageSet } from '../../../host';
-import { useState, useEffect } from 'react';
-import { App as AntdApp, Button, Form, Input, Space, Divider, Radio, Flex } from 'antd';
+import { useEffect } from 'react';
+import { App as AntdApp, Button, Card, Divider, Empty, Flex, Form, Input, Space } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 
-import { BulbOutlined, MessageOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  ARTICLE_CATEGORY_ID,
+  buildDefaultQuickCommands,
+  newId,
+  normalizeQuickCommands,
+  type QuickCommandCategory,
+} from '../../../utils/quickCommand';
 
-const CustomPrompt: React.FC = () => {
+type FormValues = { categories: QuickCommandCategory[] };
+
+const QuickCommandSetting: React.FC = () => {
   const { message: antdMessage } = AntdApp.useApp();
   const { t } = useTranslation();
-  const [form] = Form.useForm();
-
-  const [prompts] = useState([]);
-
-  const fetchCustomPrompt = async () => {
-    const { customPrompts } = await storageGet('sync', 'customPrompts');
-    form.setFieldsValue({ prompts: customPrompts });
-  };
+  const [form] = Form.useForm<FormValues>();
+  const categories = Form.useWatch('categories', form);
 
   useEffect(() => {
-    fetchCustomPrompt();
-  }, []);
+    void (async () => {
+      const { quickCommands } = await storageGet('sync', 'quickCommands');
+      form.setFieldsValue({ categories: normalizeQuickCommands(quickCommands, navigator.language) });
+    })();
+  }, [form]);
 
-  const onFinish = async (values: any) => {
-    await storageSet('sync', {
-      customPrompts: values.prompts,
-    });
+  const onFinish = async (values: FormValues) => {
+    await storageSet('sync', { quickCommands: values.categories ?? [] });
     antdMessage.success(t('formAction.saveSuccess'));
   };
 
-  const onReset = () => {
-    form.setFieldsValue([]);
+  const onRestoreDefault = () => {
+    form.setFieldsValue({ categories: buildDefaultQuickCommands(navigator.language) });
+    antdMessage.info(t('quickCommandSetting.restored'));
   };
 
   return (
     <section>
       <Form
         form={form}
-        name="prompt-setting"
+        name="quick-command-setting"
         onFinish={onFinish}
         layout="vertical"
-        initialValues={{ prompts }}
+        initialValues={{ categories: [] }}
       >
-        <Divider titlePlacement="left">{t('customPromptSetting.promptSetting')}</Divider>
-        <p>{t('customPromptSetting.usedForQuickOpen')}</p>
-        <Form.List name="prompts">
+        <Divider titlePlacement="left">{t('quickCommandSetting.title')}</Divider>
+        <p>{t('quickCommandSetting.description')}</p>
+
+        <Form.List name="categories">
           {(fields, { add, remove }) => (
-            <>
-              {fields.map(({ key, name, ...restField }, index) => (
-                <div key={key}>
-                  <Form.Item
-                    style={{ marginBottom: 4 }}
-                    label={
-                      <strong>
-                        {t('customPromptSetting.prompt')} {index + 1}
-                      </strong>
+            <Flex vertical gap="middle">
+              {fields.map(({ key, name, ...restField }, index) => {
+                const isDefault = categories?.[index]?.id === ARTICLE_CATEGORY_ID;
+                return (
+                  <Card
+                    key={key}
+                    size="small"
+                    title={
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'name']}
+                        noStyle
+                        rules={[
+                          {
+                            required: true,
+                            whitespace: true,
+                            message: t('quickCommandSetting.categoryNameRequired'),
+                          },
+                        ]}
+                      >
+                        <Input
+                          variant="borderless"
+                          style={{ fontWeight: 600 }}
+                          placeholder={t('quickCommandSetting.categoryNamePlaceholder')}
+                        />
+                      </Form.Item>
+                    }
+                    extra={
+                      <Button
+                        size="small"
+                        type="text"
+                        danger
+                        disabled={isDefault}
+                        title={isDefault ? t('quickCommandSetting.defaultCategoryTip') : undefined}
+                        icon={<MinusOutlined />}
+                        onClick={() => remove(name)}
+                      >
+                        {t('quickCommandSetting.deleteCategory')}
+                      </Button>
                     }
                   >
-                    <Space.Compact style={{ width: '100%' }}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'label']}
-                        noStyle
-                        rules={[
-                          { required: true, message: t('customPromptSetting.inputLabelTip') },
-                        ]}
-                      >
-                        <Input.TextArea
-                          placeholder={t('customPromptSetting.inputLabelPlaceholder')}
-                          style={{ width: 240 }}
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'value']}
-                        noStyle
-                        rules={[
-                          { required: true, message: t('customPromptSetting.inputValueTip') },
-                        ]}
-                      >
-                        <Input.TextArea
-                          placeholder={t('customPromptSetting.inputValuePlaceholder')}
-                        />
-                      </Form.Item>
-                    </Space.Compact>
-                  </Form.Item>
-                  <Flex justify="space-between">
-                    <Form.Item {...restField} name={[name, 'type']}>
-                      <Radio.Group
-                        style={{ borderRadius: 0 }}
-                        optionType="button"
-                        options={[
-                          {
-                            value: 'quick',
-                            label: (
-                              <Flex align="center" gap="small">
-                                <BulbOutlined /> {t('customPromptSetting.quickPrompt')}
-                              </Flex>
-                            ),
-                          },
-                          {
-                            value: 'system',
-                            label: (
-                              <Flex align="center" gap="small">
-                                <MessageOutlined /> {t('customPromptSetting.systemPrompt')}
-                              </Flex>
-                            ),
-                          },
-                        ]}
-                      />
+                    <Form.Item {...restField} name={[name, 'id']} hidden>
+                      <Input />
                     </Form.Item>
 
-                    <Form.Item>
-                      <Space.Compact>
-                        <Button onClick={() => remove(name)} icon={<MinusOutlined />}>
-                          {t('formAction.delete')}
-                        </Button>
-                        <Button
-                          onClick={() => add({ type: 'quick' }, index + 1)}
-                          icon={<PlusOutlined />}
-                        >
-                          {t('formAction.add')}
-                        </Button>
-                      </Space.Compact>
-                    </Form.Item>
-                  </Flex>
-                </div>
-              ))}
-              {!fields.length && (
-                <Button
-                  block
-                  style={{ marginBottom: 'var(--ant-margin)' }}
-                  onClick={() => add({ type: 'quick' })}
-                  icon={<PlusOutlined />}
-                >
-                  {t('formAction.add')}
-                </Button>
-              )}
-            </>
+                    <Form.List name={[name, 'commands']}>
+                      {(commandFields, { add: addCommand, remove: removeCommand }) => (
+                        <Flex vertical gap="small">
+                          {!commandFields.length && (
+                            <Empty
+                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                              description={t('quickCommandSetting.emptyCategory')}
+                            />
+                          )}
+                          {commandFields.map((command) => (
+                            <Flex key={command.key} gap="small" align="flex-start">
+                              <Form.Item name={[command.name, 'id']} hidden>
+                                <Input />
+                              </Form.Item>
+                              <Form.Item
+                                name={[command.name, 'title']}
+                                style={{ width: 200, marginBottom: 0, flexShrink: 0 }}
+                                rules={[
+                                  {
+                                    required: true,
+                                    whitespace: true,
+                                    message: t('quickCommandSetting.commandTitleRequired'),
+                                  },
+                                ]}
+                              >
+                                <Input
+                                  placeholder={t('quickCommandSetting.commandTitlePlaceholder')}
+                                />
+                              </Form.Item>
+                              <Form.Item
+                                name={[command.name, 'content']}
+                                style={{ flex: 1, marginBottom: 0 }}
+                                rules={[
+                                  {
+                                    required: true,
+                                    whitespace: true,
+                                    message: t('quickCommandSetting.commandContentRequired'),
+                                  },
+                                ]}
+                              >
+                                <Input.TextArea
+                                  autoSize={{ minRows: 2, maxRows: 8 }}
+                                  placeholder={t('quickCommandSetting.commandContentPlaceholder')}
+                                />
+                              </Form.Item>
+                              <Button
+                                type="text"
+                                aria-label={t('formAction.delete')}
+                                icon={<MinusOutlined />}
+                                onClick={() => removeCommand(command.name)}
+                              />
+                            </Flex>
+                          ))}
+                          <Button
+                            type="dashed"
+                            block
+                            icon={<PlusOutlined />}
+                            onClick={() => addCommand({ id: newId(), title: '', content: '' })}
+                          >
+                            {t('quickCommandSetting.addCommand')}
+                          </Button>
+                        </Flex>
+                      )}
+                    </Form.List>
+                  </Card>
+                );
+              })}
+
+              <Button
+                block
+                icon={<PlusOutlined />}
+                onClick={() => add({ id: newId(), name: '', commands: [] })}
+              >
+                {t('quickCommandSetting.addCategory')}
+              </Button>
+            </Flex>
           )}
         </Form.List>
 
-        <Form.Item style={{ textAlign: 'right' }}>
+        <Form.Item style={{ textAlign: 'right', marginTop: 'var(--ant-margin)' }}>
           <Space>
             <Button type="primary" htmlType="submit">
               {t('formAction.save')}
             </Button>
-
-            <Button htmlType="button" onClick={onReset}>
-              {t('formAction.clear')}
+            <Button htmlType="button" onClick={onRestoreDefault}>
+              {t('quickCommandSetting.restoreDefault')}
             </Button>
           </Space>
         </Form.Item>
@@ -156,4 +190,4 @@ const CustomPrompt: React.FC = () => {
   );
 };
 
-export default CustomPrompt;
+export default QuickCommandSetting;

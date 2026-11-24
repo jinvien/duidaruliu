@@ -70,12 +70,6 @@
       "tokens": "About {{count}} tokens",
       "overContext": "Exceeds the context window ({{limit}} tokens); the model may not see the full text",
       "truncated": "Content too long, truncated",
-      "chipSummary": "Summarize",
-      "chipSummaryPrompt": "Please summarize the full text of this article and keep the key information.",
-      "chipPoints": "Key points",
-      "chipPointsPrompt": "Please extract the key points of this article as a list.",
-      "chipTranslate": "Translate",
-      "chipTranslatePrompt": "Please translate the full text of this article into English.",
       "sourceLabel": "Quoted page"
     },
     "modelPicker": {
@@ -97,7 +91,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama Settings",
-    "customPromptSetting": "Custom Prompts",
+    "quickCommandSetting": "Quick Commands",
     "customLinkSetting": "Quick Access Settings",
     "mcp": "Tools / MCP",
     "customModel": "Custom models"
@@ -150,17 +144,22 @@
     "linkAddress": "Link Address",
     "addLink": "Add Link"
   },
-  "customPromptSetting": {
-    "promptSetting": "Prompt Settings",
-    "usedForQuickOpen": "Type / in dialog to select prompts",
-    "prompt": "Prompt",
-    "inputLabelTip": "Short name required",
-    "inputLabelPlaceholder": "Short name (keep it brief)",
-    "inputValueTip": "Prompt content required",
-    "inputValuePlaceholder": "Enter complete prompt",
-    "linkAddress": "Link Address",
-    "systemPrompt": "System Prompt",
-    "quickPrompt": "Quick Prompt"
+  "quickCommandSetting": {
+    "title": "Quick Commands",
+    "description": "Type / in the chat box to pick a command. Commands in the default \"Article commands\" category appear as buttons after you quote a page; click one to send it.",
+    "categoryNamePlaceholder": "Category name",
+    "categoryNameRequired": "Category name required",
+    "deleteCategory": "Delete category",
+    "defaultCategoryTip": "Default category, cannot be deleted",
+    "addCategory": "Add category",
+    "commandTitlePlaceholder": "Command title (keep it brief)",
+    "commandTitleRequired": "Command title required",
+    "commandContentPlaceholder": "Command content",
+    "commandContentRequired": "Command content required",
+    "addCommand": "Add command",
+    "emptyCategory": "No commands in this category yet",
+    "restoreDefault": "Restore defaults",
+    "restored": "Defaults restored. Click Save to apply."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama configuration saved successfully",

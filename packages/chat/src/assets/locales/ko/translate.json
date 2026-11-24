@@ -62,12 +62,6 @@
       "tokens": "약 {{count}} 토큰",
       "overContext": "컨텍스트 창({{limit}} 토큰)을 초과했습니다. 모델이 전문을 보지 못할 수 있습니다",
       "truncated": "본문이 너무 길어 잘렸습니다",
-      "chipSummary": "전문 요약",
-      "chipSummaryPrompt": "이 글의 전문을 핵심 정보를 유지하며 요약해 주세요.",
-      "chipPoints": "요점 추출",
-      "chipPointsPrompt": "이 글의 요점을 목록으로 추출해 주세요.",
-      "chipTranslate": "전문 번역",
-      "chipTranslatePrompt": "이 글의 본문 전체를 한국어로 번역해 주세요.",
       "sourceLabel": "인용 페이지"
     },
     "modelPicker": {
@@ -89,7 +83,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama 설정",
-    "customPromptSetting": "사용자 정의 프롬프트",
+    "quickCommandSetting": "빠른 명령",
     "customLinkSetting": "빠른 링크 설정",
     "mcp": "도구 / MCP"
   },
@@ -141,16 +135,22 @@
     "linkAddress": "링크 주소",
     "addLink": "링크 추가"
   },
-  "customPromptSetting": {
-    "promptSetting": "프롬프트 설정",
-    "usedForQuickOpen": "/ 입력으로 프롬프트 선택",
-    "prompt": "프롬프트",
-    "inputLabelTip": "프롬프트 약칭 필수",
-    "inputLabelPlaceholder": "짧은 약칭 입력",
-    "inputValueTip": "프롬프트 내용 필수",
-    "inputValuePlaceholder": "전체 프롬프트 입력",
-    "linkAddress": "링크 주소",
-    "addPrompt": "프롬프트 추가"
+  "quickCommandSetting": {
+    "title": "빠른 명령",
+    "description": "대화창에 /를 입력하면 명령을 선택할 수 있습니다. 기본 분류 \"문서 명령\"의 명령은 페이지를 인용하면 버튼으로 표시되며, 클릭하면 바로 전송됩니다.",
+    "categoryNamePlaceholder": "분류 이름",
+    "categoryNameRequired": "분류 이름 필수",
+    "deleteCategory": "분류 삭제",
+    "defaultCategoryTip": "기본 분류는 삭제할 수 없습니다",
+    "addCategory": "분류 추가",
+    "commandTitlePlaceholder": "명령 제목 (간결하게)",
+    "commandTitleRequired": "명령 제목 필수",
+    "commandContentPlaceholder": "명령 내용",
+    "commandContentRequired": "명령 내용 필수",
+    "addCommand": "명령 추가",
+    "emptyCategory": "이 분류에는 아직 명령이 없습니다",
+    "restoreDefault": "기본값 복원",
+    "restored": "기본값으로 복원했습니다. 저장하면 적용됩니다."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama 설정이 성공적으로 저장되었습니다",

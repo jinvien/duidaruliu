@@ -8,7 +8,7 @@ import Chat from '../pages/chat';
 import Setting from '../pages/setting';
 import store from '../store';
 import { toggleTheme, updateAppSettings, initializeApp, type AppState } from '../store/appSlice';
-import { initializePrompts } from '../store/promptSlice';
+import { initializeQuickCommands, setQuickCommands } from '../store/quickCommandSlice';
 import { initializeOllama, setOllamaModelParams, setOllamaUrl } from '../store/ollamaSlice';
 import {
   ACTIVE_CUSTOM_MODEL_STORAGE_KEY,
@@ -149,7 +149,7 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
       dispatch(initializeOllama());
       dispatch(initializeCustomModels());
       dispatch(initializeApp());
-      dispatch(initializePrompts());
+      dispatch(initializeQuickCommands());
       dispatch(initializeMcp());
     })();
     if (!ownsRuntime) {
@@ -165,6 +165,15 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
       })();
     };
   }, [dispatch, ownsRuntime, onRuntimeStop]);
+
+  // 快捷指令在设置里改完，已经打开的聊天页跟着更新。设置页和聊天页可能不在同一份文档里。
+  useEffect(() => {
+    return getChatHost().storage.subscribe((changes, area) => {
+      if (area === 'sync' && changes.quickCommands) {
+        dispatch(setQuickCommands(changes.quickCommands.newValue));
+      }
+    });
+  }, [dispatch]);
 
   useEffect(() => {
     if (!ownsRuntime) return;

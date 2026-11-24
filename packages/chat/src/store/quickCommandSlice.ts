@@ -1,38 +1,37 @@
-import { storageGet, storageSet } from '../host';
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { storageGet } from '../host';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-type PromptState = {
-  label: string;
-  value: string;
-  type: 'system' | 'quick';
+import { normalizeQuickCommands, type QuickCommandCategory } from '../utils/quickCommand';
+
+type QuickCommandState = {
+  categories: QuickCommandCategory[];
 };
 
-const initialState: PromptState[] = [];
+const initialState: QuickCommandState = {
+  categories: [],
+};
 
-// 异步获取存储数据
-export const initializePrompts = createAsyncThunk('prompt/initialize', async () => {
-  const { customPrompts } = await storageGet('sync', 'customPrompts');
-  return customPrompts;
+export const initializeQuickCommands = createAsyncThunk('quickCommand/initialize', async () => {
+  const { quickCommands } = await storageGet('sync', 'quickCommands');
+  return normalizeQuickCommands(quickCommands, navigator.language);
 });
 
-const promptSlice = createSlice({
-  name: 'prompt',
+const quickCommandSlice = createSlice({
+  name: 'quickCommand',
   initialState,
   reducers: {
-    updateCustomPrompts(state, action: PayloadAction<PromptState>) {
-      storageSet('sync', {
-        customPrompts: action.payload,
-      });
-      Object.assign(state, action.payload);
+    /** 设置页保存后，存储变化会通过它同步到已经打开的聊天页。 */
+    setQuickCommands(state, action: PayloadAction<unknown>) {
+      state.categories = normalizeQuickCommands(action.payload, navigator.language);
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(initializePrompts.fulfilled, (state, action) => {
-      Object.assign(state, action.payload);
+    builder.addCase(initializeQuickCommands.fulfilled, (state, action) => {
+      state.categories = action.payload;
     });
   },
 });
 
-export const { updateCustomPrompts } = promptSlice.actions;
+export const { setQuickCommands } = quickCommandSlice.actions;
 
-export default promptSlice;
+export default quickCommandSlice;

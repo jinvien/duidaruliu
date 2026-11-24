@@ -4,7 +4,7 @@ import chatSlice from './chatSlice';
 import ollamaSlice from './ollamaSlice';
 import customModelSlice from './customModelSlice';
 import historySlice from './historySlice';
-import promptSlice from './promptSlice';
+import quickCommandSlice from './quickCommandSlice';
 import mcpSlice from './mcpSlice';
 import pageSlice from './pageSlice';
 
@@ -16,7 +16,7 @@ const store = configureStore({
     ollama: ollamaSlice.reducer,
     customModel: customModelSlice.reducer,
     history: historySlice.reducer,
-    prompt: promptSlice.reducer,
+    quickCommand: quickCommandSlice.reducer,
     mcp: mcpSlice.reducer,
     page: pageSlice.reducer,
   },
