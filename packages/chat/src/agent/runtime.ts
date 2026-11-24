@@ -160,6 +160,7 @@ function currentCustomRequest(custom: CustomModel): CustomStreamRequest {
     translatePostfix: i18n.t('prompt.aiTranslateSelected.postfix'),
     // 翻译场景会带一个低温度覆盖，其余场景不传，交给服务端默认值。
     temperature: modelParamsOverride?.options?.temperature,
+    thinkingEnabled: !state.customModel.thinkingOff.includes(custom.id),
     tracking: { sessionId, qaId },
   };
 }

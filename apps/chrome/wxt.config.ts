@@ -6,6 +6,9 @@ export default defineConfig({
   outDir: 'dist',
   extensionApi: 'chrome',
   modules: ['@wxt-dev/module-react'],
+  runner: {
+    disabled: true,
+  },
   vite: () => ({
     plugins: piMcpBrowserPlugins(),
   }),

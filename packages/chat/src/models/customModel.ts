@@ -34,8 +34,11 @@ export type CustomService = {
   protocol: CustomProtocol;
   /** 附带会话与提问标识请求头和 prompt_cache_key，用于会话亲和与缓存命中。 */
   sessionHeaders: boolean;
-  /** 上下文长度（token）。目前只作为信息记录，不参与请求。 */
-  contextTokens?: number;
+  /**
+   * 可选的上下文窗口（token），从小到大，可以为空。使用时在模型选择里切换其中一个。
+   * 它是客户端的预算，用来判断引用页面是否超限，不会发给模型接口。
+   */
+  contextWindows: number[];
   /** 单次输出上限（token），对应各协议的 max tokens 字段。 */
   maxOutputTokens?: number;
 };
@@ -88,6 +91,7 @@ export function emptyCustomServiceDraft(): CustomServiceDraft {
     customProtocol: false,
     protocol: 'chat_completions',
     sessionHeaders: false,
+    contextWindows: [],
   };
 }
 
@@ -165,6 +169,33 @@ function positiveInt(value: unknown): number | undefined {
   return rounded > 0 ? rounded : undefined;
 }
 
+/** 去掉不合法的值、去重、从小到大排序。 */
+export function cleanContextWindows(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  const sizes = value.map(positiveInt).filter((size): size is number => size !== undefined);
+  return [...new Set(sizes)].sort((a, b) => a - b);
+}
+
+const TOKEN_TEXT = /^(\d+(?:\.\d+)?)\s*([kKmM])?$/;
+
+/** 解析用户输入的 token 数。支持 300K、1M、1048576，K 按 1024 计。 */
+export function parseTokenCount(text: string): number | undefined {
+  const match = TOKEN_TEXT.exec(text.trim());
+  if (!match) return undefined;
+  const unit = match[2]?.toLowerCase();
+  const scale = unit === 'm' ? TOKEN_K * TOKEN_K : unit === 'k' ? TOKEN_K : 1;
+  return positiveInt(Number(match[1]) * scale);
+}
+
+/** 选择值落在可选项里就用它，否则用最大的一档。没有可选项时返回 undefined。 */
+export function resolveContextWindow(
+  windows: readonly number[],
+  choice: number | undefined
+): number | undefined {
+  if (choice !== undefined && windows.includes(choice)) return choice;
+  return windows.length ? Math.max(...windows) : undefined;
+}
+
 function flag(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback;
 }
@@ -191,7 +222,10 @@ export function normalizeCustomService(raw: unknown): CustomService | null {
     customProtocol: flag(value.customProtocol, false),
     protocol,
     sessionHeaders: flag(value.sessionHeaders, false),
-    contextTokens: positiveInt(value.contextTokens),
+    // 旧版本只有一个 contextTokens，当作唯一的可选项。
+    contextWindows: cleanContextWindows(
+      Array.isArray(value.contextWindows) ? value.contextWindows : [value.contextTokens]
+    ),
     maxOutputTokens: positiveInt(value.maxOutputTokens),
   };
 }
@@ -223,7 +257,7 @@ export function draftToCustomService(draft: CustomServiceDraft): CustomService {
     protocol: draft.protocol,
     // 会话头只在自定义协议面板里配置，关掉面板时一并关掉，避免看不见的行为。
     sessionHeaders: draft.customProtocol ? draft.sessionHeaders : false,
-    contextTokens: positiveInt(draft.contextTokens),
+    contextWindows: cleanContextWindows(draft.contextWindows),
     maxOutputTokens: positiveInt(draft.maxOutputTokens),
   };
 }

@@ -91,11 +91,21 @@ async function main() {
   const { setMessages } = await import('../src/store/chatSlice.ts');
   const { setOllamaModelParams, setOllamaUrl } = await import('../src/store/ollamaSlice.ts');
   const { setMcpToolsEnabled } = await import('../src/store/mcpSlice.ts');
-  const { hydrateCustomModels, saveCustomService, setActiveCustomModel, removeCustomService } =
-    await import('../src/store/customModelSlice.ts');
-  const { selectBackendReady, selectSelectedModelKey, selectSelectedModelLabel } = await import(
-    '../src/models/selection.ts'
-  );
+  const {
+    hydrateCustomModels,
+    saveCustomService,
+    setActiveCustomModel,
+    removeCustomService,
+    setCustomModelThinking,
+    setCustomModelContext,
+  } = await import('../src/store/customModelSlice.ts');
+  const {
+    selectActiveContextWindow,
+    selectBackendReady,
+    selectSelectedModelKey,
+    selectSelectedModelLabel,
+  } = await import('../src/models/selection.ts');
+  const { selectContextLimit } = await import('../src/page/contextLimit.ts');
   const runtime = await import('../src/agent/runtime.ts');
 
   store.dispatch(setOllamaUrl('http://127.0.0.1:11434'));
@@ -143,6 +153,7 @@ async function main() {
     customProtocol: true,
     protocol: 'chat_completions' as const,
     sessionHeaders: true,
+    contextWindows: [307200, 614400, 983040],
   };
 
   // 没有自定义模型时走 Ollama。
@@ -302,6 +313,54 @@ async function main() {
   equal(calls[switched].headers.Authorization, 'Bearer sk-test', 'same key');
   equal(store.getState().chat.messages.at(-1)?.model, 'model-b', 'message records the model name');
 
+  // 选择模型时关掉思考：开关按模型保存、会持久化，只有声明了思考模式的服务才会带参数。
+  await store.dispatch(saveCustomService({ ...custom, tools: false, thinking: true }));
+  await store.dispatch(setCustomModelThinking('s1::model-b', false));
+  equal(
+    store.getState().customModel.thinkingOff,
+    ['s1::model-b'],
+    'thinking switched off for model-b'
+  );
+  equal(
+    (await storage.get('local', 'customThinkingOff')).customThinkingOff,
+    ['s1::model-b'],
+    'thinking switch is persisted'
+  );
+  runtime.resetAgentTranscript();
+  store.dispatch(setMessages({ messages: [{ role: 'user', content: '别想', createdAt: 8 }] }));
+  script = [reply(text('好'))];
+  const thinkOff = calls.length;
+  await withTimeout(runtime.startAssistantTurn());
+  equal(calls[thinkOff].body.reasoning_effort, 'no_think', 'switched-off model sends no_think');
+
+  await store.dispatch(setActiveCustomModel('s1::model-a'));
+  runtime.resetAgentTranscript();
+  store.dispatch(setMessages({ messages: [{ role: 'user', content: '想想', createdAt: 9 }] }));
+  script = [reply(text('好'))];
+  const thinkOn = calls.length;
+  await withTimeout(runtime.startAssistantTurn());
+  equal(calls[thinkOn].body.reasoning_effort, 'high', 'the other model keeps thinking on');
+  await store.dispatch(setActiveCustomModel('s1::model-b'));
+
+  // 上下文窗口：配置多档，使用时选其中一档；没选过按最大一档，选择按模型保存。
+  equal(selectActiveContextWindow(store.getState()), 983040, 'default is the largest window');
+  equal(selectContextLimit(store.getState()), 983040, 'page limit follows the largest window');
+  await store.dispatch(setCustomModelContext('s1::model-b', 614400));
+  equal(selectActiveContextWindow(store.getState()), 614400, 'chosen window is used');
+  equal(selectContextLimit(store.getState()), 614400, 'page limit follows the chosen window');
+  equal(
+    (await storage.get('local', 'customContextChoice')).customContextChoice,
+    { 's1::model-b': 614400 },
+    'context choice is persisted'
+  );
+  // 编辑服务把选中的那档去掉后，退回最大一档，不会卡在一个已不存在的值上。
+  await store.dispatch(
+    saveCustomService({ ...custom, tools: false, thinking: true, contextWindows: [307200] })
+  );
+  equal(selectActiveContextWindow(store.getState()), 307200, 'removed choice falls back');
+  await store.dispatch(saveCustomService({ ...custom, tools: false, thinking: true }));
+  await store.dispatch(setCustomModelContext('s1::model-b', 307200));
+
   // 编辑服务时删掉了当前正在用的模型：选择被清掉，不会指向不存在的模型。
   await store.dispatch(saveCustomService({ ...custom, tools: false, models: ['model-a'] }));
   equal(store.getState().customModel.activeId, null, 'removed active model clears the selection');
@@ -309,6 +368,22 @@ async function main() {
     (await storage.get('local', 'activeCustomModelId')).activeCustomModelId,
     null,
     'cleared selection is persisted'
+  );
+  equal(
+    store.getState().customModel.contextChoice,
+    {},
+    'context choice of a removed model is dropped'
+  );
+  equal(
+    (await storage.get('local', 'customContextChoice')).customContextChoice,
+    {},
+    'dropped context choice is persisted'
+  );
+  equal(store.getState().customModel.thinkingOff, [], 'switch of a removed model is dropped');
+  equal(
+    (await storage.get('local', 'customThinkingOff')).customThinkingOff,
+    [],
+    'dropped switch is persisted'
   );
   await store.dispatch(setActiveCustomModel('s1::model-b'));
   equal(store.getState().customModel.activeId, null, 'cannot select a model that no longer exists');

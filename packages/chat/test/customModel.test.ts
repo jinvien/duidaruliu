@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import {
+  cleanContextWindows,
   cleanModelNames,
   customModelId,
   customModelIdFromKey,
@@ -12,7 +13,10 @@ import {
   inferProtocol,
   isCustomModelKey,
   modelsListUrl,
+  normalizeCustomService,
   normalizeStoredCustomServices,
+  parseTokenCount,
+  resolveContextWindow,
   validateCustomService,
 } from '../src/models/customModel';
 import { parseSseBlock } from '../src/utils/sseFetch';
@@ -119,7 +123,7 @@ equal(cleanModelNames('a'), [], 'non-array');
     models: [' gpt-4o ', 'gpt-4o-mini', 'gpt-4o'],
     customProtocol: false,
     sessionHeaders: true,
-    contextTokens: 131072.9,
+    contextWindows: [614400, 307200.7, 983040, 307200, -1, 0],
     maxOutputTokens: -5,
   });
   assert(service.id.length > 0, 'id is generated');
@@ -133,7 +137,11 @@ equal(cleanModelNames('a'), [], 'non-array');
     false,
     'session headers are dropped while the protocol panel is closed'
   );
-  equal(service.contextTokens, 131072, 'token counts are floored');
+  equal(
+    service.contextWindows,
+    [307200, 614400, 983040],
+    'context windows are floored, de-duplicated, sorted and stripped of invalid values'
+  );
   equal(service.maxOutputTokens, undefined, 'non-positive token counts are dropped');
   equal(
     draftToCustomService({ ...service, customProtocol: true, sessionHeaders: true }).sessionHeaders,
@@ -211,6 +219,37 @@ equal(formatTokens(1024 * 1024), '1024K', '1M is shown as 1024K like the docs');
 equal(formatTokens(32 * 1024), '32K', '32K');
 equal(formatTokens(1000), '1000', 'non-K value');
 equal(formatTokens(undefined), '', 'empty');
+
+// 上下文窗口：输入解析、旧数据迁移、选择回退。
+equal(parseTokenCount('300K'), 307200, 'K is 1024');
+equal(parseTokenCount(' 960k '), 983040, 'lower case and spaces');
+equal(parseTokenCount('1M'), 1048576, 'M');
+equal(parseTokenCount('1048576'), 1048576, 'plain number');
+equal(parseTokenCount('0.5K'), 512, 'fraction');
+equal(parseTokenCount('abc'), undefined, 'not a number');
+equal(parseTokenCount('-3K'), undefined, 'negative');
+equal(parseTokenCount(''), undefined, 'empty input');
+equal(cleanContextWindows('x'), [], 'non-array context windows');
+equal(emptyCustomServiceDraft().contextWindows, [], 'draft starts without context windows');
+{
+  const base = { id: 'a', url: 'https://a.com/v1/chat/completions', models: ['m'] };
+  equal(
+    normalizeCustomService({ ...base, contextTokens: 131072 })?.contextWindows,
+    [131072],
+    'legacy single context value becomes the only option'
+  );
+  equal(
+    normalizeCustomService({ ...base, contextWindows: [2048, 1024], contextTokens: 1 })
+      ?.contextWindows,
+    [1024, 2048],
+    'new field wins over the legacy one'
+  );
+  equal(normalizeCustomService(base)?.contextWindows, [], 'none configured');
+}
+equal(resolveContextWindow([300, 600, 960], 600), 600, 'chosen value is used');
+equal(resolveContextWindow([300, 600, 960], 777), 960, 'unknown choice falls back to the largest');
+equal(resolveContextWindow([300, 600, 960], undefined), 960, 'no choice uses the largest');
+equal(resolveContextWindow([], 600), undefined, 'no options');
 
 // SSE 块解析。
 equal(parseSseBlock('event: a\ndata: {"x":1}'), { event: 'a', data: '{"x":1}' }, 'event + data');

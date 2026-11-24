@@ -47,12 +47,6 @@
   }
 }
 
-.modelSelect {
-  &:global(.ant-select.ant-select-borderless):not(:global(.ant-select-disabled)):has(input:focus-visible),
-  &:global(.ant-select.ant-select-borderless):not(:global(.ant-select-disabled)):has(textarea:focus-visible) {
-    outline: none;
-  }
-}
 
 .serviceRow {
   flex: 1 0 100%;
@@ -73,6 +67,17 @@
     height: 100%;
     min-height: 0;
     padding: var(--ant-padding-sm) 0;
+  }
+}
+
+// 插件侧边栏很窄。Bubble.List 给左侧气泡预留了 15% 的右侧空白，这里铺满可用宽度。
+:global(.chat-shell-compact .ant-bubble-list .ant-bubble-start:not(.ant-bubble-divider):not(.ant-bubble-system)) {
+  padding-inline-end: 0;
+
+  :global(.ant-bubble-body) {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
   }
 }
 .userContentPre {
@@ -113,8 +118,113 @@
 .modelOption {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--ant-padding-xs);
+}
+
+.modelName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 输入框下方的模型选择
+.pickerTrigger {
+  max-width: 100%;
+  gap: var(--ant-margin-xxs);
+  color: var(--ant-color-text-secondary);
+}
+
+.pickerTriggerText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerArrow {
+  font-size: 10px;
+}
+
+.pickerDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ant-color-text-quaternary);
+}
+
+.pickerDotOnline {
+  background: var(--ant-color-success);
+}
+
+.pickerPanel {
+  width: min(320px, calc(100vw - 32px));
+  padding: var(--ant-padding-xxs);
+  border-radius: var(--ant-border-radius-lg);
+  background: var(--ant-color-bg-elevated);
+  box-shadow: var(--ant-box-shadow-secondary);
+}
+
+.pickerList {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.pickerGroup {
+  padding: var(--ant-padding-xxs) var(--ant-padding-xs);
+  font-size: var(--ant-font-size-sm);
+  color: var(--ant-color-text-description);
+}
+
+.pickerItem {
+  display: flex;
+  align-items: center;
+  gap: var(--ant-padding-xs);
+  width: 100%;
+  padding: var(--ant-padding-xs);
+  border: none;
+  border-radius: var(--ant-border-radius);
+  background: transparent;
+  color: var(--ant-color-text);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--ant-color-fill-tertiary);
+  }
+}
+
+.pickerItemActive {
+  background: var(--ant-color-fill-quaternary);
+  font-weight: 600;
+}
+
+.pickerCheck {
+  flex: none;
+  width: 14px;
+  color: var(--ant-color-primary);
+}
+
+.pickerSettings {
+  margin-top: var(--ant-margin-xxs);
+  padding: var(--ant-padding-xs);
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+.pickerSetting {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--ant-padding-xs);
+  min-height: 28px;
+  font-size: var(--ant-font-size-sm);
+}
+
+.pickerValue {
+  color: var(--ant-color-text-secondary);
 }
 
 .modelVision {

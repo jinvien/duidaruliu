@@ -69,6 +69,19 @@
       "chipTranslate": "Traduire",
       "chipTranslatePrompt": "Traduis le texte complet de cet article en français.",
       "sourceLabel": "Page citée"
+    },
+    "modelPicker": {
+      "title": "Choisir un modèle",
+      "empty": "Choisir un modèle",
+      "thinking": "Réflexion",
+      "thinkingOn": "Activée",
+      "thinkingOff": "Désactivée",
+      "thinkingOffShort": "Sans réflexion",
+      "thinkingDefault": "Par défaut du service",
+      "thinkingUndeclared": "Ce service n'a pas déclaré le mode réflexion, les requêtes n'envoient donc aucun paramètre de réflexion. Activez-le dans les réglages pour le changer ici.",
+      "context": "Fenêtre de contexte",
+      "contextUnset": "Non défini",
+      "contextHint": "Budget de contexte côté client pour vérifier si une page citée est trop longue. Il n'est pas envoyé à l'API du modèle"
     }
   },
   "links": {

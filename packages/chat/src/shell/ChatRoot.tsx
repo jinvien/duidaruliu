@@ -14,6 +14,8 @@ import {
   ACTIVE_CUSTOM_MODEL_STORAGE_KEY,
   CUSTOM_SERVICES_STORAGE_KEY,
   hydrateCustomModels,
+  THINKING_OFF_STORAGE_KEY,
+  CONTEXT_CHOICE_STORAGE_KEY,
   initializeCustomModels,
 } from '../store/customModelSlice';
 import { selectCombinedModels, selectSelectedModelKey } from '../models/selection';
@@ -65,13 +67,19 @@ const SidePanelMain: React.FC<{ setAppMode: SetAppMode; appMode: AppMode }> = ({
       if (area === 'local') {
         const services = changes[CUSTOM_SERVICES_STORAGE_KEY];
         const active = changes[ACTIVE_CUSTOM_MODEL_STORAGE_KEY];
-        if (services || active) {
+        const thinkingOff = changes[THINKING_OFF_STORAGE_KEY];
+        const contextChoice = changes[CONTEXT_CHOICE_STORAGE_KEY];
+        if (services || active || thinkingOff || contextChoice) {
           dispatch(
             hydrateCustomModels({
               services: services?.newValue,
               activeId: active?.newValue,
+              thinkingOff: thinkingOff?.newValue,
               hasServices: Boolean(services),
               hasActive: Boolean(active),
+              hasThinkingOff: Boolean(thinkingOff),
+              contextChoice: contextChoice?.newValue,
+              hasContextChoice: Boolean(contextChoice),
             })
           );
         }

@@ -32,6 +32,7 @@ import {
   selectSelectedModelKey,
 } from '../../../models/selection';
 
+import ModelPicker from './ModelPicker';
 import ToolApprovalCard from './ToolApproval';
 import PageRefCard, { type PageChip } from './PageRefCard';
 
@@ -322,6 +323,7 @@ const ChatSender: FC = () => {
               loading={stopVisible}
               submitType="enter"
               value={userContent}
+              footer={<ModelPicker />}
               prefix={
                 showAttach || canCapturePage ? (
                   <Flex gap="small">

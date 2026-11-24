@@ -77,6 +77,19 @@
       "chipTranslate": "Translate",
       "chipTranslatePrompt": "Please translate the full text of this article into English.",
       "sourceLabel": "Quoted page"
+    },
+    "modelPicker": {
+      "title": "Select model",
+      "empty": "Select model",
+      "thinking": "Thinking",
+      "thinkingOn": "On",
+      "thinkingOff": "Off",
+      "thinkingOffShort": "No thinking",
+      "thinkingDefault": "Service default",
+      "thinkingUndeclared": "This service has not declared thinking mode, so requests carry no thinking parameter. Enable \"Thinking mode\" in settings to switch it here.",
+      "context": "Context window",
+      "contextUnset": "Not set",
+      "contextHint": "Client-side context budget used to check whether a referenced page is too long. It is not sent to the model API"
     }
   },
   "links": {
@@ -221,10 +234,8 @@
     "protocol": "Protocol",
     "sessionHeaders": "Send session identifiers",
     "sessionHeadersExtra": "Sends X-Session-Id, X-QA-Id and X-Model-Request-Id headers plus prompt_cache_key for session affinity and cache hits. Leave off if the service does not support them.",
-    "input": "Input",
     "output": "Output",
     "providerDefault": "Use provider default",
-    "inputExtra": "Context length, for reference only",
     "outputExtra": "Max tokens per reply",
     "cancel": "Cancel",
     "save": "Save",
@@ -233,6 +244,9 @@
     "deleteConfirm": "Delete service {{name}} and all its models?",
     "listHint": "Click a model name to switch to it",
     "modelNameExtra": "Press Enter to add more than one. Once the URL and key are filled in, you can pick from the service's model list.",
-    "sharedHint": "These settings apply to every model of this service. Add models with different capabilities separately."
+    "sharedHint": "These settings apply to every model of this service. Add models with different capabilities separately.",
+    "context": "Context window",
+    "contextExtra": "Enter several values separated by Enter, such as 300K, 600K, 960K. Switch between them in the model picker. This is a client-side budget and is not sent to the model API",
+    "contextPlaceholder": "e.g. 300K, 600K, 960K"
   }
 }

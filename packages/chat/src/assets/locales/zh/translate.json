@@ -77,6 +77,19 @@
       "chipTranslate": "翻译全文",
       "chipTranslatePrompt": "请把这篇文章的正文完整翻译成中文。",
       "sourceLabel": "引用页面"
+    },
+    "modelPicker": {
+      "title": "选择模型",
+      "empty": "选择模型",
+      "thinking": "思考",
+      "thinkingOn": "开启",
+      "thinkingOff": "关闭",
+      "thinkingOffShort": "不思考",
+      "thinkingDefault": "服务默认",
+      "thinkingUndeclared": "这个服务没有声明思考模式，请求不会带思考参数。在设置里勾选「思考模式」后可在这里开关。",
+      "context": "上下文窗口",
+      "contextUnset": "未设置",
+      "contextHint": "客户端上下文预算，用于判断引用页面是否超限，不会发给模型接口"
     }
   },
   "links": {
@@ -217,10 +230,8 @@
     "protocol": "协议",
     "sessionHeaders": "附带会话标识",
     "sessionHeadersExtra": "发送 X-Session-Id、X-QA-Id、X-Model-Request-Id 请求头和 prompt_cache_key，用于会话亲和与缓存命中，服务不支持时请保持关闭",
-    "input": "输入",
     "output": "输出",
     "providerDefault": "使用提供商默认值",
-    "inputExtra": "上下文长度，仅作记录",
     "outputExtra": "单次最多输出的 token 数",
     "cancel": "取消",
     "save": "保存",
@@ -229,6 +240,9 @@
     "deleteConfirm": "删除服务 {{name}} 及其下所有模型？",
     "listHint": "点击模型名即可切换使用",
     "modelNameExtra": "输入后回车，可添加多个；填好地址和 Key 后可从服务的模型列表里选",
-    "sharedHint": "以上能力对该服务下的所有模型生效，能力不同的模型请分开添加"
+    "sharedHint": "以上能力对该服务下的所有模型生效，能力不同的模型请分开添加",
+    "context": "上下文窗口",
+    "contextExtra": "可填多个，回车分隔，如 300K、600K、960K。使用时在模型选择里切换。这是客户端预算，不会发给模型接口",
+    "contextPlaceholder": "例如 300K、600K、960K"
   }
 }

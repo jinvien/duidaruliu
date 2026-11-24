@@ -69,6 +69,19 @@
       "chipTranslate": "全文を翻訳",
       "chipTranslatePrompt": "この記事の本文全体を日本語に翻訳してください。",
       "sourceLabel": "引用ページ"
+    },
+    "modelPicker": {
+      "title": "モデルを選択",
+      "empty": "モデルを選択",
+      "thinking": "思考",
+      "thinkingOn": "オン",
+      "thinkingOff": "オフ",
+      "thinkingOffShort": "思考なし",
+      "thinkingDefault": "サービス既定",
+      "thinkingUndeclared": "このサービスは思考モードを宣言していないため、リクエストに思考パラメータは含まれません。設定で「思考モード」を有効にすると、ここで切り替えられます。",
+      "context": "コンテキストウィンドウ",
+      "contextUnset": "未設定",
+      "contextHint": "参照ページが長すぎないか判定するためのクライアント側の予算です。モデル API には送信されません"
     }
   },
   "links": {

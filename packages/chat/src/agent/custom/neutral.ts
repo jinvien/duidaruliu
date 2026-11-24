@@ -36,10 +36,33 @@ export type CustomStreamRequest = {
   translateSystemPrompt: string;
   translatePostfix: string;
   temperature?: number;
+  /** 用户在选择模型时的思考开关。只在服务声明了思考模式时才有意义，缺省视为开启。 */
+  thinkingEnabled?: boolean;
   /** 会话与提问标识。只有模型打开 sessionHeaders 时才会写进请求。 */
   tracking?: Tracking;
   fetchImpl?: typeof fetch;
 };
+
+export function isOfficialOpenAi(url: string): boolean {
+  try {
+    return new URL(url).hostname === 'api.openai.com';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * default：服务没声明思考模式，请求里不带任何思考参数，交给服务端默认值。
+ * on / off：服务声明了思考模式，请求里显式带上开启或关闭的参数。
+ */
+export type ThinkingMode = 'default' | 'on' | 'off';
+
+export function thinkingMode(
+  request: Pick<CustomStreamRequest, 'model' | 'thinkingEnabled'>
+): ThinkingMode {
+  if (!request.model.thinking) return 'default';
+  return request.thinkingEnabled === false ? 'off' : 'on';
+}
 
 function userImages(message: Message): NeutralImage[] {
   if (message.role !== 'user' || typeof message.content === 'string') return [];

@@ -69,6 +69,19 @@
       "chipTranslate": "전문 번역",
       "chipTranslatePrompt": "이 글의 본문 전체를 한국어로 번역해 주세요.",
       "sourceLabel": "인용 페이지"
+    },
+    "modelPicker": {
+      "title": "모델 선택",
+      "empty": "모델 선택",
+      "thinking": "사고",
+      "thinkingOn": "켜기",
+      "thinkingOff": "끄기",
+      "thinkingOffShort": "사고 안 함",
+      "thinkingDefault": "서비스 기본값",
+      "thinkingUndeclared": "이 서비스는 사고 모드를 선언하지 않아 요청에 사고 파라미터가 포함되지 않습니다. 설정에서 '사고 모드'를 켜면 여기서 전환할 수 있습니다.",
+      "context": "컨텍스트 창",
+      "contextUnset": "설정 안 됨",
+      "contextHint": "참조한 페이지가 너무 긴지 판단하는 클라이언트 측 컨텍스트 예산입니다. 모델 API로 전송되지 않습니다"
     }
   },
   "links": {

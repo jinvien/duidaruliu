@@ -69,6 +69,19 @@
       "chipTranslate": "Traducir",
       "chipTranslatePrompt": "Traduce el texto completo de este artículo al español.",
       "sourceLabel": "Página citada"
+    },
+    "modelPicker": {
+      "title": "Seleccionar modelo",
+      "empty": "Seleccionar modelo",
+      "thinking": "Razonamiento",
+      "thinkingOn": "Activado",
+      "thinkingOff": "Desactivado",
+      "thinkingOffShort": "Sin razonar",
+      "thinkingDefault": "Predeterminado del servicio",
+      "thinkingUndeclared": "Este servicio no ha declarado el modo de razonamiento, así que las solicitudes no llevan ese parámetro. Actívalo en los ajustes para cambiarlo aquí.",
+      "context": "Ventana de contexto",
+      "contextUnset": "Sin definir",
+      "contextHint": "Presupuesto de contexto del cliente para comprobar si una página citada es demasiado larga. No se envía a la API del modelo"
     }
   },
   "links": {

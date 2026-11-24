@@ -1,5 +1,7 @@
 import {
   dataUrl,
+  isOfficialOpenAi,
+  thinkingMode,
   type CustomStreamRequest,
   type NeutralMessage,
   type NeutralTool,
@@ -7,14 +9,6 @@ import {
 import { obj, parseEventData, str, type ChunkSink, type FinishReason } from './core';
 
 import type { SseEvent } from '../../utils/sseFetch';
-
-function isOfficialOpenAi(url: string): boolean {
-  try {
-    return new URL(url).hostname === 'api.openai.com';
-  } catch {
-    return false;
-  }
-}
 
 function wireMessage(message: NeutralMessage, request: CustomStreamRequest) {
   if (message.role === 'system') return { role: 'system', content: message.text };
@@ -39,8 +33,10 @@ function wireMessage(message: NeutralMessage, request: CustomStreamRequest) {
       // 只有工具调用时，部分网关要求 content 为 null 而不是空串。
       content: message.text || (message.toolCalls.length ? null : ''),
     };
-    // 慢思考下的工具调用需要每一轮回填历史 reasoning_content。只对声明了思考的模型回填。
-    if (request.model.thinking && message.thinking) wire.reasoning_content = message.thinking;
+    // 慢思考下的工具调用需要每一轮回填历史 reasoning_content。只在思考开启时回填。
+    if (thinkingMode(request) === 'on' && message.thinking) {
+      wire.reasoning_content = message.thinking;
+    }
     if (message.toolCalls.length) {
       wire.tool_calls = message.toolCalls.map((call) => ({
         id: call.id,
@@ -71,7 +67,11 @@ export function buildChatCompletionsBody(
     body[isOfficialOpenAi(model.url) ? 'max_completion_tokens' : 'max_tokens'] =
       model.maxOutputTokens;
   }
-  if (model.thinking) body.reasoning_effort = 'high';
+  const thinking = thinkingMode(request);
+  if (thinking === 'on') body.reasoning_effort = 'high';
+  // 混元的关闭值是 no_think，OpenAI 官方是 none。
+  else if (thinking === 'off')
+    body.reasoning_effort = isOfficialOpenAi(model.url) ? 'none' : 'no_think';
   if (model.sessionHeaders && request.tracking) body.prompt_cache_key = request.tracking.sessionId;
   if (tools.length) {
     body.tools = tools.map((tool) => ({

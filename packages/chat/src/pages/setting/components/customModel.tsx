@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchRemoteModelIds, testCustomModelConnection } from '../../../agent/customStream';
 import {
   TOKEN_K,
+  cleanContextWindows,
   cleanModelNames,
   draftToCustomService,
   effectiveProtocol,
@@ -27,6 +28,7 @@ import {
   formatTokens,
   isValidModelUrl,
   modelsListUrl,
+  parseTokenCount,
   validateCustomService,
   type CustomProtocol,
   type CustomService,
@@ -47,8 +49,27 @@ const PROTOCOL_LABEL: Record<CustomProtocol, string> = {
   messages: 'Claude Messages',
 };
 
-const INPUT_CHIPS = [32, 64, 128, 256];
+const CONTEXT_CHIPS = [128, 256, 512, 1024];
 const OUTPUT_CHIPS = [8, 16, 32, 64];
+
+/** 可以输入多个上下文窗口，回车或逗号分隔，支持 300K、1M、1048576 这类写法。 */
+const ContextWindowsInput: React.FC<{
+  value?: number[];
+  onChange?: (value: number[]) => void;
+  placeholder?: string;
+}> = ({ value = [], onChange, placeholder }) => (
+  <Select
+    mode="tags"
+    open={false}
+    suffixIcon={null}
+    tokenSeparators={[',', ' ', '、', '\n']}
+    value={value.map(formatTokens)}
+    placeholder={placeholder}
+    onChange={(items: string[]) =>
+      onChange?.(cleanContextWindows(items.map((item) => parseTokenCount(item))))
+    }
+  />
+);
 
 function serviceTitle(url: string): string {
   try {
@@ -129,14 +150,28 @@ const ServiceDialog: React.FC<{
     }
   };
 
-  const chips = (values: number[], field: 'contextTokens' | 'maxOutputTokens') => (
+  const chips = (values: number[], field: 'contextWindows' | 'maxOutputTokens') => (
     <div className={Styles.chips}>
       {values.map((value) => (
         <Button
           key={value}
           size="small"
           type="text"
-          onClick={() => form.setFieldValue(field, value * TOKEN_K)}
+          onClick={() => {
+            const tokens = value * TOKEN_K;
+            if (field === 'maxOutputTokens') {
+              form.setFieldValue(field, tokens);
+              return;
+            }
+            // 上下文窗口可以多选，再点一次取消。
+            const picked = cleanContextWindows(form.getFieldValue(field));
+            form.setFieldValue(
+              field,
+              picked.includes(tokens)
+                ? picked.filter((item) => item !== tokens)
+                : cleanContextWindows([...picked, tokens])
+            );
+          }}
         >
           {value}K
         </Button>
@@ -262,19 +297,13 @@ const ServiceDialog: React.FC<{
         <div className={Styles.limits}>
           <div>
             <Form.Item
-              name="contextTokens"
-              label={t('customModel.input')}
-              extra={t('customModel.inputExtra')}
+              name="contextWindows"
+              label={t('customModel.context')}
+              extra={t('customModel.contextExtra')}
             >
-              <InputNumber
-                min={1}
-                precision={0}
-                controls={false}
-                style={{ width: '100%' }}
-                placeholder={t('customModel.providerDefault')}
-              />
+              <ContextWindowsInput placeholder={t('customModel.contextPlaceholder')} />
             </Form.Item>
-            {chips(INPUT_CHIPS, 'contextTokens')}
+            {chips(CONTEXT_CHIPS, 'contextWindows')}
           </div>
           <div>
             <Form.Item
@@ -356,9 +385,10 @@ const CustomModelSetting: React.FC = () => {
                 {service.tools ? <Tag>{t('chat.tools')}</Tag> : null}
                 {service.vision ? <Tag>{t('chat.vision')}</Tag> : null}
                 {service.thinking ? <Tag>{t('customModel.thinking')}</Tag> : null}
-                {service.contextTokens ? (
+                {service.contextWindows.length ? (
                   <Tag>
-                    {t('customModel.input')} {formatTokens(service.contextTokens)}
+                    {t('customModel.context')}{' '}
+                    {service.contextWindows.map(formatTokens).join(' / ')}
                   </Tag>
                 ) : null}
                 {service.maxOutputTokens ? (
