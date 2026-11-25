@@ -23,6 +23,7 @@ import { dropLastAssistantTurn } from '../../../utils/chatTurn';
 import { groupChatBlocks, readableToolName, type AssistantSegment } from '../../../utils/chatView';
 
 // import utils
+import { prepareAssistantMarkdown } from '../../../utils/assistantMarkdown';
 import { copyToClipboard } from '../../../utils/copyToClipboard';
 
 // import styles
@@ -45,6 +46,85 @@ const ChatBubbleImage: React.FC<{ src: string }> = ({ src }) => {
   if (!visible) return null;
   return <img src={src} alt="" className={Styles.userImage} onError={() => setVisible(false)} />;
 };
+
+/**
+ * 长回复会每帧更新最后一条。已经写完的正文内容没变，就不能再走一遍 Markdown 解析。
+ * 切换语言时，这里的 useTranslation 会自己刷新文案。
+ */
+const MarkdownBody = React.memo(function MarkdownBody({
+  content,
+  isDarkMode,
+}: {
+  content: string;
+  isDarkMode: boolean;
+}) {
+  const { message: antdMessage } = AntdApp.useApp();
+  const { t } = useTranslation();
+  const processedContent = prepareAssistantMarkdown(content);
+
+  try {
+    return (
+      <ReactMarkdown
+        className={Styles.messageRender}
+        children={processedContent}
+        rehypePlugins={[rehypeRaw]}
+        remarkPlugins={[remarkGfm]}
+        components={{
+          table({ children }) {
+            return (
+              <div className={Styles.tableScroll}>
+                <table>{children}</table>
+              </div>
+            );
+          },
+          // rehype-raw 会把模型输出的 think 标签交给这个自定义渲染。
+          // @ts-expect-error think 不是 Markdown 的内置标签。
+          think: ({ children: thought }: { children?: React.ReactNode }) => (
+            <Think title={t('chat.thinkDone')} defaultExpanded={false} blink={false}>
+              {thought}
+            </Think>
+          ),
+
+          code({ className, children, node, style, ...rest }) {
+            const match = /language-(\w+)/.exec(className || '');
+            const language = className?.replace('language-', '');
+            const childrenString = String(children).replace(/\n$/, '');
+            const themeStyle = isDarkMode ? oneDark : oneLight;
+
+            return match ? (
+              <div className={Styles.codeBlock}>
+                <Button
+                  className={Styles.codeBlockCopy}
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => {
+                    copyToClipboard(childrenString);
+                    antdMessage.success(t('chat.codeCopy'));
+                  }}
+                />
+                <Highlighter language={language} style={themeStyle} children={childrenString} />
+              </div>
+            ) : (
+              <code
+                {...rest}
+                className={className}
+                style={{
+                  background: 'var(--ant-color-bg-layout)',
+                  padding: '2px var(--ant-padding-xs) ',
+                  borderRadius: '4px',
+                }}
+              >
+                {children}
+              </code>
+            );
+          },
+        }}
+      />
+    );
+  } catch {
+    return t('chat.renderError');
+  }
+});
 
 const ChatContent: React.FC = () => {
   // tools
@@ -71,81 +151,6 @@ const ChatContent: React.FC = () => {
       })
     );
     await sendMessage();
-  };
-
-  const renderMarkdown = (content: string) => {
-    // 预处理函数
-    const escapeThinkContent = (raw: string) => {
-      return (
-        raw
-          // 处理已闭合的 think 标签
-          .replace(/<think>([\s\S]*?)<\/think>/g, (_, content) => {
-            return `<think>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</think>`;
-          })
-          // 处理未闭合的 think 标签（流式场景）
-          .replace(/<think>([\s\S]*?)(?=<think>|<\/think>|$)/g, (_, content) => {
-            return `<think>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}`;
-          })
-      );
-    };
-
-    const processedContent = escapeThinkContent(content);
-
-    try {
-      return (
-        <ReactMarkdown
-          className={Styles.messageRender}
-          children={processedContent}
-          rehypePlugins={[rehypeRaw]}
-          remarkPlugins={[remarkGfm]}
-          components={{
-            // rehype-raw 会把模型输出的 think 标签交给这个自定义渲染。
-            // @ts-expect-error think 不是 Markdown 的内置标签。
-            think: ({ children: thought }: { children?: React.ReactNode }) => (
-              <Think title={t('chat.thinkDone')} defaultExpanded={false} blink={false}>
-                {thought}
-              </Think>
-            ),
-
-            code({ node, className, children, style, ...rest }) {
-              const match = /language-(\w+)/.exec(className || '');
-              const language = className?.replace('language-', '');
-              const childrenString = String(children).replace(/\n$/, '');
-              const themeStyle = isDarkMode ? oneDark : oneLight;
-
-              return match ? (
-                <div className={Styles.codeBlock}>
-                  <Button
-                    className={Styles.codeBlockCopy}
-                    size="small"
-                    icon={<CopyOutlined />}
-                    onClick={() => {
-                      copyToClipboard(childrenString);
-                      antdMessage.success(t('chat.codeCopy'));
-                    }}
-                  />
-                  <Highlighter language={language} style={themeStyle} children={childrenString} />
-                </div>
-              ) : (
-                <code
-                  {...rest}
-                  className={className}
-                  style={{
-                    background: 'var(--ant-color-bg-layout)',
-                    padding: '2px var(--ant-padding-xs) ',
-                    borderRadius: '4px',
-                  }}
-                >
-                  {children}
-                </code>
-              );
-            },
-          }}
-        />
-      );
-    } catch {
-      return t('chat.renderError');
-    }
   };
 
   const userContentRender = (
@@ -190,7 +195,6 @@ const ChatContent: React.FC = () => {
       placement: 'start',
       shape: 'corner',
       variant: 'outlined',
-      contentRender: (content) => (typeof content === 'string' ? renderMarkdown(content) : content),
     },
     user: {
       placement: 'end',
@@ -237,7 +241,9 @@ const ChatContent: React.FC = () => {
                   <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{thinking}</p>
                 </Think>
               ) : null}
-              {segment.text ? renderMarkdown(segment.text) : null}
+              {segment.text ? (
+                <MarkdownBody content={segment.text} isDarkMode={isDarkMode} />
+              ) : null}
             </div>
           );
         }
@@ -335,7 +341,6 @@ const ChatContent: React.FC = () => {
                 key: `assistant-${block.lastIndex}`,
                 role: 'assistant' as const,
                 content: renderAssistantBody(segments, thinkingLive),
-                contentRender: (content: React.ReactNode) => content,
                 loadingRender: () => <Badge status="processing" className="loadingDot" />,
                 loading: waiting && !hasVisibleText && !pendingTool,
                 header: renderHeader('assistant', block.model || selectedModel),

@@ -103,9 +103,127 @@
 }
 
 .messageRender {
+  // 气泡上的 break-word 会继承下来，表格列会被压到最窄。
+  word-break: normal;
+  overflow-wrap: break-word;
+
   p {
     margin: var(--ant-padding-xs) 0;
   }
+
+  ul,
+  ol {
+    margin: var(--ant-padding-xs) 0;
+    padding-inline-start: 1.5em;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  // 浏览器默认引用左右各缩进 40px，窄侧边栏里正文会被挤到提前换行。
+  blockquote {
+    margin: var(--ant-padding-xs) 0;
+    padding: 6px 10px 6px 12px;
+    border-inline-start: 3px solid var(--ant-color-text-quaternary);
+    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
+    background: var(--ant-color-fill-quaternary);
+
+    > p {
+      margin: 0;
+    }
+
+    > p + p {
+      margin-top: var(--ant-padding-xs);
+    }
+  }
+}
+
+.tableScroll {
+  max-width: 100%;
+  margin: var(--ant-padding-xs) 0;
+  overflow-x: auto;
+
+  table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    word-break: normal;
+  }
+
+  th,
+  td {
+    border: 1px solid var(--ant-color-border-secondary);
+    padding: 6px 10px;
+    text-align: start;
+    vertical-align: top;
+    white-space: normal;
+    word-break: normal;
+  }
+
+  th[align='center'],
+  td[align='center'] {
+    text-align: center;
+  }
+
+  th[align='right'],
+  td[align='right'] {
+    text-align: end;
+  }
+
+  th {
+    background: var(--ant-color-fill-quaternary);
+    font-weight: 600;
+  }
+
+  code {
+    white-space: nowrap;
+  }
+}
+
+.composerTool {
+  display: inline-flex;
+}
+
+// 与消息列表 .ant-bubble-list-scroll-box 的滚动条一致。textarea 默认是系统滚动条，深色下会露出白轨道。
+.composer {
+  textarea {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ant-color-text-tertiary) transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+      background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--ant-color-text-tertiary);
+      border-radius: var(--ant-border-radius-sm);
+    }
+
+    &::-webkit-scrollbar-track,
+    &::-webkit-scrollbar-corner {
+      background-color: transparent;
+    }
+  }
+}
+
+.composerFooter {
+  width: 100%;
+}
+
+.composerFooterSide {
+  min-width: 0;
+  flex: 1;
+}
+
+.composerSend {
+  flex: none;
 }
 
 .footer {

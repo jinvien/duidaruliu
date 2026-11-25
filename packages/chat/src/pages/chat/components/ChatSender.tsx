@@ -1,4 +1,13 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  FC,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
 import {
@@ -13,7 +22,12 @@ import { agentIsStreaming, getAgentActivity, subscribeAgentActivity } from '../.
 import { useAppSelector, useAppDispatch } from '../../../hooks/useStore';
 import { getMcpRuntime, subscribeMcpRuntime } from '../../../mcp/session';
 import { explainChatTools, modelToolCapability } from '../../../mcp/toolGate';
-import { composerCanSend, composerStopVisible } from '../composer';
+import {
+  composerCanSend,
+  composerEnterAction,
+  composerKeyStopsCascader,
+  composerStopVisible,
+} from '../composer';
 import { modelHasTools, modelToolsMark } from '../../../utils/modelCapability';
 import store from '../../../store';
 import { setIsViewHistoryMode } from '../../../store/historySlice';
@@ -64,7 +78,17 @@ const ChatSender: FC = () => {
   const canCapturePage = Boolean(getChatHost().capturePage);
 
   const [userContent, setUserContent] = useState<string>('');
+  const caretRef = useRef<number | null>(null);
+  const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+
+  useLayoutEffect(() => {
+    const pos = caretRef.current;
+    const el = composerInputRef.current;
+    if (pos == null || !el) return;
+    caretRef.current = null;
+    el.setSelectionRange(pos, pos);
+  }, [userContent]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const visionEnabledRef = useRef(false);
 
@@ -260,20 +284,39 @@ const ChatSender: FC = () => {
         })}
       />
       <ToolApprovalCard />
-      {canCapturePage ? (
+      {showAttach || canCapturePage ? (
         // 输入框上方的功能区，后续的输入辅助功能都放这里。
         <Flex wrap gap="small" align="center" className={Styles.composerToolbar}>
-          <Button
-            size="small"
-            variant="text"
-            color="default"
-            aria-label={t('chat.page.attach')}
-            icon={<FileTextOutlined />}
-            loading={page.status === 'loading'}
-            onClick={() => void loadPageRef(dispatch)}
-          >
-            {t('chat.page.attach')}
-          </Button>
+          {showAttach ? (
+            <Tooltip title={attachTitle}>
+              <span className={Styles.composerTool}>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="default"
+                  aria-label={attachTitle}
+                  icon={<PictureOutlined />}
+                  disabled={!visionEnabled || imageLimitReached || turnBusy}
+                  onClick={() => fileInputRef.current?.click()}
+                />
+              </span>
+            </Tooltip>
+          ) : null}
+          {canCapturePage ? (
+            <Tooltip title={t('chat.page.attach')}>
+              <span className={Styles.composerTool}>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="default"
+                  aria-label={t('chat.page.attach')}
+                  icon={<FileTextOutlined />}
+                  loading={page.status === 'loading'}
+                  onClick={() => void loadPageRef(dispatch)}
+                />
+              </span>
+            </Tooltip>
+          ) : null}
         </Flex>
       ) : null}
       <Suggestion
@@ -287,25 +330,50 @@ const ChatSender: FC = () => {
         {({ onTrigger, onKeyDown, open }) => {
           return (
             <Sender
+              className={Styles.composer}
               loading={stopVisible}
               submitType="enter"
               value={userContent}
-              footer={<ModelPicker />}
-              prefix={
-                showAttach ? (
-                  <Tooltip title={attachTitle}>
-                    <Button
-                      variant="text"
-                      color="default"
-                      aria-label={attachTitle}
-                      icon={<PictureOutlined />}
-                      disabled={!visionEnabled || imageLimitReached || turnBusy}
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onClick={() => fileInputRef.current?.click()}
-                    />
-                  </Tooltip>
-                ) : undefined
-              }
+              suffix={false}
+              footer={(_, info) => {
+                const { SendButton, LoadingButton } = info.components;
+                const action = stopVisible ? (
+                  <LoadingButton
+                    type="default"
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onClick={() => abortControl()}
+                  />
+                ) : (
+                  <SendButton
+                    color="primary"
+                    variant="solid"
+                    icon={<ArrowUpOutlined />}
+                    shape="default"
+                    type="default"
+                    disabled={
+                      !composerCanSend(
+                        responseStatus,
+                        agentIsStreaming(),
+                        userContent.length > 0,
+                        backendReady
+                      )
+                    }
+                  />
+                );
+                return (
+                  <Flex
+                    align="center"
+                    justify="space-between"
+                    gap={8}
+                    className={Styles.composerFooter}
+                  >
+                    <div className={Styles.composerFooterSide}>
+                      <ModelPicker />
+                    </div>
+                    <div className={Styles.composerSend}>{action}</div>
+                  </Flex>
+                );
+              }}
               onPaste={(event) => {
                 if (!visionEnabled || turnBusy) return;
                 const files = Array.from(event.clipboardData?.files ?? []).filter((file) =>
@@ -326,6 +394,31 @@ const ChatSender: FC = () => {
                 setUserContent(nextVal);
               }}
               onKeyDown={(event) => {
+                // 快捷指令的 Cascader 会在冒泡阶段吃掉空格和回车。
+                if (composerKeyStopsCascader(event.key)) event.stopPropagation();
+                if (event.nativeEvent.isComposing) return;
+
+                const action = composerEnterAction({
+                  key: event.key,
+                  shiftKey: event.shiftKey,
+                  metaKey: event.metaKey,
+                  ctrlKey: event.ctrlKey,
+                  composing: false,
+                });
+                if (action === 'break-line') return;
+                if (action === 'insert-line') {
+                  const el = event.target;
+                  if (el instanceof HTMLTextAreaElement) {
+                    const start = el.selectionStart ?? el.value.length;
+                    const end = el.selectionEnd ?? el.value.length;
+                    composerInputRef.current = el;
+                    caretRef.current = start + 1;
+                    event.preventDefault();
+                    setUserContent(`${el.value.slice(0, start)}\n${el.value.slice(end)}`);
+                  }
+                  return;
+                }
+
                 const result = onKeyDown(event);
                 // X 2 去掉了建议列表里回车直接选中的回调，只返回 false 来拦住发送。
                 // 回车时点当前高亮项，仍走 Suggestion 自己的 onSelect。
@@ -341,36 +434,6 @@ const ChatSender: FC = () => {
               }}
               onSubmit={() => handleSubmit()}
               onCancel={() => abortControl()}
-              suffix={(_, info) => {
-                const { SendButton, LoadingButton } = info.components;
-                return (
-                  <>
-                    {stopVisible ? (
-                      <LoadingButton
-                        type="default"
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onClick={() => abortControl()}
-                      />
-                    ) : (
-                      <SendButton
-                        color="primary"
-                        variant="solid"
-                        icon={<ArrowUpOutlined />}
-                        shape="default"
-                        type="default"
-                        disabled={
-                          !composerCanSend(
-                            responseStatus,
-                            agentIsStreaming(),
-                            userContent.length > 0,
-                            backendReady
-                          )
-                        }
-                      />
-                    )}
-                  </>
-                );
-              }}
             />
           );
         }}

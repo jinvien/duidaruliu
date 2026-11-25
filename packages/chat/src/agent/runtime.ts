@@ -58,6 +58,9 @@ let sessionId = newTrackingId();
 let qaId = newTrackingId();
 let modelParamsOverride: OllamaModelParams | undefined;
 let loadingTimer: ReturnType<typeof setTimeout> | undefined;
+let streamingPaintQueued = false;
+let streamingPaintTimer: ReturnType<typeof setTimeout> | undefined;
+let streamingPaintFrame = 0;
 let thinkingText = '';
 let visibleText = '';
 /** 每次换会话或重新开跑都会增加。过期的流式事件不能再改界面。 */
@@ -171,6 +174,54 @@ function clearLoadingTimer() {
   loadingTimer = undefined;
 }
 
+function cancelStreamingPaint() {
+  streamingPaintQueued = false;
+  if (streamingPaintTimer !== undefined) {
+    clearTimeout(streamingPaintTimer);
+    streamingPaintTimer = undefined;
+  }
+  if (streamingPaintFrame !== 0 && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(streamingPaintFrame);
+    streamingPaintFrame = 0;
+  }
+}
+
+function paintStreamingAssistant() {
+  if (!runIsCurrent()) return;
+  store.dispatch(setResponseStatus('outputting'));
+  store.dispatch(updateLastMessage(visibleText));
+  if (thinkingText) store.dispatch(patchLastAssistant({ thinking: thinkingText }));
+}
+
+/** 把尚未写到界面上的正文一次写完。没有排队的增量时什么也不做。 */
+function flushStreamingPaint() {
+  if (!streamingPaintQueued) return;
+  cancelStreamingPaint();
+  paintStreamingAssistant();
+}
+
+/**
+ * 模型每个 token 都推一次。跟着每次都改 Redux，气泡会整篇重排 Markdown，长回复就会卡住。
+ * 同一帧里的增量合成一次界面更新，收尾再把最后一截写实。
+ */
+function scheduleStreamingPaint() {
+  if (streamingPaintQueued) return;
+  streamingPaintQueued = true;
+  const scheduledEpoch = epoch;
+  const run = () => {
+    if (!streamingPaintQueued || scheduledEpoch !== epoch) {
+      streamingPaintQueued = false;
+      return;
+    }
+    flushStreamingPaint();
+  };
+  if (typeof requestAnimationFrame === 'function') {
+    streamingPaintFrame = requestAnimationFrame(run);
+    return;
+  }
+  streamingPaintTimer = setTimeout(run, 16);
+}
+
 function runIsCurrent() {
   return runEpoch !== 0 && runEpoch === epoch;
 }
@@ -178,6 +229,7 @@ function runIsCurrent() {
 function invalidateRun() {
   epoch += 1;
   clearLoadingTimer();
+  cancelStreamingPaint();
 }
 
 function armRun() {
@@ -321,6 +373,7 @@ agent.subscribe((event) => {
   if (!runIsCurrent()) return;
 
   if (event.type === 'agent_start') {
+    cancelStreamingPaint();
     thinkingText = '';
     visibleText = '';
     clearLoadingTimer();
@@ -335,6 +388,7 @@ agent.subscribe((event) => {
 
   if (event.type === 'message_start' && event.message.role === 'assistant') {
     const message = event.message;
+    cancelStreamingPaint();
     thinkingText = '';
     visibleText = '';
     ensureStreamingAssistant(message.model);
@@ -350,14 +404,14 @@ agent.subscribe((event) => {
     if (update.type === 'text_delta') visibleText += update.delta;
     else thinkingText += update.delta;
     clearLoadingTimer();
-    store.dispatch(setResponseStatus('outputting'));
-    store.dispatch(updateLastMessage(visibleText));
-    if (thinkingText) store.dispatch(patchLastAssistant({ thinking: thinkingText }));
+    scheduleStreamingPaint();
     return;
   }
 
   if (event.type === 'message_end' && event.message.role === 'assistant') {
     const message = event.message;
+    // 停止时收尾正文可能是空的，要先把还排着队的 partial 写进当前这条。
+    flushStreamingPaint();
     ensureStreamingAssistant(message.model);
     const { text, thinking, toolCalls } = assistantParts(message);
     // 停止或失败的收尾消息可能没有正文。空串不能盖掉已经流出来的 partial。
@@ -403,6 +457,7 @@ agent.subscribe((event) => {
   }
 
   if (event.type !== 'agent_end') return;
+  flushStreamingPaint();
   clearLoadingTimer();
   cancelPendingToolApproval();
   store.dispatch(setPendingTool(null));
@@ -466,6 +521,8 @@ export function abortAgent() {
  * 换会话之前调用，避免旧回复写到新的消息列表上。
  */
 export async function settleAgent() {
+  // 先把这一帧还没画上去的正文留在当前会话，再让后续的取消事件失效。
+  flushStreamingPaint();
   invalidateRun();
   store.dispatch(setPendingTool(null));
   if (agent.state.isStreaming) {
