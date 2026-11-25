@@ -47,6 +47,13 @@
   }
 }
 
+.modelSelect {
+  &:global(.ant-select.ant-select-borderless):not(:global(.ant-select-disabled)):has(input:focus-visible),
+  &:global(.ant-select.ant-select-borderless):not(:global(.ant-select-disabled)):has(textarea:focus-visible) {
+    outline: none;
+  }
+}
+
 .serviceRow {
   flex: 1 0 100%;
   display: flex;

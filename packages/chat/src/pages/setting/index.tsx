@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useChatLayout, useMinWidth } from '../../shell/layout';
 import OllamaSetting from './components/ollama';
+import CustomModelSetting from './components/customModel';
 import McpSetting from './components/mcp';
 import CustomLink from './components/customLink';
 import CustomPrompt from './components/customPrompt';
@@ -33,6 +34,7 @@ const OptionsPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
 
   const items: MenuItem[] = [
     getItem(t('settingMenu.ollamaSetting'), 'ollamaSetting'),
+    getItem(t('settingMenu.customModel'), 'customModel'),
     getItem(t('settingMenu.mcp'), 'mcp'),
     getItem(t('settingMenu.customPromptSetting'), 'customPrompt'),
     getItem(t('settingMenu.customLinkSetting'), 'customLink'),
@@ -66,6 +68,7 @@ const OptionsPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
         {sideNav ? <Sider className={Styles.sider} width={220}>{menu}</Sider> : menu}
         <Content className={Styles.content}>
           {currentPage === 'ollamaSetting' && <OllamaSetting />}
+          {currentPage === 'customModel' && <CustomModelSetting />}
           {currentPage === 'mcp' && <McpSetting />}
           {currentPage === 'customLink' && <CustomLink />}
           {currentPage === 'customPrompt' && <CustomPrompt />}

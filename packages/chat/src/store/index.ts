@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import appSlice from './appSlice';
 import chatSlice from './chatSlice';
 import ollamaSlice from './ollamaSlice';
+import customModelSlice from './customModelSlice';
 import historySlice from './historySlice';
 import promptSlice from './promptSlice';
 import mcpSlice from './mcpSlice';
@@ -12,6 +13,7 @@ const store = configureStore({
     app: appSlice.reducer,
     chat: chatSlice.reducer,
     ollama: ollamaSlice.reducer,
+    customModel: customModelSlice.reducer,
     history: historySlice.reducer,
     prompt: promptSlice.reducer,
     mcp: mcpSlice.reducer,

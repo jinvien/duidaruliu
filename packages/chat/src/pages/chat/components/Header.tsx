@@ -1,6 +1,6 @@
 import { storageSet } from '../../../host';
 import React, { useEffect, useSyncExternalStore } from 'react';
-import { App as AntdApp, Button, Space, Select, Badge, Tooltip } from 'antd';
+import { App as AntdApp, Button, Space, Select, Badge, Tooltip, type SelectProps } from 'antd';
 import { MenuOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,18 @@ import { agentIsStreaming, getAgentActivity, resetAgentTranscript, subscribeAgen
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { bumpModelsNonce, checkOllamaStatus, setOllamaModelParams } from '../../../store/ollamaSlice';
 import { setMessages } from '../../../store/chatSlice';
+import { setActiveCustomModel } from '../../../store/customModelSlice';
+import {
+  customModelIdFromKey,
+  customModelKey,
+  isCustomModelKey,
+} from '../../../models/customModel';
+import {
+  selectCustomModels,
+  findActiveCustomModel,
+  selectCombinedModels,
+  selectSelectedModelKey,
+} from '../../../models/selection';
 import {
   initializeConversations,
   setIsShowHistoryPanel,
@@ -44,6 +56,11 @@ const HeaderSection: React.FC = () => {
   const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
 
   const { ollamaTags } = useOllamaTags(ollamaUrl);
+  const customModels = useAppSelector(selectCustomModels);
+  const activeCustom = useAppSelector(findActiveCustomModel);
+  const allModels = useAppSelector(selectCombinedModels);
+  const selectedKey = useAppSelector(selectSelectedModelKey);
+  const backendOnline = Boolean(activeCustom) || ollamaIsRunning;
 
   // 设置初始化模型
   useEffect(() => {
@@ -92,10 +109,16 @@ const HeaderSection: React.FC = () => {
     return '';
   };
 
-  const renderModelLabel = (name: string) => {
-    if (!ollamaIsRunning) return name;
-    const vision = markText(modelCapabilityMark(ollamaTags, name, listState), 'vision');
-    const tools = markText(modelToolsMark(ollamaTags, name, listState), 'tools');
+  const displayName = (key: string) =>
+    isCustomModelKey(key)
+      ? (customModels.find((model) => model.id === customModelIdFromKey(key))?.model ?? key)
+      : key;
+
+  const renderModelLabel = (key: string) => {
+    const name = displayName(key);
+    if (!isCustomModelKey(key) && !ollamaIsRunning) return name;
+    const vision = markText(modelCapabilityMark(allModels, key, listState), 'vision');
+    const tools = markText(modelToolsMark(allModels, key, listState), 'tools');
     const gate = explainChatTools({
       toolsEnabled: mcpToolsEnabled,
       enabledServerCount: mcpServers.filter((server) => server.enabled).length,
@@ -104,8 +127,8 @@ const HeaderSection: React.FC = () => {
         0
       ),
       capability: modelToolCapability({
-        hasTools: modelHasTools(ollamaTags, name),
-        mark: modelToolsMark(ollamaTags, name, listState),
+        hasTools: modelHasTools(allModels, key),
+        mark: modelToolsMark(allModels, key, listState),
       }),
     });
     const unsupported =
@@ -128,12 +151,27 @@ const HeaderSection: React.FC = () => {
         mcpRuntime.find((item) => item.name === server.name)?.status !== 'connected'
     );
 
-  const serviceProblem = !ollamaIsRunning || modelsStatus === 'error';
+  // 选中自定义模型时，本机 Ollama 的状态与当前对话无关，不打扰。
+  const serviceProblem = !activeCustom && (!ollamaIsRunning || modelsStatus === 'error');
   const serviceText = !ollamaIsRunning
     ? serviceError
       ? t('chat.serviceUnreachableDetail', { url: ollamaUrl, detail: serviceError })
       : t('chat.serviceUnreachable', { url: ollamaUrl })
     : t('chat.modelsLoadFailed', { url: ollamaUrl });
+
+  const ollamaOptions = ollamaTags.map(({ name }) => ({ value: name, label: name }));
+  const customOptions = customModels.map((model) => ({
+    value: customModelKey(model.id),
+    label: model.model,
+  }));
+  // 只有一类模型时保持平铺，两类并存才分组。
+  const modelOptions: SelectProps['options'] =
+    ollamaOptions.length && customOptions.length
+      ? [
+          { label: 'Ollama', options: ollamaOptions },
+          { label: t('customModel.group'), options: customOptions },
+        ]
+      : [...ollamaOptions, ...customOptions];
 
   return (
     <header className={Styles.header}>
@@ -151,25 +189,32 @@ const HeaderSection: React.FC = () => {
         </Tooltip>
       </div>
       <div className={Styles.middle}>
-        <Badge status={ollamaIsRunning ? 'success' : 'default'} />
+        <Badge status={backendOnline ? 'success' : 'default'} />
         {mcpDisconnected ? (
           <Tooltip title={t('chat.mcpDisconnected')}>
             <Badge status="warning" />
           </Tooltip>
         ) : null}
         <Select
-          disabled={!ollamaIsRunning}
+          className={Styles.modelSelect}
+          disabled={!backendOnline && customModels.length === 0}
           variant="borderless"
-          value={ollamaIsRunning ? ollamaModelParams.model : t('chat.serviceUnreachable', { url: ollamaUrl })}
+          value={
+            backendOnline || customModels.length
+              ? selectedKey
+              : t('chat.serviceUnreachable', { url: ollamaUrl })
+          }
           popupMatchSelectWidth={false}
-          options={ollamaTags.map(({ name }) => ({
-            value: name,
-            label: name,
-          }))}
+          options={modelOptions}
           labelRender={(item) => renderModelLabel(String(item.value ?? item.label ?? ''))}
           optionRender={(option) => renderModelLabel(String(option.value ?? ''))}
           onChange={(value) => {
+            if (isCustomModelKey(value)) {
+              void dispatch(setActiveCustomModel(customModelIdFromKey(value)));
+              return;
+            }
             storageSet('sync', { ollamaModelParams: { ...ollamaModelParams, model: value } });
+            void dispatch(setActiveCustomModel(null));
           }}
         />
       </div>

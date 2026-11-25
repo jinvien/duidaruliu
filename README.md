@@ -14,6 +14,7 @@
 5. 会话导入导出
 6. 自定义 Ollama 服务地址和模型参数
 7. 支持添加网址作为快捷入口，可以方便地在侧边栏打开
+8. 自定义模型：直连兼容 OpenAI Chat Completions、Responses 或 Claude Messages 协议的服务，支持工具调用、图片输入、思考模式。API Key 只保存在本机
 
 **后续计划添加能力的能力：**
 
@@ -38,6 +39,7 @@ Fluently Respond is a Local-only browser extension designed for Ollama users, pr
 5. Session import/export
 6. Customizable Ollama service address and model parameters
 7. Support for adding URLs as shortcuts (quick access to websites via the sidebar)
+8. Custom models: connect directly to services compatible with OpenAI Chat Completions, Responses or Claude Messages, with tool calling, image input and thinking mode. API keys stay on the device
 
 **Planned Features:**
 

@@ -25,10 +25,18 @@ import { listCallableMcpTools, setMcpToolsChangedListener } from '../mcp/session
 import { blockReasonForToolDecision, buildAgentTools } from '../mcp/tools';
 
 import { streamOllamaChat, type OllamaStreamRequest } from './ollamaStream';
+import { streamCustomChat, type CustomStreamRequest } from './customStream';
+import {
+  findActiveCustomModel,
+  selectCombinedModels,
+  selectSelectedModelKey,
+  selectSelectedModelLabel,
+} from '../models/selection';
 
 import type { AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import type { AssistantMessage, ImageContent, TextContent, ToolCall } from '@earendil-works/pi-ai';
 import type { OllamaModelParams } from '../hooks/useOllama';
+import type { CustomModel } from '../models/customModel';
 import type { Message } from '../store/chatSlice';
 
 const EMPTY_USAGE: AssistantMessage['usage'] = {
@@ -43,6 +51,10 @@ const EMPTY_USAGE: AssistantMessage['usage'] = {
 const DATA_URL_MIME = /^data:([^;,]+)/i;
 
 let reportChatError: (error: unknown) => void = () => {};
+/** 同一个对话的多次提问共用，随新对话或打开历史更换。自定义模型用它做会话亲和。 */
+let sessionId = newTrackingId();
+/** 一次提问（含工具循环里的多轮模型调用）共用，每次 continue 更换。 */
+let qaId = newTrackingId();
 let modelParamsOverride: OllamaModelParams | undefined;
 let loadingTimer: ReturnType<typeof setTimeout> | undefined;
 let thinkingText = '';
@@ -51,6 +63,10 @@ let visibleText = '';
 let epoch = 0;
 /** 当前这次 continue 对应的 epoch。0 表示还没有跑过。 */
 let runEpoch = 0;
+
+function newTrackingId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+}
 
 function mimeTypeFromDataUrl(dataUrl: string): string {
   return DATA_URL_MIME.exec(dataUrl)?.[1] || 'image/png';
@@ -130,6 +146,21 @@ function currentRequest(): OllamaStreamRequest {
   };
 }
 
+function currentCustomRequest(custom: CustomModel): CustomStreamRequest {
+  const state = store.getState();
+  return {
+    model: custom,
+    includeImages: custom.vision,
+    includeTools: shouldExposeTools(state.mcp.toolsEnabled, custom.tools),
+    lang: state.app.lang,
+    translateSystemPrompt: i18n.t('prompt.aiTranslateSelected.systemPrompt'),
+    translatePostfix: i18n.t('prompt.aiTranslateSelected.postfix'),
+    // 翻译场景会带一个低温度覆盖，其余场景不传，交给服务端默认值。
+    temperature: modelParamsOverride?.options?.temperature,
+    tracking: { sessionId, qaId },
+  };
+}
+
 function clearLoadingTimer() {
   if (loadingTimer === undefined) return;
   clearTimeout(loadingTimer);
@@ -181,8 +212,11 @@ const agent = new Agent({
     messages: [],
   },
   toolExecution: 'sequential',
-  streamFn: (model, context, options) =>
-    streamOllamaChat(model, context, options, currentRequest()),
+  streamFn: (model, context, options) => {
+    const custom = findActiveCustomModel(store.getState());
+    if (custom) return streamCustomChat(model, context, options, currentCustomRequest(custom));
+    return streamOllamaChat(model, context, options, currentRequest());
+  },
   beforeToolCall: async ({ toolCall, args }, signal) => {
     if (signal?.aborted) {
       return { block: true, reason: blockReasonForToolDecision('aborted', true) ?? '' };
@@ -227,7 +261,7 @@ function ensureStreamingAssistant(model?: string) {
       role: 'assistant',
       content: '',
       createdAt: Date.now(),
-      model: model && model !== 'unknown' ? model : store.getState().ollama.ollamaModelParams.model,
+      model: model && model !== 'unknown' ? model : selectSelectedModelLabel(store.getState()),
     })
   );
 }
@@ -251,7 +285,7 @@ export function refreshAgentTools() {
   const state = store.getState();
   const expose = shouldExposeTools(
     state.mcp.toolsEnabled,
-    modelHasTools(state.ollama.listedModels, state.ollama.ollamaModelParams.model)
+    modelHasTools(selectCombinedModels(state), selectSelectedModelKey(state))
   );
   if (!expose) {
     toolLabels.clear();
@@ -379,8 +413,11 @@ agent.subscribe((event) => {
   console.error('onChatError', error);
   reportChatError(error);
   } finally {
-    // finishRun 在监听返回后才把 isStreaming 清掉，微任务里再读才是停稳的状态。
     queueMicrotask(publishAgentActivity);
+    // agent_end 之后还要经过好几层 await 才会 finishRun 清掉 isStreaming，一个微任务等不到。
+    // 通知得太早，界面最后一次渲染就停在「仍在流式」，依赖它的按钮（如添加图片）会一直灰着。
+    // waitForIdle 在 finishRun 里 resolve，此时 isStreaming 已经是 false。
+    if (event.type === 'agent_end') void agent.waitForIdle().then(publishAgentActivity);
   }
 });
 
@@ -438,6 +475,7 @@ export async function settleAgent() {
 export function resetAgentTranscript(): boolean {
   if (agent.state.isStreaming) return false;
   clearSessionToolAllows();
+  sessionId = newTrackingId();
   agent.reset();
   agent.state.messages = [];
   refreshAgentTools();
@@ -448,6 +486,7 @@ export function resetAgentTranscript(): boolean {
 export function loadAgentTranscript(messages: Message[]): boolean {
   if (agent.state.isStreaming) return false;
   clearSessionToolAllows();
+  sessionId = newTrackingId();
   agent.state.messages = toAgentMessages(messages);
   return true;
 }
@@ -462,6 +501,7 @@ export function snapshotAgentTranscript(): { role: string; text: string }[] {
 export async function continueAgent(messages: Message[], override?: OllamaModelParams) {
   if (agent.state.isStreaming) await settleAgent();
   armRun();
+  qaId = newTrackingId();
   modelParamsOverride = override;
   agent.state.messages = toAgentMessages(messages);
   try {
@@ -482,7 +522,7 @@ export async function startAssistantTurn(override?: OllamaModelParams) {
       role: 'assistant',
       content: '',
       createdAt: Date.now(),
-      model: state.ollama.ollamaModelParams.model,
+      model: selectSelectedModelLabel(state),
     })
   );
   try {

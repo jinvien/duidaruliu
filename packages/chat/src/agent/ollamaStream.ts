@@ -34,7 +34,7 @@ const EMPTY_USAGE: AssistantMessage['usage'] = {
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
 };
 
-const LANG_FULLNAME: Record<string, string> = {
+export const LANG_FULLNAME: Record<string, string> = {
   zh: '中文',
   'zh-CN': '中文',
   en: 'English',

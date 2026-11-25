@@ -10,6 +10,13 @@ import store from '../store';
 import { toggleTheme, updateAppSettings, initializeApp, type AppState } from '../store/appSlice';
 import { initializePrompts } from '../store/promptSlice';
 import { initializeOllama, setOllamaModelParams, setOllamaUrl } from '../store/ollamaSlice';
+import {
+  ACTIVE_CUSTOM_MODEL_STORAGE_KEY,
+  CUSTOM_SERVICES_STORAGE_KEY,
+  hydrateCustomModels,
+  initializeCustomModels,
+} from '../store/customModelSlice';
+import { selectCombinedModels, selectSelectedModelKey } from '../models/selection';
 import type { OllamaModelParams } from '../hooks/useOllama';
 import { initializeMcp, setMcpServers, setMcpToolsEnabled } from '../store/mcpSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/useStore';
@@ -54,6 +61,22 @@ const SidePanelMain: React.FC<{ setAppMode: SetAppMode; appMode: AppMode }> = ({
     window.addEventListener('popstate', readMode);
 
     const unsubscribe = getChatHost().storage.subscribe((changes, area) => {
+      // 自定义模型含 API Key，放在 local。设置页和聊天页不在同一份文档时靠这里同步。
+      if (area === 'local') {
+        const services = changes[CUSTOM_SERVICES_STORAGE_KEY];
+        const active = changes[ACTIVE_CUSTOM_MODEL_STORAGE_KEY];
+        if (services || active) {
+          dispatch(
+            hydrateCustomModels({
+              services: services?.newValue,
+              activeId: active?.newValue,
+              hasServices: Boolean(services),
+              hasActive: Boolean(active),
+            })
+          );
+        }
+        return;
+      }
       if (area !== 'sync') return;
       if (changes.appSettings?.newValue) {
         dispatch(updateAppSettings(changes.appSettings.newValue as AppState));
@@ -106,8 +129,8 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpLoaded = useAppSelector((state) => state.mcp.loaded);
   const mcpToolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
-  const listedModels = useAppSelector((state) => state.ollama.listedModels);
-  const selectedModel = useAppSelector((state) => state.ollama.ollamaModelParams.model);
+  const listedModels = useAppSelector(selectCombinedModels);
+  const selectedModel = useAppSelector(selectSelectedModelKey);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,6 +139,7 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
       if (cancelled) return;
       await loadStoredLanguage();
       dispatch(initializeOllama());
+      dispatch(initializeCustomModels());
       dispatch(initializeApp());
       dispatch(initializePrompts());
       dispatch(initializeMcp());

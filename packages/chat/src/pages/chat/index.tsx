@@ -19,6 +19,7 @@ import { replaceConversationForTranslate } from './translateConversation';
 // import constants
 import { getChatHost } from '../../host';
 import { SELECTION_COMMANDS } from '../../constants/command';
+import { selectSelectedModelLabel } from '../../models/selection';
 import { PROMPTS } from '../../constants/prompt';
 
 // import styles
@@ -35,6 +36,7 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
   const dispatch = useAppDispatch();
 
   const { ollamaModelParams } = useAppSelector((state) => state.ollama);
+  const modelLabel = useAppSelector(selectSelectedModelLabel);
   const { isViewHistoryMode } = useAppSelector((state) => state.history);
   const layout = useChatLayout();
   const wide = useMinWidth(960);
@@ -61,7 +63,7 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
       {
         role: 'system',
         content: t('prompt.aiTranslateSelected.systemPrompt'),
-        model: ollamaModelParams.model,
+        model: modelLabel,
         createdAt: Date.now(),
       },
       {
@@ -85,7 +87,7 @@ const ChatPage: React.FC<{ setAppMode: SetAppMode }> = ({ setAppMode }) => {
 
   useEffect(() => {
     return getChatHost().subscribeHostCommand?.(handleContextMenus);
-  }, [ollamaModelParams]);
+  }, [ollamaModelParams, modelLabel]);
 
   return (
     <main className={Styles.page}>
