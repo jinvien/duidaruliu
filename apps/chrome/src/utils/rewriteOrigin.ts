@@ -5,9 +5,12 @@
  */
 import { browser } from 'wxt/browser';
 
-import { mcpOriginRuleIds, planMcpOriginRules, planOllamaOriginRule } from '@/mcp/origin';
-
-import type { McpServerRecord } from '@/mcp/types';
+import {
+  mcpOriginRuleIds,
+  planMcpOriginRules,
+  planOllamaOriginRule,
+  type McpServerRecord,
+} from '@ddrl/chat/mcp/origin';
 
 export const rewriteOrigin = async (rewriteUrl: string) => {
   try {

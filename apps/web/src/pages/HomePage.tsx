@@ -53,6 +53,13 @@ export default function HomePage() {
               <LogoGithubIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden sm:inline">Github</span>
             </Button>
+            {['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ? (
+              <Button size="sm" className="p-1 sm:p-2 sm:mr-2" asChild>
+                <a href="/app.html" title="只在本机开发服务器可用，不会连到你电脑以外的服务">
+                  本地聊天
+                </a>
+              </Button>
+            ) : null}
             <Button
               size="sm"
               className="p-1 sm:p-2"

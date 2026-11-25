@@ -1,7 +1,9 @@
 import { defineBackground } from 'wxt/sandbox';
 import { browser } from 'wxt/browser';
-import { SELECTION_COMMANDS, SYNC_VALUE_CHANGED, DEFAULT_OLLAMA_URL } from '@/constants/command';
-import { DEFAULT_LINKS, DEFAULT_PROMPTS } from '@/constants/default';
+import { SELECTION_COMMANDS, SYNC_VALUE_CHANGED } from '@ddrl/chat/constants';
+import { seedStorageDefaults } from '@ddrl/chat/storage';
+
+import { chromeStorage } from '@/platform/chromeStorage';
 
 export type StorageChangeMessage = {
   type: string;
@@ -67,44 +69,7 @@ export default defineBackground(() => {
     }
   });
 
-  // 判断 local 和 sync 是否有值后再做初始化
-  chrome.storage.local.get().then((localObj) => {
-    const { historyConversations } = localObj;
-    if (!historyConversations) {
-      chrome.storage.local.set({
-        // 历史会话列表
-        historyConversations: [],
-      });
-    }
-  });
-
-  chrome.storage.sync.get().then((syncObj) => {
-    const { appSettings } = syncObj;
-
-    if (!appSettings) {
-      chrome.storage.sync.set({
-        // 系统配置
-        appSettings: {
-          isDarkMode: false,
-          lang: navigator.language,
-        },
-
-        // 当前会话的模型配置
-        ollamaModelParams: {},
-
-        // ollama配置
-        ollamaSettings: {
-          url: DEFAULT_OLLAMA_URL,
-        },
-
-        // 自定义提示词
-        customPrompts: DEFAULT_PROMPTS,
-
-        // 自定义链接
-        customLinks: navigator.language === 'zh-CN' ? DEFAULT_LINKS : [],
-      });
-    }
-  });
+  void seedStorageDefaults(chromeStorage, navigator.language);
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
     // 检查是否是 `sync` 存储区域的变化
