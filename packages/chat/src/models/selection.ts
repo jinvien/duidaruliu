@@ -1,6 +1,11 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-import { customModelKey, expandCustomServices, type CustomModel } from './customModel';
+import {
+  customModelKey,
+  expandCustomServices,
+  resolveContextWindow,
+  type CustomModel,
+} from './customModel';
 import {
   TOOLS_CAPABILITY,
   VISION_CAPABILITY,
@@ -43,6 +48,19 @@ export function selectSelectedModelKey(state: RootState): string {
 /** 写进消息、显示在气泡标题上的名字。 */
 export function selectSelectedModelLabel(state: RootState): string {
   return findActiveCustomModel(state)?.model ?? state.ollama.ollamaModelParams.model;
+}
+
+/** 当前自定义模型的思考开关。没选自定义模型、或没关过，都是开启。 */
+export function selectThinkingEnabled(state: RootState): boolean {
+  const custom = findActiveCustomModel(state);
+  return !custom || !state.customModel.thinkingOff.includes(custom.id);
+}
+
+/** 当前自定义模型生效的上下文窗口。没选自定义模型或没配可选项时为 undefined。 */
+export function selectActiveContextWindow(state: RootState): number | undefined {
+  const custom = findActiveCustomModel(state);
+  if (!custom) return undefined;
+  return resolveContextWindow(custom.contextWindows, state.customModel.contextChoice[custom.id]);
 }
 
 /** 自定义模型直连云端，不依赖本机 Ollama 是否在线。 */

@@ -1,25 +1,13 @@
-import { storageSet } from '../../../host';
-import React, { useEffect, useSyncExternalStore } from 'react';
-import { App as AntdApp, Button, Space, Select, Badge, Tooltip, type SelectProps } from 'antd';
+import React, { useSyncExternalStore } from 'react';
+import { App as AntdApp, Button, Space, Badge, Tooltip } from 'antd';
 import { MenuOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 import { agentIsStreaming, getAgentActivity, resetAgentTranscript, subscribeAgentActivity } from '../../../agent/runtime';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
-import { bumpModelsNonce, checkOllamaStatus, setOllamaModelParams } from '../../../store/ollamaSlice';
+import { bumpModelsNonce, checkOllamaStatus } from '../../../store/ollamaSlice';
 import { setMessages } from '../../../store/chatSlice';
-import { setActiveCustomModel } from '../../../store/customModelSlice';
-import {
-  customModelIdFromKey,
-  customModelKey,
-  isCustomModelKey,
-} from '../../../models/customModel';
-import {
-  selectCustomModels,
-  findActiveCustomModel,
-  selectCombinedModels,
-  selectSelectedModelKey,
-} from '../../../models/selection';
+import { findActiveCustomModel } from '../../../models/selection';
 import {
   initializeConversations,
   setIsShowHistoryPanel,
@@ -27,15 +15,7 @@ import {
   storeCurrentMessagesFunc,
 } from '../../../store/historySlice';
 
-import { useOllamaTags } from '../../../hooks/useOllama';
 import { getMcpRuntime, subscribeMcpRuntime } from '../../../mcp/session';
-import { explainChatTools, modelToolCapability } from '../../../mcp/toolGate';
-import {
-  modelCapabilityMark,
-  modelHasTools,
-  modelToolsMark,
-  type CapabilityMark,
-} from '../../../utils/modelCapability';
 
 // import local styles
 import Styles from '../index.module.less';
@@ -45,8 +25,9 @@ const HeaderSection: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const { ollamaModelParams, ollamaUrl, ollamaIsRunning, modelsStatus, serviceError } =
-    useAppSelector((state) => state.ollama);
+  const { ollamaUrl, ollamaIsRunning, modelsStatus, serviceError } = useAppSelector(
+    (state) => state.ollama
+  );
   useSyncExternalStore(subscribeAgentActivity, getAgentActivity, getAgentActivity);
   const messages = useAppSelector((state) => state.chat.messages);
   const { isViewHistoryMode, isShowHistoryPanel } = useAppSelector((state) => state.history);
@@ -55,21 +36,7 @@ const HeaderSection: React.FC = () => {
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
 
-  const { ollamaTags } = useOllamaTags(ollamaUrl);
-  const customModels = useAppSelector(selectCustomModels);
   const activeCustom = useAppSelector(findActiveCustomModel);
-  const allModels = useAppSelector(selectCombinedModels);
-  const selectedKey = useAppSelector(selectSelectedModelKey);
-  const backendOnline = Boolean(activeCustom) || ollamaIsRunning;
-
-  // 设置初始化模型
-  useEffect(() => {
-    // 如果模型列表为空或者已有 model，则不处理
-    if (!ollamaTags.length || ollamaModelParams?.model) {
-      return;
-    }
-    dispatch(setOllamaModelParams({ ...ollamaModelParams, model: ollamaTags[0].name }));
-  }, [ollamaTags]);
 
   const retryService = () => {
     dispatch(checkOllamaStatus(ollamaUrl));
@@ -98,51 +65,6 @@ const HeaderSection: React.FC = () => {
     }
   };
 
-  const listState = modelsStatus === 'idle' ? 'loading' : modelsStatus;
-  const markText = (mark: CapabilityMark | null, kind: 'vision' | 'tools') => {
-    if (mark === 'vision') return t('chat.vision');
-    if (mark === 'tools') return t('chat.tools');
-    if (mark === 'pending')
-      return t(kind === 'vision' ? 'chat.visionChecking' : 'chat.toolsChecking');
-    if (mark === 'unknown')
-      return t(kind === 'vision' ? 'chat.visionUnknown' : 'chat.toolsUnknown');
-    return '';
-  };
-
-  const displayName = (key: string) =>
-    isCustomModelKey(key)
-      ? (customModels.find((model) => model.id === customModelIdFromKey(key))?.model ?? key)
-      : key;
-
-  const renderModelLabel = (key: string) => {
-    const name = displayName(key);
-    if (!isCustomModelKey(key) && !ollamaIsRunning) return name;
-    const vision = markText(modelCapabilityMark(allModels, key, listState), 'vision');
-    const tools = markText(modelToolsMark(allModels, key, listState), 'tools');
-    const gate = explainChatTools({
-      toolsEnabled: mcpToolsEnabled,
-      enabledServerCount: mcpServers.filter((server) => server.enabled).length,
-      connectedToolCount: mcpRuntime.reduce(
-        (count, server) => (server.status === 'connected' ? count + server.tools.length : count),
-        0
-      ),
-      capability: modelToolCapability({
-        hasTools: modelHasTools(allModels, key),
-        mark: modelToolsMark(allModels, key, listState),
-      }),
-    });
-    const unsupported =
-      gate.kind === 'modelUnsupported' ? t('chat.toolsGate.modelUnsupportedShort') : '';
-    return (
-      <span className={Styles.modelOption}>
-        <span>{name}</span>
-        {vision ? <span className={Styles.modelVision}>{vision}</span> : null}
-        {tools ? <span className={Styles.modelVision}>{tools}</span> : null}
-        {unsupported ? <span className={Styles.modelVision}>{unsupported}</span> : null}
-      </span>
-    );
-  };
-
   const mcpDisconnected =
     mcpToolsEnabled &&
     mcpServers.some(
@@ -158,20 +80,6 @@ const HeaderSection: React.FC = () => {
       ? t('chat.serviceUnreachableDetail', { url: ollamaUrl, detail: serviceError })
       : t('chat.serviceUnreachable', { url: ollamaUrl })
     : t('chat.modelsLoadFailed', { url: ollamaUrl });
-
-  const ollamaOptions = ollamaTags.map(({ name }) => ({ value: name, label: name }));
-  const customOptions = customModels.map((model) => ({
-    value: customModelKey(model.id),
-    label: model.model,
-  }));
-  // 只有一类模型时保持平铺，两类并存才分组。
-  const modelOptions: SelectProps['options'] =
-    ollamaOptions.length && customOptions.length
-      ? [
-          { label: 'Ollama', options: ollamaOptions },
-          { label: t('customModel.group'), options: customOptions },
-        ]
-      : [...ollamaOptions, ...customOptions];
 
   return (
     <header className={Styles.header}>
@@ -189,34 +97,11 @@ const HeaderSection: React.FC = () => {
         </Tooltip>
       </div>
       <div className={Styles.middle}>
-        <Badge status={backendOnline ? 'success' : 'default'} />
         {mcpDisconnected ? (
           <Tooltip title={t('chat.mcpDisconnected')}>
             <Badge status="warning" />
           </Tooltip>
         ) : null}
-        <Select
-          className={Styles.modelSelect}
-          disabled={!backendOnline && customModels.length === 0}
-          variant="borderless"
-          value={
-            backendOnline || customModels.length
-              ? selectedKey
-              : t('chat.serviceUnreachable', { url: ollamaUrl })
-          }
-          popupMatchSelectWidth={false}
-          options={modelOptions}
-          labelRender={(item) => renderModelLabel(String(item.value ?? item.label ?? ''))}
-          optionRender={(option) => renderModelLabel(String(option.value ?? ''))}
-          onChange={(value) => {
-            if (isCustomModelKey(value)) {
-              void dispatch(setActiveCustomModel(customModelIdFromKey(value)));
-              return;
-            }
-            storageSet('sync', { ollamaModelParams: { ...ollamaModelParams, model: value } });
-            void dispatch(setActiveCustomModel(null));
-          }}
-        />
       </div>
       <Space size={2} className={Styles.right}>
         <Tooltip title={t('chat.newChat')} placement="left">

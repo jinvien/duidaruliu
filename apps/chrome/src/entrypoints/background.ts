@@ -4,6 +4,7 @@ import { SELECTION_COMMANDS, SYNC_VALUE_CHANGED } from '@ddrl/chat/constants';
 import { seedStorageDefaults } from '@ddrl/chat/storage';
 
 import { chromeStorage } from '@/platform/chromeStorage';
+import { postPageRequest } from '@/platform/pageRequest';
 
 export type StorageChangeMessage = {
   type: string;
@@ -31,8 +32,24 @@ export default defineBackground(() => {
     contexts: ['selection'],
   });
 
+  // 整页发送：提取在侧边栏里做，这里只通知“哪个标签页”。
+  browser.contextMenus.create({
+    id: SELECTION_COMMANDS.SEND_PAGE,
+    title: browser.i18n.getMessage('sendToDDRL'),
+    parentId: rootMenu,
+    contexts: ['page', 'selection'],
+  });
+
   browser.contextMenus.onClicked.addListener(async (info, tab) => {
     if (!tab?.id || !tab.windowId) return;
+
+    if (info.menuItemId === SELECTION_COMMANDS.SEND_PAGE) {
+      // sidePanel.open 要在用户手势里最先调用，前面不能有 await。
+      const opening = chrome.sidePanel.open({ windowId: tab.windowId });
+      await postPageRequest(tab.id);
+      await opening;
+      return;
+    }
 
     await chrome.sidePanel.open({ windowId: tab.windowId });
 

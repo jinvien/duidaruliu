@@ -50,6 +50,32 @@
       "modelUnsupported": "このモデルには tools 能力がありません。この会話はツールを送りません。設定の接続済みはサーバーがつながっていることだけで、モデルがツールを呼べるという意味ではありません。",
       "modelUnsupportedShort": "ツールなし",
       "noTools": "スイッチはオンで、このモデルはツールに対応していますが、接続済みの使えるツールがありません。この会話はツールを送りません。"
+    },
+    "page": {
+      "attach": "現在のページを引用",
+      "loading": "ページの内容を抽出しています",
+      "unsupported": "このページは抽出できません",
+      "failed": "ページの抽出に失敗しました",
+      "remove": "ページ引用を削除",
+      "preview": "プレビュー",
+      "previewTitle": "ページ内容のプレビュー",
+      "tokens": "約 {{count}} トークン",
+      "overContext": "コンテキストウィンドウ（{{limit}} トークン）を超えています。モデルが全文を参照できない可能性があります",
+      "truncated": "本文が長すぎるため切り詰めました",
+      "sourceLabel": "引用ページ"
+    },
+    "modelPicker": {
+      "title": "モデルを選択",
+      "empty": "モデルを選択",
+      "thinking": "思考",
+      "thinkingOn": "オン",
+      "thinkingOff": "オフ",
+      "thinkingOffShort": "思考なし",
+      "thinkingDefault": "サービス既定",
+      "thinkingUndeclared": "このサービスは思考モードを宣言していないため、リクエストに思考パラメータは含まれません。設定で「思考モード」を有効にすると、ここで切り替えられます。",
+      "context": "コンテキストウィンドウ",
+      "contextUnset": "未設定",
+      "contextHint": "参照ページが長すぎないか判定するためのクライアント側の予算です。モデル API には送信されません"
     }
   },
   "links": {
@@ -57,7 +83,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama設定",
-    "customPromptSetting": "カスタムプロンプト",
+    "quickCommandSetting": "クイックコマンド",
     "customLinkSetting": "クイックリンク設定",
     "mcp": "ツール / MCP"
   },
@@ -109,16 +135,22 @@
     "linkAddress": "リンクアドレス",
     "addLink": "リンクを追加"
   },
-  "customPromptSetting": {
-    "promptSetting": "プロンプト設定",
-    "usedForQuickOpen": "/ 入力でプロンプトを選択",
-    "prompt": "プロンプト",
-    "inputLabelTip": "短縮名必須",
-    "inputLabelPlaceholder": "短縮名（簡潔に）",
-    "inputValueTip": "プロンプト内容必須",
-    "inputValuePlaceholder": "完全なプロンプトを入力",
-    "linkAddress": "リンクアドレス",
-    "addPrompt": "プロンプトを追加"
+  "quickCommandSetting": {
+    "title": "クイックコマンド",
+    "description": "チャット欄に / を入力するとコマンドを選択できます。既定カテゴリ「記事コマンド」のコマンドは、ページを引用すると各ボタンとして表示され、クリックでそのまま送信されます。",
+    "categoryNamePlaceholder": "カテゴリ名",
+    "categoryNameRequired": "カテゴリ名は必須です",
+    "deleteCategory": "カテゴリを削除",
+    "defaultCategoryTip": "既定のカテゴリは削除できません",
+    "addCategory": "カテゴリを追加",
+    "commandTitlePlaceholder": "コマンド名（簡潔に）",
+    "commandTitleRequired": "コマンド名は必須です",
+    "commandContentPlaceholder": "コマンド本文",
+    "commandContentRequired": "コマンド本文は必須です",
+    "addCommand": "コマンドを追加",
+    "emptyCategory": "このカテゴリにはまだコマンドがありません",
+    "restoreDefault": "既定に戻す",
+    "restored": "既定に戻しました。保存すると反映されます。"
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama設定を保存しました",

@@ -47,12 +47,6 @@
   }
 }
 
-.modelSelect {
-  &:global(.ant-select.ant-select-borderless):not(:global(.ant-select-disabled)):has(input:focus-visible),
-  &:global(.ant-select.ant-select-borderless):not(:global(.ant-select-disabled)):has(textarea:focus-visible) {
-    outline: none;
-  }
-}
 
 .serviceRow {
   flex: 1 0 100%;
@@ -73,6 +67,23 @@
     height: 100%;
     min-height: 0;
     padding: var(--ant-padding-sm) 0;
+
+    // 浏览器默认会把视口锚在旧内容上，流式增高时新输出会落到可视区域下面。
+    :global(.ant-bubble-list-scroll-box),
+    :global(.ant-bubble-list-scroll-content) {
+      overflow-anchor: none;
+    }
+  }
+}
+
+// 插件侧边栏很窄。Bubble.List 给左侧气泡预留了 15% 的右侧空白，这里铺满可用宽度。
+:global(.chat-shell-compact .ant-bubble-list .ant-bubble-start:not(.ant-bubble-divider):not(.ant-bubble-system)) {
+  padding-inline-end: 0;
+
+  :global(.ant-bubble-body) {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
   }
 }
 .userContentPre {
@@ -98,9 +109,127 @@
 }
 
 .messageRender {
+  // 气泡上的 break-word 会继承下来，表格列会被压到最窄。
+  word-break: normal;
+  overflow-wrap: break-word;
+
   p {
     margin: var(--ant-padding-xs) 0;
   }
+
+  ul,
+  ol {
+    margin: var(--ant-padding-xs) 0;
+    padding-inline-start: 1.5em;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  // 浏览器默认引用左右各缩进 40px，窄侧边栏里正文会被挤到提前换行。
+  blockquote {
+    margin: var(--ant-padding-xs) 0;
+    padding: 6px 10px 6px 12px;
+    border-inline-start: 3px solid var(--ant-color-text-quaternary);
+    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
+    background: var(--ant-color-fill-quaternary);
+
+    > p {
+      margin: 0;
+    }
+
+    > p + p {
+      margin-top: var(--ant-padding-xs);
+    }
+  }
+}
+
+.tableScroll {
+  max-width: 100%;
+  margin: var(--ant-padding-xs) 0;
+  overflow-x: auto;
+
+  table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    word-break: normal;
+  }
+
+  th,
+  td {
+    border: 1px solid var(--ant-color-border-secondary);
+    padding: 6px 10px;
+    text-align: start;
+    vertical-align: top;
+    white-space: normal;
+    word-break: normal;
+  }
+
+  th[align='center'],
+  td[align='center'] {
+    text-align: center;
+  }
+
+  th[align='right'],
+  td[align='right'] {
+    text-align: end;
+  }
+
+  th {
+    background: var(--ant-color-fill-quaternary);
+    font-weight: 600;
+  }
+
+  code {
+    white-space: nowrap;
+  }
+}
+
+.composerTool {
+  display: inline-flex;
+}
+
+// 与消息列表 .ant-bubble-list-scroll-box 的滚动条一致。textarea 默认是系统滚动条，深色下会露出白轨道。
+.composer {
+  textarea {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ant-color-text-tertiary) transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+      background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--ant-color-text-tertiary);
+      border-radius: var(--ant-border-radius-sm);
+    }
+
+    &::-webkit-scrollbar-track,
+    &::-webkit-scrollbar-corner {
+      background-color: transparent;
+    }
+  }
+}
+
+.composerFooter {
+  width: 100%;
+}
+
+.composerFooterSide {
+  min-width: 0;
+  flex: 1;
+}
+
+.composerSend {
+  flex: none;
 }
 
 .footer {
@@ -113,8 +242,113 @@
 .modelOption {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--ant-padding-xs);
+}
+
+.modelName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 输入框下方的模型选择
+.pickerTrigger {
+  max-width: 100%;
+  gap: var(--ant-margin-xxs);
+  color: var(--ant-color-text-secondary);
+}
+
+.pickerTriggerText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerArrow {
+  font-size: 10px;
+}
+
+.pickerDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ant-color-text-quaternary);
+}
+
+.pickerDotOnline {
+  background: var(--ant-color-success);
+}
+
+.pickerPanel {
+  width: min(320px, calc(100vw - 32px));
+  padding: var(--ant-padding-xxs);
+  border-radius: var(--ant-border-radius-lg);
+  background: var(--ant-color-bg-elevated);
+  box-shadow: var(--ant-box-shadow-secondary);
+}
+
+.pickerList {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.pickerGroup {
+  padding: var(--ant-padding-xxs) var(--ant-padding-xs);
+  font-size: var(--ant-font-size-sm);
+  color: var(--ant-color-text-description);
+}
+
+.pickerItem {
+  display: flex;
+  align-items: center;
+  gap: var(--ant-padding-xs);
+  width: 100%;
+  padding: var(--ant-padding-xs);
+  border: none;
+  border-radius: var(--ant-border-radius);
+  background: transparent;
+  color: var(--ant-color-text);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--ant-color-fill-tertiary);
+  }
+}
+
+.pickerItemActive {
+  background: var(--ant-color-fill-quaternary);
+  font-weight: 600;
+}
+
+.pickerCheck {
+  flex: none;
+  width: 14px;
+  color: var(--ant-color-primary);
+}
+
+.pickerSettings {
+  margin-top: var(--ant-margin-xxs);
+  padding: var(--ant-padding-xs);
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+.pickerSetting {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--ant-padding-xs);
+  min-height: 28px;
+  font-size: var(--ant-font-size-sm);
+}
+
+.pickerValue {
+  color: var(--ant-color-text-secondary);
 }
 
 .modelVision {
@@ -226,4 +460,98 @@
   font-size: var(--ant-font-size-sm);
   line-height: 18px;
   color: var(--ant-color-text-description);
+}
+
+// 页面引用卡片
+.composerToolbar {
+  padding: 0 var(--ant-padding-xxs);
+}
+
+.pageCard {
+  padding: var(--ant-padding-xs) var(--ant-padding-sm);
+  border: 1px solid var(--ant-color-border);
+  border-radius: var(--ant-border-radius-lg);
+  background: var(--ant-color-bg-container);
+}
+
+.pageCardIcon {
+  margin-top: 4px;
+  color: var(--ant-color-text-secondary);
+}
+
+.pageCardMain {
+  min-width: 0;
+}
+
+.pageCardTitle {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageCardMeta {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--ant-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageCardDesc {
+  display: -webkit-box;
+  margin-bottom: 0 !important;
+  overflow: hidden;
+  font-size: var(--ant-font-size-sm);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.pagePreview {
+  max-height: 70vh;
+  overflow: auto;
+  word-break: break-word;
+
+  img,
+  table {
+    max-width: 100%;
+  }
+
+  pre {
+    overflow: auto;
+  }
+}
+
+// 用户气泡里的页面引用，只显示标题和域名
+.userPage {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--ant-padding-xxs) var(--ant-padding-xs);
+  border-radius: var(--ant-border-radius);
+  background: var(--ant-color-bg-layout);
+  color: var(--ant-color-text);
+  text-align: left;
+  min-width: 0;
+
+  &:not(:last-child) {
+    margin-bottom: var(--ant-padding-xxs);
+  }
+}
+
+.userPageTitle {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userPageHost {
+  font-size: var(--ant-font-size-sm);
+  color: var(--ant-color-text-secondary);
 }

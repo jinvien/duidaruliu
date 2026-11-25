@@ -1,5 +1,6 @@
-import { DEFAULT_LINKS, DEFAULT_PROMPTS } from '../constants/default';
+import { DEFAULT_LINKS } from '../constants/default';
 import { DEFAULT_OLLAMA_URL } from '../constants/command';
+import { buildDefaultQuickCommands, migrateLegacyPrompts } from '../utils/quickCommand';
 
 import type { KeyValueStorage } from '../host';
 
@@ -20,8 +21,13 @@ export async function seedStorageDefaults(bucket: KeyValueStorage, language: str
       ollamaSettings: {
         url: DEFAULT_OLLAMA_URL,
       },
-      customPrompts: DEFAULT_PROMPTS,
+      quickCommands: buildDefaultQuickCommands(language),
       customLinks: language === 'zh-CN' ? DEFAULT_LINKS : [],
+    });
+  } else if (!sync.quickCommands) {
+    // 老用户：把旧的自定义提示词迁到快捷指令里。旧的 customPrompts 保留不动。
+    await bucket.set('sync', {
+      quickCommands: migrateLegacyPrompts(sync.customPrompts, language),
     });
   }
 }

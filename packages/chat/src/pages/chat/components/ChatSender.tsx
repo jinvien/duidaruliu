@@ -1,11 +1,20 @@
-import { FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  FC,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Sender, Suggestion } from '@ant-design/x';
 import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
 import {
   ArrowUpOutlined,
-  BulbOutlined,
   CloseOutlined,
-  MessageOutlined,
+  FileTextOutlined,
+  LoadingOutlined,
   PictureOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -13,11 +22,19 @@ import { agentIsStreaming, getAgentActivity, subscribeAgentActivity } from '../.
 import { useAppSelector, useAppDispatch } from '../../../hooks/useStore';
 import { getMcpRuntime, subscribeMcpRuntime } from '../../../mcp/session';
 import { explainChatTools, modelToolCapability } from '../../../mcp/toolGate';
-import { composerCanSend, composerStopVisible } from '../composer';
+import {
+  composerCanSend,
+  composerEnterAction,
+  composerKeyStopsCascader,
+  composerStopVisible,
+} from '../composer';
 import { modelHasTools, modelToolsMark } from '../../../utils/modelCapability';
 import store from '../../../store';
 import { setIsViewHistoryMode } from '../../../store/historySlice';
 import { addMessage } from '../../../store/chatSlice';
+import { discardPage, loadPageRef } from '../../../store/pageSlice';
+import { getChatHost } from '../../../host';
+import { selectContextLimit } from '../../../page/contextLimit';
 import { useChat } from '../../../hooks/useChat';
 import { ChatImageError, MAX_CHAT_IMAGES, fileToChatImage } from '../../../utils/chatImage';
 import { modelCapabilityMark, modelHasVision } from '../../../utils/modelCapability';
@@ -27,7 +44,11 @@ import {
   selectSelectedModelKey,
 } from '../../../models/selection';
 
+import { articleCommands, findQuickCommand, toSuggestionOptions } from '../../../utils/quickCommand';
+
+import ModelPicker from './ModelPicker';
 import ToolApprovalCard from './ToolApproval';
+import PageRefCard, { type PageChip } from './PageRefCard';
 
 import Styles from '../index.module.less';
 
@@ -48,17 +69,26 @@ const ChatSender: FC = () => {
   const toolsEnabled = useAppSelector((state) => state.mcp.toolsEnabled);
   const mcpServers = useAppSelector((state) => state.mcp.servers);
   const mcpRuntime = useSyncExternalStore(subscribeMcpRuntime, getMcpRuntime, getMcpRuntime);
-  const prompts = useAppSelector((state) => state.prompt).map((prompt) => ({
-    ...prompt,
-    icon: prompt.type === 'quick' ? <BulbOutlined /> : <MessageOutlined />,
-  }));
+  const quickCategories = useAppSelector((state) => state.quickCommand.categories);
+  // 每次渲染都新建数组的话，建议列表会在 layout 里跟着 setState，流式输出时会叠进同一轮同步更新。
+  const quickOptions = useMemo(() => toSuggestionOptions(quickCategories), [quickCategories]);
+
+  const page = useAppSelector((state) => state.page);
+  const contextLimit = useAppSelector(selectContextLimit);
+  const canCapturePage = Boolean(getChatHost().capturePage);
 
   const [userContent, setUserContent] = useState<string>('');
+  const caretRef = useRef<number | null>(null);
+  const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-  const [selectedSystemPrompt, setSelectedSystemPrompt] = useState<{
-    label: string;
-    value: string;
-  } | null>(null);
+
+  useLayoutEffect(() => {
+    const pos = caretRef.current;
+    const el = composerInputRef.current;
+    if (pos == null || !el) return;
+    caretRef.current = null;
+    el.setSelectionRange(pos, pos);
+  }, [userContent]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const visionEnabledRef = useRef(false);
 
@@ -118,44 +148,56 @@ const ChatSender: FC = () => {
   const stopVisible = composerStopVisible(responseStatus);
   const turnBusy = stopVisible || streaming;
 
-  const handleSubmit = useCallback(() => {
-    const status = store.getState().chat.responseStatus;
-    if (!composerCanSend(status, agentIsStreaming(), userContent.length > 0, backendReady)) {
-      return;
-    }
+  // content 默认取输入框。页面卡片上的快捷选项传入自己的指令，不动输入框里已有的文字。
+  const handleSubmit = useCallback(
+    (content: string = userContent) => {
+      const status = store.getState().chat.responseStatus;
+      if (!composerCanSend(status, agentIsStreaming(), content.length > 0, backendReady)) {
+        return;
+      }
 
-    const images: ChatImage[] | undefined =
-      visionEnabled && pendingImages.length
-        ? pendingImages.map(({ dataUrl }) => ({ dataUrl }))
-        : undefined;
+      const images: ChatImage[] | undefined =
+        visionEnabled && pendingImages.length
+          ? pendingImages.map(({ dataUrl }) => ({ dataUrl }))
+          : undefined;
+      const pageRef = store.getState().page.ref;
 
-    dispatch(setIsViewHistoryMode(false));
-    setUserContent('');
-    setPendingImages([]);
-    setSelectedSystemPrompt(null);
+      dispatch(setIsViewHistoryMode(false));
+      if (content === userContent) setUserContent('');
+      setPendingImages([]);
+      discardPage(dispatch);
 
-    if (selectedSystemPrompt) {
-      dispatch(
-        addMessage({ role: 'system', content: selectedSystemPrompt.value, createdAt: Date.now() })
-      );
-    }
-    const userMessage: Message = {
-      role: 'user',
-      content: userContent,
-      createdAt: Date.now(),
-    };
-    if (images?.length) userMessage.images = images;
-    dispatch(addMessage(userMessage));
-    sendMessage();
-  }, [
-    dispatch,
-    backendReady,
-    pendingImages,
-    selectedSystemPrompt,
-    sendMessage,
-    userContent,
-    visionEnabled,
-  ]);
+      const userMessage: Message = {
+        role: 'user',
+        content,
+        createdAt: Date.now(),
+      };
+      if (images?.length) userMessage.images = images;
+      if (pageRef) userMessage.page = pageRef;
+      dispatch(addMessage(userMessage));
+      sendMessage();
+    },
+    [
+      dispatch,
+      backendReady,
+      pendingImages,
+      sendMessage,
+      userContent,
+      visionEnabled,
+    ]
+  );
+
+  // 页面卡片上的快捷按钮，来自快捷指令里的默认分类（文章快捷指令）。
+  const pageChips: PageChip[] = articleCommands(quickCategories).map((command) => ({
+    key: command.id,
+    label: command.title,
+    text: command.content,
+  }));
+
+  const pageErrorText =
+    page.status === 'error'
+      ? t(page.error === 'unsupported' ? 'chat.page.unsupported' : 'chat.page.failed')
+      : '';
 
   const imageLimitReached = pendingImages.length >= MAX_CHAT_IMAGES;
   const attachTitle = !visionEnabled
@@ -166,24 +208,26 @@ const ChatSender: FC = () => {
 
   return (
     <Flex vertical gap="small">
-      {selectedSystemPrompt && (
+      {page.status === 'loading' && (
+        <Alert type="info" showIcon icon={<LoadingOutlined />} message={t('chat.page.loading')} />
+      )}
+      {pageErrorText && (
         <Alert
-          message={
-            <Flex
-              gap="small"
-              align="center"
-              style={{ fontSize: 'var(--ant-font-size)', fontWeight: 'bold' }}
-            >
-              <MessageOutlined /> {selectedSystemPrompt.label}
-            </Flex>
-          }
-          description={selectedSystemPrompt.value}
-          type="info"
-          closable={{
-            'aria-label': 'close',
-            closeIcon: <CloseOutlined />,
-          }}
-          onClose={() => setSelectedSystemPrompt(null)}
+          type="warning"
+          showIcon
+          message={pageErrorText}
+          closable={{ 'aria-label': 'close', closeIcon: <CloseOutlined /> }}
+          onClose={() => discardPage(dispatch)}
+        />
+      )}
+      {page.ref && (
+        <PageRefCard
+          page={page.ref}
+          chips={pageChips}
+          contextLimit={contextLimit}
+          disabled={!composerCanSend(responseStatus, streaming, true, backendReady)}
+          onRemove={() => discardPage(dispatch)}
+          onChip={(text) => handleSubmit(text)}
         />
       )}
 
@@ -240,40 +284,96 @@ const ChatSender: FC = () => {
         })}
       />
       <ToolApprovalCard />
+      {showAttach || canCapturePage ? (
+        // 输入框上方的功能区，后续的输入辅助功能都放这里。
+        <Flex wrap gap="small" align="center" className={Styles.composerToolbar}>
+          {showAttach ? (
+            <Tooltip title={attachTitle}>
+              <span className={Styles.composerTool}>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="default"
+                  aria-label={attachTitle}
+                  icon={<PictureOutlined />}
+                  disabled={!visionEnabled || imageLimitReached || turnBusy}
+                  onClick={() => fileInputRef.current?.click()}
+                />
+              </span>
+            </Tooltip>
+          ) : null}
+          {canCapturePage ? (
+            <Tooltip title={t('chat.page.attach')}>
+              <span className={Styles.composerTool}>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="default"
+                  aria-label={t('chat.page.attach')}
+                  icon={<FileTextOutlined />}
+                  loading={page.status === 'loading'}
+                  onClick={() => void loadPageRef(dispatch)}
+                />
+              </span>
+            </Tooltip>
+          ) : null}
+        </Flex>
+      ) : null}
       <Suggestion
-        items={prompts}
-        onSelect={(prompt) => {
-          // 判断的是否为系统提示词
-          const item = prompts.find((item) => item.value === prompt);
-          if (item?.type === 'system') {
-            setSelectedSystemPrompt(item);
-            setUserContent('');
-          } else {
-            setUserContent(prompt);
-          }
+        items={quickOptions}
+        onSelect={(commandId) => {
+          // 选中一条快捷指令：正文放进输入框，可以改完再发。
+          const command = findQuickCommand(quickCategories, commandId);
+          if (command) setUserContent(command.content);
         }}
       >
         {({ onTrigger, onKeyDown, open }) => {
           return (
             <Sender
+              className={Styles.composer}
               loading={stopVisible}
               submitType="enter"
               value={userContent}
-              prefix={
-                showAttach ? (
-                  <Tooltip title={attachTitle}>
-                    <Button
-                      variant="text"
-                      color="default"
-                      aria-label={attachTitle}
-                      icon={<PictureOutlined />}
-                      disabled={!visionEnabled || imageLimitReached || turnBusy}
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onClick={() => fileInputRef.current?.click()}
-                    />
-                  </Tooltip>
-                ) : undefined
-              }
+              suffix={false}
+              footer={(_, info) => {
+                const { SendButton, LoadingButton } = info.components;
+                const action = stopVisible ? (
+                  <LoadingButton
+                    type="default"
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onClick={() => abortControl()}
+                  />
+                ) : (
+                  <SendButton
+                    color="primary"
+                    variant="solid"
+                    icon={<ArrowUpOutlined />}
+                    shape="default"
+                    type="default"
+                    disabled={
+                      !composerCanSend(
+                        responseStatus,
+                        agentIsStreaming(),
+                        userContent.length > 0,
+                        backendReady
+                      )
+                    }
+                  />
+                );
+                return (
+                  <Flex
+                    align="center"
+                    justify="space-between"
+                    gap={8}
+                    className={Styles.composerFooter}
+                  >
+                    <div className={Styles.composerFooterSide}>
+                      <ModelPicker />
+                    </div>
+                    <div className={Styles.composerSend}>{action}</div>
+                  </Flex>
+                );
+              }}
               onPaste={(event) => {
                 if (!visionEnabled || turnBusy) return;
                 const files = Array.from(event.clipboardData?.files ?? []).filter((file) =>
@@ -285,7 +385,7 @@ const ChatSender: FC = () => {
                 void addImageFiles(files);
               }}
               onChange={(nextVal) => {
-                if (nextVal === '/' && prompts.length) {
+                if (nextVal === '/' && quickOptions.length) {
                   onTrigger();
                 } else if (!nextVal) {
                   onTrigger(false);
@@ -294,50 +394,46 @@ const ChatSender: FC = () => {
                 setUserContent(nextVal);
               }}
               onKeyDown={(event) => {
+                // 快捷指令的 Cascader 会在冒泡阶段吃掉空格和回车。
+                if (composerKeyStopsCascader(event.key)) event.stopPropagation();
+                if (event.nativeEvent.isComposing) return;
+
+                const action = composerEnterAction({
+                  key: event.key,
+                  shiftKey: event.shiftKey,
+                  metaKey: event.metaKey,
+                  ctrlKey: event.ctrlKey,
+                  composing: false,
+                });
+                if (action === 'break-line') return;
+                if (action === 'insert-line') {
+                  const el = event.target;
+                  if (el instanceof HTMLTextAreaElement) {
+                    const start = el.selectionStart ?? el.value.length;
+                    const end = el.selectionEnd ?? el.value.length;
+                    composerInputRef.current = el;
+                    caretRef.current = start + 1;
+                    event.preventDefault();
+                    setUserContent(`${el.value.slice(0, start)}\n${el.value.slice(end)}`);
+                  }
+                  return;
+                }
+
                 const result = onKeyDown(event);
                 // X 2 去掉了建议列表里回车直接选中的回调，只返回 false 来拦住发送。
                 // 回车时点当前高亮项，仍走 Suggestion 自己的 onSelect。
                 if (open && event.key === 'Enter') {
-                  const active = document.querySelector<HTMLElement>(
+                  // 分类和指令是两级菜单，每一级都有高亮项，取最后一级的那个。
+                  const actives = document.querySelectorAll<HTMLElement>(
                     '.ant-cascader-dropdown.ant-suggestion .ant-cascader-menu-item-active'
                   );
-                  active?.click();
+                  actives[actives.length - 1]?.click();
                   return false;
                 }
                 return result;
               }}
               onSubmit={() => handleSubmit()}
               onCancel={() => abortControl()}
-              suffix={(_, info) => {
-                const { SendButton, LoadingButton } = info.components;
-                return (
-                  <>
-                    {stopVisible ? (
-                      <LoadingButton
-                        type="default"
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onClick={() => abortControl()}
-                      />
-                    ) : (
-                      <SendButton
-                        color="primary"
-                        variant="solid"
-                        icon={<ArrowUpOutlined />}
-                        shape="default"
-                        type="default"
-                        disabled={
-                          !composerCanSend(
-                            responseStatus,
-                            agentIsStreaming(),
-                            userContent.length > 0,
-                            backendReady
-                          )
-                        }
-                      />
-                    )}
-                  </>
-                );
-              }}
             />
           );
         }}

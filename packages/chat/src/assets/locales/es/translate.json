@@ -50,6 +50,32 @@
       "modelUnsupported": "Este modelo no tiene la capacidad tools. Esta conversación no le enviará herramientas. Conectado en Ajustes solo significa que el servidor responde, no que el modelo pueda llamarlas.",
       "modelUnsupportedShort": "Sin herramientas",
       "noTools": "El interruptor está activo y el modelo admite herramientas, pero no hay ninguna conectada. Esta conversación no enviará herramientas."
+    },
+    "page": {
+      "attach": "Citar la página actual",
+      "loading": "Extrayendo el contenido de la página",
+      "unsupported": "No se puede extraer esta página",
+      "failed": "Error al extraer la página",
+      "remove": "Quitar la referencia de página",
+      "preview": "Vista previa",
+      "previewTitle": "Vista previa del contenido",
+      "tokens": "Aprox. {{count}} tokens",
+      "overContext": "Supera la ventana de contexto ({{limit}} tokens); el modelo puede no ver el texto completo",
+      "truncated": "Contenido demasiado largo, truncado",
+      "sourceLabel": "Página citada"
+    },
+    "modelPicker": {
+      "title": "Seleccionar modelo",
+      "empty": "Seleccionar modelo",
+      "thinking": "Razonamiento",
+      "thinkingOn": "Activado",
+      "thinkingOff": "Desactivado",
+      "thinkingOffShort": "Sin razonar",
+      "thinkingDefault": "Predeterminado del servicio",
+      "thinkingUndeclared": "Este servicio no ha declarado el modo de razonamiento, así que las solicitudes no llevan ese parámetro. Actívalo en los ajustes para cambiarlo aquí.",
+      "context": "Ventana de contexto",
+      "contextUnset": "Sin definir",
+      "contextHint": "Presupuesto de contexto del cliente para comprobar si una página citada es demasiado larga. No se envía a la API del modelo"
     }
   },
   "links": {
@@ -57,7 +83,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Configuración Ollama",
-    "customPromptSetting": "Comandos personalizados",
+    "quickCommandSetting": "Comandos rápidos",
     "customLinkSetting": "Configuración de acceso rápido",
     "mcp": "Herramientas / MCP"
   },
@@ -109,16 +135,22 @@
     "linkAddress": "Dirección del enlace",
     "addLink": "Añadir enlace"
   },
-  "customPromptSetting": {
-    "promptSetting": "Configuración de comandos",
-    "usedForQuickOpen": "Escriba / para seleccionar comandos",
-    "prompt": "Comando",
-    "inputLabelTip": "Nombre corto requerido",
-    "inputLabelPlaceholder": "Nombre corto (breve)",
-    "inputValueTip": "Contenido requerido",
-    "inputValuePlaceholder": "Escriba comando completo",
-    "linkAddress": "Dirección del enlace",
-    "addPrompt": "Añadir comando"
+  "quickCommandSetting": {
+    "title": "Comandos rápidos",
+    "description": "Escriba / en el cuadro de chat para elegir un comando. Los comandos de la categoría predeterminada \"Comandos de artículo\" aparecen como botones al citar una página; haga clic para enviarlos.",
+    "categoryNamePlaceholder": "Nombre de la categoría",
+    "categoryNameRequired": "Nombre de categoría requerido",
+    "deleteCategory": "Eliminar categoría",
+    "defaultCategoryTip": "Categoría predeterminada, no se puede eliminar",
+    "addCategory": "Añadir categoría",
+    "commandTitlePlaceholder": "Título del comando (breve)",
+    "commandTitleRequired": "Título del comando requerido",
+    "commandContentPlaceholder": "Contenido del comando",
+    "commandContentRequired": "Contenido del comando requerido",
+    "addCommand": "Añadir comando",
+    "emptyCategory": "Esta categoría aún no tiene comandos",
+    "restoreDefault": "Restaurar valores predeterminados",
+    "restored": "Valores restaurados. Pulse Guardar para aplicarlos."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Configuración de Ollama guardada exitosamente",

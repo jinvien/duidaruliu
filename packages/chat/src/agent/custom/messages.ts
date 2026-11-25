@@ -1,5 +1,6 @@
 import {
   systemText,
+  thinkingMode,
   type CustomStreamRequest,
   type NeutralMessage,
   type NeutralTool,
@@ -44,7 +45,7 @@ function wireMessages(messages: readonly NeutralMessage[], request: CustomStream
     if (message.role === 'assistant') {
       const blocks: Block[] = [];
       // 没有签名的思考块会被官方接口拒绝。拿不到签名就不回填。
-      if (request.model.thinking && message.thinking && message.thinkingSignature) {
+      if (thinkingMode(request) === 'on' && message.thinking && message.thinkingSignature) {
         blocks.push({
           type: 'thinking',
           thinking: message.thinking,
@@ -82,9 +83,10 @@ export function buildMessagesBody(
   request: CustomStreamRequest
 ): Record<string, unknown> {
   const { model } = request;
+  const mode = thinkingMode(request);
   const maxTokens =
     model.maxOutputTokens ??
-    (model.thinking ? DEFAULT_MAX_TOKENS_WITH_THINKING : DEFAULT_MAX_TOKENS);
+    (mode === 'default' || mode === 'off' ? DEFAULT_MAX_TOKENS : DEFAULT_MAX_TOKENS_WITH_THINKING);
   const body: Record<string, unknown> = {
     model: model.model,
     // Messages 协议必须带 max_tokens，没配输出上限时给一个保守的默认值。
@@ -96,7 +98,7 @@ export function buildMessagesBody(
   if (system) body.system = system;
 
   // budget_tokens 必须小于 max_tokens，且不小于 1024。放不下就不开思考。
-  const thinkingOn = model.thinking && maxTokens > MIN_THINKING_BUDGET;
+  const thinkingOn = mode === 'on' && maxTokens > MIN_THINKING_BUDGET;
   if (thinkingOn) {
     body.thinking = {
       type: 'enabled',
@@ -105,9 +107,11 @@ export function buildMessagesBody(
         maxTokens - 1
       ),
     };
-  } else if (request.temperature !== undefined) {
-    // 开启思考时接口只接受默认温度。
-    body.temperature = request.temperature;
+  } else {
+    // 用户明确关闭时要告诉服务端，不传的话混元默认会深度思考。
+    if (mode === 'off') body.thinking = { type: 'disabled' };
+    // 只有真正开启思考时接口才限定默认温度，其余情况照常传。
+    if (request.temperature !== undefined) body.temperature = request.temperature;
   }
 
   if (tools.length) {

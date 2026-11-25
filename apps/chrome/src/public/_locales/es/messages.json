@@ -10,5 +10,8 @@
   },
   "translateSelected": {
     "message": "Traducir texto seleccionado"
+  },
+  "sendToDDRL": {
+    "message": "Enviar a DDRL"
   }
 }

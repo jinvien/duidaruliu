@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/keptPartial.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts && tsx --tsconfig tsconfig.json test/stage3.test.ts && tsx --tsconfig tsconfig.json test/stage3Runtime.test.ts && tsx --tsconfig tsconfig.json test/reviewFixes.test.ts && tsx --tsconfig tsconfig.json test/mcpJson.test.ts && tsx --tsconfig tsconfig.json test/toolGate.test.ts && tsx --tsconfig tsconfig.json test/serverSummary.test.ts && tsx --tsconfig tsconfig.json test/chatView.test.ts && tsx --tsconfig tsconfig.json test/storageHost.test.ts && tsx --tsconfig tsconfig.json test/originRewrite.test.ts && tsx --tsconfig tsconfig.json test/turnStatus.test.ts && tsx --tsconfig tsconfig.json test/customModel.test.ts && tsx --tsconfig tsconfig.json test/customStream.test.ts && tsx --tsconfig tsconfig.json test/customRuntime.test.ts",
+    "test": "tsx --tsconfig tsconfig.json test/ollamaStream.test.ts && tsx --tsconfig tsconfig.json test/agentRuntime.test.ts && tsx --tsconfig tsconfig.json test/keptPartial.test.ts && tsx --tsconfig tsconfig.json test/mcpSession.test.ts && tsx --tsconfig tsconfig.json test/stage3.test.ts && tsx --tsconfig tsconfig.json test/stage3Runtime.test.ts && tsx --tsconfig tsconfig.json test/reviewFixes.test.ts && tsx --tsconfig tsconfig.json test/mcpJson.test.ts && tsx --tsconfig tsconfig.json test/toolGate.test.ts && tsx --tsconfig tsconfig.json test/serverSummary.test.ts && tsx --tsconfig tsconfig.json test/chatView.test.ts && tsx --tsconfig tsconfig.json test/storageHost.test.ts && tsx --tsconfig tsconfig.json test/originRewrite.test.ts && tsx --tsconfig tsconfig.json test/turnStatus.test.ts && tsx --tsconfig tsconfig.json test/customModel.test.ts && tsx --tsconfig tsconfig.json test/customStream.test.ts && tsx --tsconfig tsconfig.json test/customRuntime.test.ts && tsx --tsconfig tsconfig.json test/pageExtract.test.ts && tsx --tsconfig tsconfig.json test/quickCommand.test.ts && tsx --tsconfig tsconfig.json test/assistantMarkdown.test.ts",
     "compile": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "@earendil-works/pi-agent-core": "1.6.0",
     "@earendil-works/pi-ai": "1.6.0",
     "@earendil-works/pi-mcp": "1.6.0",
+    "@mozilla/readability": "^0.6.0",
     "@reduxjs/toolkit": "^2.6.0",
     "antd": "^6.7.1",
     "dayjs": "^1.11.13",
@@ -33,7 +34,9 @@
     "react-redux": "^9.2.0",
     "react-syntax-highlighter": "^15.6.1",
     "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "turndown": "^7.2.5",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -43,6 +46,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/turndown": "^5.0.6",
+    "linkedom": "^0.18.15",
     "tsx": "4.20.6",
     "typescript": "^5.6.3"
   }

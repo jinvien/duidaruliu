@@ -72,7 +72,7 @@ export function customPiModel(model: CustomModel): Model<Api> {
     reasoning: model.thinking,
     input: model.vision ? ['text', 'image'] : ['text'],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: model.contextTokens ?? 0,
+    contextWindow: Math.max(0, ...model.contextWindows),
     maxTokens: model.maxOutputTokens ?? 0,
   } as Model<Api>;
 }

@@ -50,6 +50,32 @@
       "modelUnsupported": "이 모델은 tools 능력이 없습니다. 이 대화는 도구를 보내지 않습니다. 설정의 연결됨은 서버가 연결되었다는 뜻이지, 모델이 도구를 호출할 수 있다는 뜻이 아닙니다.",
       "modelUnsupportedShort": "도구 없음",
       "noTools": "스위치는 켜져 있고 이 모델은 도구를 지원하지만, 연결된 사용 가능한 도구가 없습니다. 이 대화는 도구를 보내지 않습니다."
+    },
+    "page": {
+      "attach": "현재 페이지 인용",
+      "loading": "페이지 내용을 추출하는 중",
+      "unsupported": "이 페이지는 추출할 수 없습니다",
+      "failed": "페이지 추출에 실패했습니다",
+      "remove": "페이지 인용 제거",
+      "preview": "미리보기",
+      "previewTitle": "페이지 내용 미리보기",
+      "tokens": "약 {{count}} 토큰",
+      "overContext": "컨텍스트 창({{limit}} 토큰)을 초과했습니다. 모델이 전문을 보지 못할 수 있습니다",
+      "truncated": "본문이 너무 길어 잘렸습니다",
+      "sourceLabel": "인용 페이지"
+    },
+    "modelPicker": {
+      "title": "모델 선택",
+      "empty": "모델 선택",
+      "thinking": "사고",
+      "thinkingOn": "켜기",
+      "thinkingOff": "끄기",
+      "thinkingOffShort": "사고 안 함",
+      "thinkingDefault": "서비스 기본값",
+      "thinkingUndeclared": "이 서비스는 사고 모드를 선언하지 않아 요청에 사고 파라미터가 포함되지 않습니다. 설정에서 '사고 모드'를 켜면 여기서 전환할 수 있습니다.",
+      "context": "컨텍스트 창",
+      "contextUnset": "설정 안 됨",
+      "contextHint": "참조한 페이지가 너무 긴지 판단하는 클라이언트 측 컨텍스트 예산입니다. 모델 API로 전송되지 않습니다"
     }
   },
   "links": {
@@ -57,7 +83,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama 설정",
-    "customPromptSetting": "사용자 정의 프롬프트",
+    "quickCommandSetting": "빠른 명령",
     "customLinkSetting": "빠른 링크 설정",
     "mcp": "도구 / MCP"
   },
@@ -109,16 +135,22 @@
     "linkAddress": "링크 주소",
     "addLink": "링크 추가"
   },
-  "customPromptSetting": {
-    "promptSetting": "프롬프트 설정",
-    "usedForQuickOpen": "/ 입력으로 프롬프트 선택",
-    "prompt": "프롬프트",
-    "inputLabelTip": "프롬프트 약칭 필수",
-    "inputLabelPlaceholder": "짧은 약칭 입력",
-    "inputValueTip": "프롬프트 내용 필수",
-    "inputValuePlaceholder": "전체 프롬프트 입력",
-    "linkAddress": "링크 주소",
-    "addPrompt": "프롬프트 추가"
+  "quickCommandSetting": {
+    "title": "빠른 명령",
+    "description": "대화창에 /를 입력하면 명령을 선택할 수 있습니다. 기본 분류 \"문서 명령\"의 명령은 페이지를 인용하면 버튼으로 표시되며, 클릭하면 바로 전송됩니다.",
+    "categoryNamePlaceholder": "분류 이름",
+    "categoryNameRequired": "분류 이름 필수",
+    "deleteCategory": "분류 삭제",
+    "defaultCategoryTip": "기본 분류는 삭제할 수 없습니다",
+    "addCategory": "분류 추가",
+    "commandTitlePlaceholder": "명령 제목 (간결하게)",
+    "commandTitleRequired": "명령 제목 필수",
+    "commandContentPlaceholder": "명령 내용",
+    "commandContentRequired": "명령 내용 필수",
+    "addCommand": "명령 추가",
+    "emptyCategory": "이 분류에는 아직 명령이 없습니다",
+    "restoreDefault": "기본값 복원",
+    "restored": "기본값으로 복원했습니다. 저장하면 적용됩니다."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama 설정이 성공적으로 저장되었습니다",

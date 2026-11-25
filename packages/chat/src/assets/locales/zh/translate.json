@@ -58,6 +58,32 @@
       "modelUnsupported": "当前模型已确认没有 tools 能力，这次对话不会把工具发给它。设置里的已连接只表示服务器连上了，和模型能不能调用工具不是一回事。",
       "modelUnsupportedShort": "无工具",
       "noTools": "总开关已打开，当前模型也支持工具，但还没有已连接的可用工具。这次对话不会带上工具。"
+    },
+    "page": {
+      "attach": "引用当前页面",
+      "loading": "正在提取页面内容",
+      "unsupported": "当前页面不支持提取",
+      "failed": "页面提取失败",
+      "remove": "移除页面引用",
+      "preview": "预览",
+      "previewTitle": "页面内容预览",
+      "tokens": "约 {{count}} tokens",
+      "overContext": "超出上下文窗口（{{limit}} tokens），模型可能看不到全文",
+      "truncated": "正文过长，已截断",
+      "sourceLabel": "引用页面"
+    },
+    "modelPicker": {
+      "title": "选择模型",
+      "empty": "选择模型",
+      "thinking": "思考",
+      "thinkingOn": "开启",
+      "thinkingOff": "关闭",
+      "thinkingOffShort": "不思考",
+      "thinkingDefault": "服务默认",
+      "thinkingUndeclared": "这个服务没有声明思考模式，请求不会带思考参数。在设置里勾选「思考模式」后可在这里开关。",
+      "context": "上下文窗口",
+      "contextUnset": "未设置",
+      "contextHint": "客户端上下文预算，用于判断引用页面是否超限，不会发给模型接口"
     }
   },
   "links": {
@@ -65,7 +91,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama 设置",
-    "customPromptSetting": "自定义提示词",
+    "quickCommandSetting": "快捷指令",
     "customLinkSetting": "快捷入口设置",
     "mcp": "工具 / MCP",
     "customModel": "自定义模型"
@@ -118,16 +144,22 @@
     "linkAddress": "链接地址",
     "addLink": "新增链接"
   },
-  "customPromptSetting": {
-    "promptSetting": "提示词设置",
-    "usedForQuickOpen": "在对话框输入 / 即可快速选取提示词",
-    "prompt": "提示词",
-    "inputLabelTip": "提示词简称必填",
-    "inputLabelPlaceholder": "提示词简称，尽量简短",
-    "inputValueTip": "提示词内容必填",
-    "inputValuePlaceholder": "请输入完整提示词",
-    "linkAddress": "链接地址",
-    "addPrompt": "新增提示词"
+  "quickCommandSetting": {
+    "title": "快捷指令",
+    "description": "在对话框输入 / 即可选择指令。默认分类「文章快捷指令」里的指令，会在引用页面后显示为快捷按钮，点击直接发送。",
+    "categoryNamePlaceholder": "分类名称",
+    "categoryNameRequired": "分类名称必填",
+    "deleteCategory": "删除分类",
+    "defaultCategoryTip": "默认分类，不能删除",
+    "addCategory": "新增分类",
+    "commandTitlePlaceholder": "指令标题，尽量简短",
+    "commandTitleRequired": "指令标题必填",
+    "commandContentPlaceholder": "指令正文",
+    "commandContentRequired": "指令正文必填",
+    "addCommand": "添加指令",
+    "emptyCategory": "这个分类下还没有指令",
+    "restoreDefault": "恢复默认",
+    "restored": "已恢复默认，点保存后生效"
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama 配置保存成功",
@@ -198,10 +230,8 @@
     "protocol": "协议",
     "sessionHeaders": "附带会话标识",
     "sessionHeadersExtra": "发送 X-Session-Id、X-QA-Id、X-Model-Request-Id 请求头和 prompt_cache_key，用于会话亲和与缓存命中，服务不支持时请保持关闭",
-    "input": "输入",
     "output": "输出",
     "providerDefault": "使用提供商默认值",
-    "inputExtra": "上下文长度，仅作记录",
     "outputExtra": "单次最多输出的 token 数",
     "cancel": "取消",
     "save": "保存",
@@ -210,6 +240,9 @@
     "deleteConfirm": "删除服务 {{name}} 及其下所有模型？",
     "listHint": "点击模型名即可切换使用",
     "modelNameExtra": "输入后回车，可添加多个；填好地址和 Key 后可从服务的模型列表里选",
-    "sharedHint": "以上能力对该服务下的所有模型生效，能力不同的模型请分开添加"
+    "sharedHint": "以上能力对该服务下的所有模型生效，能力不同的模型请分开添加",
+    "context": "上下文窗口",
+    "contextExtra": "可填多个，回车分隔，如 300K、600K、960K。使用时在模型选择里切换。这是客户端预算，不会发给模型接口",
+    "contextPlaceholder": "例如 300K、600K、960K"
   }
 }

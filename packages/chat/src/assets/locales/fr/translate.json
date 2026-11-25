@@ -50,6 +50,32 @@
       "modelUnsupported": "Ce modèle n'a pas la capacité tools. Cette conversation ne lui enverra pas d'outils. Connecté dans les réglages signifie seulement que le serveur répond, pas que le modèle peut les appeler.",
       "modelUnsupportedShort": "Sans outils",
       "noTools": "L'interrupteur est activé et le modèle accepte les outils, mais aucun outil connecté n'est disponible. Cette conversation n'enverra pas d'outils."
+    },
+    "page": {
+      "attach": "Citer la page actuelle",
+      "loading": "Extraction du contenu de la page",
+      "unsupported": "Cette page ne peut pas être extraite",
+      "failed": "Échec de l'extraction de la page",
+      "remove": "Retirer la référence de page",
+      "preview": "Aperçu",
+      "previewTitle": "Aperçu du contenu de la page",
+      "tokens": "Environ {{count}} tokens",
+      "overContext": "Dépasse la fenêtre de contexte ({{limit}} tokens) ; le modèle risque de ne pas voir le texte complet",
+      "truncated": "Contenu trop long, tronqué",
+      "sourceLabel": "Page citée"
+    },
+    "modelPicker": {
+      "title": "Choisir un modèle",
+      "empty": "Choisir un modèle",
+      "thinking": "Réflexion",
+      "thinkingOn": "Activée",
+      "thinkingOff": "Désactivée",
+      "thinkingOffShort": "Sans réflexion",
+      "thinkingDefault": "Par défaut du service",
+      "thinkingUndeclared": "Ce service n'a pas déclaré le mode réflexion, les requêtes n'envoient donc aucun paramètre de réflexion. Activez-le dans les réglages pour le changer ici.",
+      "context": "Fenêtre de contexte",
+      "contextUnset": "Non défini",
+      "contextHint": "Budget de contexte côté client pour vérifier si une page citée est trop longue. Il n'est pas envoyé à l'API du modèle"
     }
   },
   "links": {
@@ -57,7 +83,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Paramètres Ollama",
-    "customPromptSetting": "Invites personnalisées",
+    "quickCommandSetting": "Commandes rapides",
     "customLinkSetting": "Paramètres d'accès rapide",
     "mcp": "Outils / MCP"
   },
@@ -109,16 +135,22 @@
     "linkAddress": "Adresse du lien",
     "addLink": "Ajouter un lien"
   },
-  "customPromptSetting": {
-    "promptSetting": "Paramètres d'invite",
-    "usedForQuickOpen": "Tapez / pour sélectionner des invites",
-    "prompt": "Invite",
-    "inputLabelTip": "Nom court requis",
-    "inputLabelPlaceholder": "Nom court (soyez concis)",
-    "inputValueTip": "Contenu d'invite requis",
-    "inputValuePlaceholder": "Invite complète",
-    "linkAddress": "Adresse du lien",
-    "addPrompt": "Ajouter une invite"
+  "quickCommandSetting": {
+    "title": "Commandes rapides",
+    "description": "Tapez / dans la zone de discussion pour choisir une commande. Les commandes de la catégorie par défaut « Commandes d'article » apparaissent sous forme de boutons après avoir cité une page ; cliquez pour envoyer.",
+    "categoryNamePlaceholder": "Nom de la catégorie",
+    "categoryNameRequired": "Nom de catégorie requis",
+    "deleteCategory": "Supprimer la catégorie",
+    "defaultCategoryTip": "Catégorie par défaut, non supprimable",
+    "addCategory": "Ajouter une catégorie",
+    "commandTitlePlaceholder": "Titre de la commande (concis)",
+    "commandTitleRequired": "Titre de la commande requis",
+    "commandContentPlaceholder": "Contenu de la commande",
+    "commandContentRequired": "Contenu de la commande requis",
+    "addCommand": "Ajouter une commande",
+    "emptyCategory": "Aucune commande dans cette catégorie",
+    "restoreDefault": "Restaurer les valeurs par défaut",
+    "restored": "Valeurs par défaut restaurées. Cliquez sur Enregistrer pour appliquer."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Configuration Ollama enregistrée avec succès",

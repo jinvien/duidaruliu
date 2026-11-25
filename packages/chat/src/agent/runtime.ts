@@ -9,6 +9,7 @@ import {
   updateLastMessage,
 } from '../store/chatSlice';
 import { imageDataUrlToBase64 } from '../utils/chatImage';
+import { formatPageForModel } from '../page/format';
 import { shouldExposeTools } from '../mcp/toolGate';
 import { modelHasTools, modelHasVision } from '../utils/modelCapability';
 import {
@@ -57,6 +58,9 @@ let sessionId = newTrackingId();
 let qaId = newTrackingId();
 let modelParamsOverride: OllamaModelParams | undefined;
 let loadingTimer: ReturnType<typeof setTimeout> | undefined;
+let streamingPaintQueued = false;
+let streamingPaintTimer: ReturnType<typeof setTimeout> | undefined;
+let streamingPaintFrame = 0;
 let thinkingText = '';
 let visibleText = '';
 /** 每次换会话或重新开跑都会增加。过期的流式事件不能再改界面。 */
@@ -79,16 +83,18 @@ function toAgentMessages(messages: Message[]): AgentMessage[] {
     }
 
     if (message.role === 'user') {
+      // 页面引用在这里拼进文本，Ollama 和自定义模型都从这里取消息。
+      const text = message.page ? formatPageForModel(message.page, message.content) : message.content;
       const images: ImageContent[] = (message.images ?? []).map((image) => ({
         type: 'image',
         data: imageDataUrlToBase64(image.dataUrl),
         mimeType: mimeTypeFromDataUrl(image.dataUrl),
       }));
       if (!images.length) {
-        return { role: 'user', content: message.content, timestamp: message.createdAt };
+        return { role: 'user', content: text, timestamp: message.createdAt };
       }
       const content: Array<TextContent | ImageContent> = [];
-      if (message.content) content.push({ type: 'text', text: message.content });
+      if (text) content.push({ type: 'text', text });
       content.push(...images);
       return { role: 'user', content, timestamp: message.createdAt };
     }
@@ -157,6 +163,7 @@ function currentCustomRequest(custom: CustomModel): CustomStreamRequest {
     translatePostfix: i18n.t('prompt.aiTranslateSelected.postfix'),
     // 翻译场景会带一个低温度覆盖，其余场景不传，交给服务端默认值。
     temperature: modelParamsOverride?.options?.temperature,
+    thinkingEnabled: !state.customModel.thinkingOff.includes(custom.id),
     tracking: { sessionId, qaId },
   };
 }
@@ -167,6 +174,54 @@ function clearLoadingTimer() {
   loadingTimer = undefined;
 }
 
+function cancelStreamingPaint() {
+  streamingPaintQueued = false;
+  if (streamingPaintTimer !== undefined) {
+    clearTimeout(streamingPaintTimer);
+    streamingPaintTimer = undefined;
+  }
+  if (streamingPaintFrame !== 0 && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(streamingPaintFrame);
+    streamingPaintFrame = 0;
+  }
+}
+
+function paintStreamingAssistant() {
+  if (!runIsCurrent()) return;
+  store.dispatch(setResponseStatus('outputting'));
+  store.dispatch(updateLastMessage(visibleText));
+  if (thinkingText) store.dispatch(patchLastAssistant({ thinking: thinkingText }));
+}
+
+/** 把尚未写到界面上的正文一次写完。没有排队的增量时什么也不做。 */
+function flushStreamingPaint() {
+  if (!streamingPaintQueued) return;
+  cancelStreamingPaint();
+  paintStreamingAssistant();
+}
+
+/**
+ * 模型每个 token 都推一次。跟着每次都改 Redux，气泡会整篇重排 Markdown，长回复就会卡住。
+ * 同一帧里的增量合成一次界面更新，收尾再把最后一截写实。
+ */
+function scheduleStreamingPaint() {
+  if (streamingPaintQueued) return;
+  streamingPaintQueued = true;
+  const scheduledEpoch = epoch;
+  const run = () => {
+    if (!streamingPaintQueued || scheduledEpoch !== epoch) {
+      streamingPaintQueued = false;
+      return;
+    }
+    flushStreamingPaint();
+  };
+  if (typeof requestAnimationFrame === 'function') {
+    streamingPaintFrame = requestAnimationFrame(run);
+    return;
+  }
+  streamingPaintTimer = setTimeout(run, 16);
+}
+
 function runIsCurrent() {
   return runEpoch !== 0 && runEpoch === epoch;
 }
@@ -174,6 +229,7 @@ function runIsCurrent() {
 function invalidateRun() {
   epoch += 1;
   clearLoadingTimer();
+  cancelStreamingPaint();
 }
 
 function armRun() {
@@ -317,6 +373,7 @@ agent.subscribe((event) => {
   if (!runIsCurrent()) return;
 
   if (event.type === 'agent_start') {
+    cancelStreamingPaint();
     thinkingText = '';
     visibleText = '';
     clearLoadingTimer();
@@ -331,6 +388,7 @@ agent.subscribe((event) => {
 
   if (event.type === 'message_start' && event.message.role === 'assistant') {
     const message = event.message;
+    cancelStreamingPaint();
     thinkingText = '';
     visibleText = '';
     ensureStreamingAssistant(message.model);
@@ -346,14 +404,14 @@ agent.subscribe((event) => {
     if (update.type === 'text_delta') visibleText += update.delta;
     else thinkingText += update.delta;
     clearLoadingTimer();
-    store.dispatch(setResponseStatus('outputting'));
-    store.dispatch(updateLastMessage(visibleText));
-    if (thinkingText) store.dispatch(patchLastAssistant({ thinking: thinkingText }));
+    scheduleStreamingPaint();
     return;
   }
 
   if (event.type === 'message_end' && event.message.role === 'assistant') {
     const message = event.message;
+    // 停止时收尾正文可能是空的，要先把还排着队的 partial 写进当前这条。
+    flushStreamingPaint();
     ensureStreamingAssistant(message.model);
     const { text, thinking, toolCalls } = assistantParts(message);
     // 停止或失败的收尾消息可能没有正文。空串不能盖掉已经流出来的 partial。
@@ -399,6 +457,7 @@ agent.subscribe((event) => {
   }
 
   if (event.type !== 'agent_end') return;
+  flushStreamingPaint();
   clearLoadingTimer();
   cancelPendingToolApproval();
   store.dispatch(setPendingTool(null));
@@ -413,7 +472,11 @@ agent.subscribe((event) => {
   console.error('onChatError', error);
   reportChatError(error);
   } finally {
-    queueMicrotask(publishAgentActivity);
+    // 每个流式片段都通知的话，输入框和顶栏会跟着整棵重渲染。
+    // 那里的受控列表会在 layout 里再次 setState，和气泡列表的更新叠在同一次同步渲染里，
+    // 嵌套次数超过 React 的上限后，这个异常会被收成对话失败。
+    // isStreaming 只在开跑和收尾变化，按钮只需要这两次。
+    if (event.type === 'agent_start') queueMicrotask(publishAgentActivity);
     // agent_end 之后还要经过好几层 await 才会 finishRun 清掉 isStreaming，一个微任务等不到。
     // 通知得太早，界面最后一次渲染就停在「仍在流式」，依赖它的按钮（如添加图片）会一直灰着。
     // waitForIdle 在 finishRun 里 resolve，此时 isStreaming 已经是 false。
@@ -458,6 +521,8 @@ export function abortAgent() {
  * 换会话之前调用，避免旧回复写到新的消息列表上。
  */
 export async function settleAgent() {
+  // 先把这一帧还没画上去的正文留在当前会话，再让后续的取消事件失效。
+  flushStreamingPaint();
   invalidateRun();
   store.dispatch(setPendingTool(null));
   if (agent.state.isStreaming) {

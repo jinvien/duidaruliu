@@ -72,6 +72,7 @@ function model(overrides: Partial<CustomModel> = {}): CustomModel {
     customProtocol: false,
     protocol: 'chat_completions',
     sessionHeaders: false,
+    contextWindows: [],
     ...overrides,
   };
 }
@@ -1161,8 +1162,107 @@ async function agentLoop() {
   assert(!agent.state.isStreaming, 'agent is idle');
 }
 
+/** 选择模型时关闭思考：三套协议各用自己的关闭写法，且不回填历史思考。 */
+async function thinkingSwitch() {
+  const done = [
+    { data: { choices: [{ delta: { content: 'x' }, finish_reason: 'stop' }] } },
+    { data: '[DONE]' },
+  ];
+  const history: Message[] = [
+    user('q'),
+    {
+      role: 'assistant',
+      content: [
+        { type: 'thinking', thinking: '先想', thinkingSignature: 'sig-1' },
+        { type: 'text', text: '答' },
+      ],
+      api: 'custom',
+      provider: 'custom',
+      model: 'model-a',
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      },
+      stopReason: 'stop',
+      timestamp: 2,
+    },
+    user('q2', 3),
+  ];
+
+  // Chat Completions：开着带 high，关掉带 no_think，不回填 reasoning_content。
+  const chat = model({ thinking: true });
+  const chatOn = await run(history, done, chat, { thinkingEnabled: true });
+  equal(chatOn.captured.body.reasoning_effort, 'high', 'chat: on sends high');
+  assert(
+    JSON.stringify(chatOn.captured.body.messages).includes('先想'),
+    'chat: on replays thinking'
+  );
+  const chatOff = await run(history, done, chat, { thinkingEnabled: false });
+  equal(chatOff.captured.body.reasoning_effort, 'no_think', 'chat: off sends no_think');
+  assert(
+    !JSON.stringify(chatOff.captured.body.messages).includes('先想'),
+    'chat: off does not replay thinking'
+  );
+  const chatDefault = await run(history, done, chat, {});
+  equal(chatDefault.captured.body.reasoning_effort, 'high', 'chat: unset means on');
+
+  // 服务没声明思考模式：开关不起作用，什么都不带。
+  const undeclared = await run(history, done, model({ thinking: false }), {
+    thinkingEnabled: false,
+  });
+  assert(!('reasoning_effort' in undeclared.captured.body), 'chat: undeclared sends nothing');
+
+  // OpenAI 官方的关闭值是 none。
+  const official = await run(
+    history,
+    done,
+    model({ url: 'https://api.openai.com/v1/chat/completions', thinking: true }),
+    { thinkingEnabled: false }
+  );
+  equal(official.captured.body.reasoning_effort, 'none', 'chat: official OpenAI uses none');
+
+  // Responses
+  const responses = model({
+    url: 'https://gateway.example.com/openapi/v1/responses',
+    thinking: true,
+    customProtocol: true,
+    protocol: 'responses',
+  });
+  const respOn = await run(history, [{ data: { type: 'response.completed' } }], responses, {});
+  equal(respOn.captured.body.reasoning, { effort: 'high' }, 'responses: on sends high');
+  const respOff = await run(history, [{ data: { type: 'response.completed' } }], responses, {
+    thinkingEnabled: false,
+  });
+  equal(respOff.captured.body.reasoning, { effort: 'no_think' }, 'responses: off sends no_think');
+
+  // Claude Messages：关闭是 thinking.disabled，不再占用思考预算，温度可以正常传。
+  const messages = model({
+    url: 'https://gateway.example.com/openapi/v1/messages',
+    thinking: true,
+  });
+  const msgOn = await run(history, [{ data: { type: 'message_stop' } }], messages, {});
+  equal(msgOn.captured.body.thinking?.type, 'enabled', 'messages: on enables thinking');
+  equal(msgOn.captured.body.max_tokens, 16384, 'messages: on uses the thinking default budget');
+  const msgOff = await run(history, [{ data: { type: 'message_stop' } }], messages, {
+    thinkingEnabled: false,
+    temperature: 0.3,
+  });
+  equal(msgOff.captured.body.thinking, { type: 'disabled' }, 'messages: off sends disabled');
+  equal(msgOff.captured.body.max_tokens, 8192, 'messages: off uses the plain default');
+  equal(msgOff.captured.body.temperature, 0.3, 'messages: off keeps temperature');
+  assert(
+    !JSON.stringify(msgOff.captured.body.messages).includes('先想'),
+    'messages: off does not replay thinking'
+  );
+}
+
 async function main() {
   await chatCompletions();
+  await thinkingSwitch();
   await responsesProtocol();
   await claudeMessages();
   await connectionTest();

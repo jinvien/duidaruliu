@@ -8,12 +8,14 @@ import Chat from '../pages/chat';
 import Setting from '../pages/setting';
 import store from '../store';
 import { toggleTheme, updateAppSettings, initializeApp, type AppState } from '../store/appSlice';
-import { initializePrompts } from '../store/promptSlice';
+import { initializeQuickCommands, setQuickCommands } from '../store/quickCommandSlice';
 import { initializeOllama, setOllamaModelParams, setOllamaUrl } from '../store/ollamaSlice';
 import {
   ACTIVE_CUSTOM_MODEL_STORAGE_KEY,
   CUSTOM_SERVICES_STORAGE_KEY,
   hydrateCustomModels,
+  THINKING_OFF_STORAGE_KEY,
+  CONTEXT_CHOICE_STORAGE_KEY,
   initializeCustomModels,
 } from '../store/customModelSlice';
 import { selectCombinedModels, selectSelectedModelKey } from '../models/selection';
@@ -65,13 +67,19 @@ const SidePanelMain: React.FC<{ setAppMode: SetAppMode; appMode: AppMode }> = ({
       if (area === 'local') {
         const services = changes[CUSTOM_SERVICES_STORAGE_KEY];
         const active = changes[ACTIVE_CUSTOM_MODEL_STORAGE_KEY];
-        if (services || active) {
+        const thinkingOff = changes[THINKING_OFF_STORAGE_KEY];
+        const contextChoice = changes[CONTEXT_CHOICE_STORAGE_KEY];
+        if (services || active || thinkingOff || contextChoice) {
           dispatch(
             hydrateCustomModels({
               services: services?.newValue,
               activeId: active?.newValue,
+              thinkingOff: thinkingOff?.newValue,
               hasServices: Boolean(services),
               hasActive: Boolean(active),
+              hasThinkingOff: Boolean(thinkingOff),
+              contextChoice: contextChoice?.newValue,
+              hasContextChoice: Boolean(contextChoice),
             })
           );
         }
@@ -141,7 +149,7 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
       dispatch(initializeOllama());
       dispatch(initializeCustomModels());
       dispatch(initializeApp());
-      dispatch(initializePrompts());
+      dispatch(initializeQuickCommands());
       dispatch(initializeMcp());
     })();
     if (!ownsRuntime) {
@@ -157,6 +165,15 @@ const ThemedApp: React.FC<ChatRootProps> = ({ ownsRuntime, onRuntimeStop }) => {
       })();
     };
   }, [dispatch, ownsRuntime, onRuntimeStop]);
+
+  // 快捷指令在设置里改完，已经打开的聊天页跟着更新。设置页和聊天页可能不在同一份文档里。
+  useEffect(() => {
+    return getChatHost().storage.subscribe((changes, area) => {
+      if (area === 'sync' && changes.quickCommands) {
+        dispatch(setQuickCommands(changes.quickCommands.newValue));
+      }
+    });
+  }, [dispatch]);
 
   useEffect(() => {
     if (!ownsRuntime) return;

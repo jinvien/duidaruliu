@@ -1,4 +1,8 @@
-import { composerCanSend } from '../src/pages/chat/composer';
+import {
+  composerCanSend,
+  composerEnterAction,
+  composerKeyStopsCascader,
+} from '../src/pages/chat/composer';
 import { mcpPageOwnsRuntime, readMcpLocalChange, rewriteOriginForSave } from '../src/mcp/page';
 import { blockReasonForToolDecision } from '../src/mcp/tools';
 
@@ -68,6 +72,49 @@ function main() {
     'the first 500ms still blocks send while the status is end'
   );
   assert(composerCanSend('end', false, false, true) === false, 'empty text cannot send');
+  assert(composerKeyStopsCascader(' ') === true, 'space must not reach the cascader');
+  assert(composerKeyStopsCascader('Enter') === true, 'enter must not reach the cascader');
+  assert(composerKeyStopsCascader('a') === false, 'letters still bubble');
+  assert(
+    composerEnterAction({
+      key: 'Enter',
+      shiftKey: true,
+      metaKey: false,
+      ctrlKey: false,
+      composing: false,
+    }) === 'break-line',
+    'shift+enter breaks the line'
+  );
+  assert(
+    composerEnterAction({
+      key: 'Enter',
+      shiftKey: false,
+      metaKey: true,
+      ctrlKey: false,
+      composing: false,
+    }) === 'insert-line',
+    'cmd+enter inserts a line'
+  );
+  assert(
+    composerEnterAction({
+      key: 'Enter',
+      shiftKey: false,
+      metaKey: false,
+      ctrlKey: false,
+      composing: false,
+    }) === 'send',
+    'enter still sends'
+  );
+  assert(
+    composerEnterAction({
+      key: ' ',
+      shiftKey: false,
+      metaKey: false,
+      ctrlKey: false,
+      composing: false,
+    }) === 'ignore',
+    'space is not an enter action'
+  );
 
   const aborted = blockReasonForToolDecision('aborted', false);
   assert(

@@ -58,6 +58,32 @@
       "modelUnsupported": "This model is confirmed to have no tools capability, so this chat will not send tools to it. Connected in Settings only means the server is up, not that the model can call tools.",
       "modelUnsupportedShort": "No tools",
       "noTools": "The switch is on and this model supports tools, but no connected tool is available. This chat will not send tools."
+    },
+    "page": {
+      "attach": "Quote current page",
+      "loading": "Extracting page content",
+      "unsupported": "This page cannot be extracted",
+      "failed": "Failed to extract the page",
+      "remove": "Remove page reference",
+      "preview": "Preview",
+      "previewTitle": "Page content preview",
+      "tokens": "About {{count}} tokens",
+      "overContext": "Exceeds the context window ({{limit}} tokens); the model may not see the full text",
+      "truncated": "Content too long, truncated",
+      "sourceLabel": "Quoted page"
+    },
+    "modelPicker": {
+      "title": "Select model",
+      "empty": "Select model",
+      "thinking": "Thinking",
+      "thinkingOn": "On",
+      "thinkingOff": "Off",
+      "thinkingOffShort": "No thinking",
+      "thinkingDefault": "Service default",
+      "thinkingUndeclared": "This service has not declared thinking mode, so requests carry no thinking parameter. Enable \"Thinking mode\" in settings to switch it here.",
+      "context": "Context window",
+      "contextUnset": "Not set",
+      "contextHint": "Client-side context budget used to check whether a referenced page is too long. It is not sent to the model API"
     }
   },
   "links": {
@@ -65,7 +91,7 @@
   },
   "settingMenu": {
     "ollamaSetting": "Ollama Settings",
-    "customPromptSetting": "Custom Prompts",
+    "quickCommandSetting": "Quick Commands",
     "customLinkSetting": "Quick Access Settings",
     "mcp": "Tools / MCP",
     "customModel": "Custom models"
@@ -118,17 +144,22 @@
     "linkAddress": "Link Address",
     "addLink": "Add Link"
   },
-  "customPromptSetting": {
-    "promptSetting": "Prompt Settings",
-    "usedForQuickOpen": "Type / in dialog to select prompts",
-    "prompt": "Prompt",
-    "inputLabelTip": "Short name required",
-    "inputLabelPlaceholder": "Short name (keep it brief)",
-    "inputValueTip": "Prompt content required",
-    "inputValuePlaceholder": "Enter complete prompt",
-    "linkAddress": "Link Address",
-    "systemPrompt": "System Prompt",
-    "quickPrompt": "Quick Prompt"
+  "quickCommandSetting": {
+    "title": "Quick Commands",
+    "description": "Type / in the chat box to pick a command. Commands in the default \"Article commands\" category appear as buttons after you quote a page; click one to send it.",
+    "categoryNamePlaceholder": "Category name",
+    "categoryNameRequired": "Category name required",
+    "deleteCategory": "Delete category",
+    "defaultCategoryTip": "Default category, cannot be deleted",
+    "addCategory": "Add category",
+    "commandTitlePlaceholder": "Command title (keep it brief)",
+    "commandTitleRequired": "Command title required",
+    "commandContentPlaceholder": "Command content",
+    "commandContentRequired": "Command content required",
+    "addCommand": "Add command",
+    "emptyCategory": "No commands in this category yet",
+    "restoreDefault": "Restore defaults",
+    "restored": "Defaults restored. Click Save to apply."
   },
   "ollamaSetting": {
     "ollamaSettingSuccess": "Ollama configuration saved successfully",
@@ -202,10 +233,8 @@
     "protocol": "Protocol",
     "sessionHeaders": "Send session identifiers",
     "sessionHeadersExtra": "Sends X-Session-Id, X-QA-Id and X-Model-Request-Id headers plus prompt_cache_key for session affinity and cache hits. Leave off if the service does not support them.",
-    "input": "Input",
     "output": "Output",
     "providerDefault": "Use provider default",
-    "inputExtra": "Context length, for reference only",
     "outputExtra": "Max tokens per reply",
     "cancel": "Cancel",
     "save": "Save",
@@ -214,6 +243,9 @@
     "deleteConfirm": "Delete service {{name}} and all its models?",
     "listHint": "Click a model name to switch to it",
     "modelNameExtra": "Press Enter to add more than one. Once the URL and key are filled in, you can pick from the service's model list.",
-    "sharedHint": "These settings apply to every model of this service. Add models with different capabilities separately."
+    "sharedHint": "These settings apply to every model of this service. Add models with different capabilities separately.",
+    "context": "Context window",
+    "contextExtra": "Enter several values separated by Enter, such as 300K, 600K, 960K. Switch between them in the model picker. This is a client-side budget and is not sent to the model API",
+    "contextPlaceholder": "e.g. 300K, 600K, 960K"
   }
 }

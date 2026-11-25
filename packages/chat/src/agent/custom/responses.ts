@@ -1,6 +1,8 @@
 import {
   dataUrl,
+  isOfficialOpenAi,
   systemText,
+  thinkingMode,
   type CustomStreamRequest,
   type NeutralMessage,
   type NeutralTool,
@@ -63,7 +65,12 @@ export function buildResponsesBody(
   if (instructions) body.instructions = instructions;
   if (request.temperature !== undefined) body.temperature = request.temperature;
   if (model.maxOutputTokens) body.max_output_tokens = model.maxOutputTokens;
-  if (model.thinking) body.reasoning = { effort: 'high' };
+  const thinking = thinkingMode(request);
+  if (thinking === 'on') body.reasoning = { effort: 'high' };
+  // 混元的关闭值是 no_think，OpenAI 官方是 none。
+  else if (thinking === 'off') {
+    body.reasoning = { effort: isOfficialOpenAi(model.url) ? 'none' : 'no_think' };
+  }
   if (model.sessionHeaders && request.tracking) body.prompt_cache_key = request.tracking.sessionId;
   if (tools.length) {
     body.tools = tools.map((tool) => ({

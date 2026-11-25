@@ -3,6 +3,7 @@ export const SELECTION_COMMANDS = {
   RECORD_SELECTED: 'aiRecordSelected',
   TRANSLATE_PAGE: 'aiTranslatePage',
   RECORD_PAGE: 'aiRecordPage',
+  SEND_PAGE: 'aiSendPage',
 };
 
 export const SYNC_VALUE_CHANGED = 'SYNC_VALUE_CHANGED';
