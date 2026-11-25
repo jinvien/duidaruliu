@@ -67,6 +67,12 @@
     height: 100%;
     min-height: 0;
     padding: var(--ant-padding-sm) 0;
+
+    // 浏览器默认会把视口锚在旧内容上，流式增高时新输出会落到可视区域下面。
+    :global(.ant-bubble-list-scroll-box),
+    :global(.ant-bubble-list-scroll-content) {
+      overflow-anchor: none;
+    }
   }
 }
 

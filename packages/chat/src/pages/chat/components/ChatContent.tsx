@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { App as AntdApp, Badge, Button, Flex, Typography } from 'antd';
 import { Actions, Bubble, Think, ThoughtChain } from '@ant-design/x';
 import { CopyOutlined, MessageOutlined, SyncOutlined } from '@ant-design/icons';
@@ -31,7 +31,7 @@ import Styles from '../index.module.less';
 
 // import types
 import type { GetProp, GetRef } from 'antd';
-import type { ChatImage } from '../../../store/chatSlice';
+import type { ChatImage, Message } from '../../../store/chatSlice';
 import type { PageRef } from '../../../page/types';
 
 // 依赖里存在两份 @types/react，直接作为 JSX 使用会在类型检查时报错。运行时仍是原来的组件。
@@ -40,6 +40,67 @@ const Highlighter = SyntaxHighlighter as unknown as React.ComponentType<{
   style?: { [key: string]: React.CSSProperties };
   children: string;
 }>;
+
+const TAIL_PIN_THRESHOLD = 16;
+const OVERLAY_SCROLLBAR_WIDTH = 16;
+
+function findScrollBox(list: GetRef<typeof Bubble.List> | null) {
+  return (
+    list?.scrollBoxNativeElement ??
+    list?.nativeElement?.querySelector<HTMLElement>('.ant-bubble-list-scroll-box') ??
+    null
+  );
+}
+
+/**
+ * Bubble.List 开启 autoScroll 后，视觉底部就是 scrollTop ≈ 0。
+ * 另一端的 scrollTop 不能当成贴底，否则滚到旧消息也会被判断成还在底部。
+ */
+function isPinnedToBottom(element: HTMLElement) {
+  const { scrollTop, scrollHeight, clientHeight } = element;
+  const reversed = getComputedStyle(element).flexDirection === 'column-reverse';
+  const distance = reversed ? Math.abs(scrollTop) : scrollHeight - clientHeight - scrollTop;
+  return distance <= TAIL_PIN_THRESHOLD;
+}
+
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+function wheelLeavesTail(event: WheelEvent) {
+  return event.deltaY < 0 && Math.abs(event.deltaY) >= Math.abs(event.deltaX);
+}
+
+function keyLeavesTail(event: KeyboardEvent) {
+  return (
+    event.key === 'ArrowUp' ||
+    event.key === 'PageUp' ||
+    event.key === 'Home' ||
+    (event.key === ' ' && event.shiftKey)
+  );
+}
+
+/** 用视口坐标判断滚动条。offsetX/offsetY 相对的是事件目标，长气泡会把正文点击误判成拖滚动条。 */
+function isScrollbarPointer(event: PointerEvent, element: HTMLElement) {
+  if (event.button !== 0 || event.pointerType === 'touch') return false;
+  const rect = element.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  if (x < 0 || y < 0 || x > rect.width || y > rect.height) return false;
+  const gutter = element.offsetWidth - element.clientWidth;
+  if (gutter > 1) return x >= element.clientLeft + element.clientWidth;
+  if (event.target !== element) return false;
+  return x >= rect.width - OVERLAY_SCROLLBAR_WIDTH;
+}
+
+function lastUserCreatedAt(messages: Message[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === 'user') return messages[index].createdAt;
+  }
+  return null;
+}
 
 const ChatBubbleImage: React.FC<{ src: string }> = ({ src }) => {
   const [visible, setVisible] = useState(true);
@@ -134,6 +195,12 @@ const ChatContent: React.FC = () => {
 
   // refs
   const listRef = useRef<GetRef<typeof Bubble.List>>(null);
+  const followTailRef = useRef(true);
+  const userScrollAtRef = useRef(0);
+  const userHoldingRef = useRef(false);
+  const ignoreScrollRef = useRef(0);
+  const prevHeadRef = useRef<number | null>(null);
+  const prevUserAtRef = useRef<number | null>(null);
   const { sendMessage } = useChat();
 
   // store
@@ -142,6 +209,168 @@ const ChatContent: React.FC = () => {
   const selectedModel = useAppSelector(selectSelectedModelLabel);
   const { responseStatus } = useAppSelector((state) => state.chat);
   const { isDarkMode } = useAppSelector((state) => state.app);
+  const prevStatusRef = useRef(responseStatus);
+
+  const scrollToTail = () => {
+    ignoreScrollRef.current += 1;
+    listRef.current?.scrollTo({ top: 'bottom', behavior: 'auto' });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ignoreScrollRef.current = Math.max(0, ignoreScrollRef.current - 1);
+      });
+    });
+  };
+
+  // 发出新消息、切换会话或重新生成时回到底部，并在回复变长时继续跟着走。
+  // 用户自己离开底部后不再抢滚动，直到滚回底部或再发一条。
+  // 已经贴底就不要 scrollTo：Bubble.List 会把它当成正在滚到底，短时间内内容变高都会把视口拽回去。
+  useLayoutEffect(() => {
+    const head = messages[0]?.createdAt ?? null;
+    const userAt = lastUserCreatedAt(messages);
+    const conversationChanged = head !== prevHeadRef.current;
+    const userSent = userAt !== null && userAt !== prevUserAtRef.current;
+    const turnStarted = prevStatusRef.current === 'end' && responseStatus !== 'end';
+    if (conversationChanged || userSent || turnStarted) followTailRef.current = true;
+    prevHeadRef.current = head;
+    prevUserAtRef.current = userAt;
+    prevStatusRef.current = responseStatus;
+
+    if (messages.length === 0) return;
+    const scheduledAt = performance.now();
+    const jumpIfNeeded = () => {
+      if (userHoldingRef.current || !followTailRef.current) return;
+      const box = findScrollBox(listRef.current);
+      if (!box || isPinnedToBottom(box)) return;
+      scrollToTail();
+    };
+    jumpIfNeeded();
+    const frame = requestAnimationFrame(() => {
+      if (userScrollAtRef.current > scheduledAt) return;
+      jumpIfNeeded();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages, pendingTool, responseStatus]);
+
+  useEffect(() => {
+    let box: HTMLElement | null = null;
+    let detach = () => {};
+    let frame = 0;
+    let stopped = false;
+    let observer: MutationObserver | null = null;
+
+    const resumeIfPinned = (next: HTMLElement, mark: number) => {
+      requestAnimationFrame(() => {
+        if (stopped || userHoldingRef.current || userScrollAtRef.current > mark) return;
+        if (isPinnedToBottom(next)) followTailRef.current = true;
+      });
+    };
+
+    const bind = (next: HTMLElement) => {
+      const noteUserScroll = () => {
+        userScrollAtRef.current = performance.now();
+      };
+      const onWheel = (event: WheelEvent) => {
+        if (!wheelLeavesTail(event)) return;
+        const mark = performance.now();
+        userScrollAtRef.current = mark;
+        followTailRef.current = false;
+        resumeIfPinned(next, mark);
+      };
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (isTypingTarget(event.target) || !keyLeavesTail(event)) return;
+        const mark = performance.now();
+        userScrollAtRef.current = mark;
+        followTailRef.current = false;
+        resumeIfPinned(next, mark);
+      };
+      const onTouchStart = () => {
+        userHoldingRef.current = true;
+        noteUserScroll();
+        followTailRef.current = false;
+      };
+      const onTouchEnd = () => {
+        const mark = performance.now();
+        userScrollAtRef.current = mark;
+        userHoldingRef.current = false;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (stopped || userHoldingRef.current || userScrollAtRef.current > mark) return;
+            followTailRef.current = isPinnedToBottom(next);
+          });
+        });
+      };
+      const onScroll = () => {
+        if (ignoreScrollRef.current > 0) return;
+        noteUserScroll();
+        if (userHoldingRef.current) {
+          followTailRef.current = false;
+          return;
+        }
+        followTailRef.current = isPinnedToBottom(next);
+      };
+      const onPointerDown = (event: PointerEvent) => {
+        if (!isScrollbarPointer(event, next)) return;
+        userHoldingRef.current = true;
+        noteUserScroll();
+        followTailRef.current = false;
+      };
+      const onPointerUp = (event: PointerEvent) => {
+        if (event.pointerType === 'touch' || !userHoldingRef.current) return;
+        userHoldingRef.current = false;
+        followTailRef.current = isPinnedToBottom(next);
+      };
+      next.addEventListener('wheel', onWheel, { passive: true });
+      next.addEventListener('keydown', onKeyDown);
+      next.addEventListener('touchstart', onTouchStart, { passive: true });
+      next.addEventListener('touchend', onTouchEnd, { passive: true });
+      next.addEventListener('touchcancel', onTouchEnd, { passive: true });
+      next.addEventListener('scroll', onScroll, { passive: true });
+      next.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+      return () => {
+        next.removeEventListener('wheel', onWheel);
+        next.removeEventListener('keydown', onKeyDown);
+        next.removeEventListener('touchstart', onTouchStart);
+        next.removeEventListener('touchend', onTouchEnd);
+        next.removeEventListener('touchcancel', onTouchEnd);
+        next.removeEventListener('scroll', onScroll);
+        next.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+      };
+    };
+
+    const sync = () => {
+      const next = findScrollBox(listRef.current);
+      if (next === box) return;
+      detach();
+      box = next;
+      detach = next ? bind(next) : () => {};
+    };
+
+    let tries = 0;
+    const tick = () => {
+      if (stopped) return;
+      const root = listRef.current?.nativeElement;
+      if (root && !observer) {
+        observer = new MutationObserver(sync);
+        observer.observe(root, { childList: true });
+      }
+      sync();
+      if (box) return;
+      tries += 1;
+      if (tries >= 180) return;
+      frame = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      detach();
+    };
+  }, []);
 
   const reGenerator = async () => {
     dispatch(setIsViewHistoryMode(false));
