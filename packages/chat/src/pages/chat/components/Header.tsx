@@ -84,17 +84,15 @@ const HeaderSection: React.FC = () => {
   return (
     <header className={Styles.header}>
       <div className={Styles.left}>
-        <Tooltip title={t('chat.openSideMenu')} placement="right">
-          <Button
-            variant="text"
-            color="default"
-            icon={<MenuOutlined />}
-            aria-label={t('chat.openSideMenu')}
-            onClick={() => {
-              dispatch(setIsShowHistoryPanel(!isShowHistoryPanel));
-            }}
-          />
-        </Tooltip>
+        <Button
+          variant="text"
+          color="default"
+          icon={<MenuOutlined />}
+          aria-label={t('chat.openSideMenu')}
+          onClick={() => {
+            dispatch(setIsShowHistoryPanel(!isShowHistoryPanel));
+          }}
+        />
       </div>
       <div className={Styles.middle}>
         {mcpDisconnected ? (
@@ -104,15 +102,13 @@ const HeaderSection: React.FC = () => {
         ) : null}
       </div>
       <Space size={2} className={Styles.right}>
-        <Tooltip title={t('chat.newChat')} placement="left">
-          <Button
-            variant="text"
-            color="default"
-            icon={<PlusOutlined />}
-            aria-label={t('chat.newChat')}
-            onClick={() => createNewChat()}
-          />
-        </Tooltip>
+        <Button
+          variant="text"
+          color="default"
+          icon={<PlusOutlined />}
+          aria-label={t('chat.newChat')}
+          onClick={() => createNewChat()}
+        />
       </Space>
       {serviceProblem ? (
         <div className={Styles.serviceRow} role="status">

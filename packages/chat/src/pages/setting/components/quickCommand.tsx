@@ -84,7 +84,6 @@ const QuickCommandSetting: React.FC = () => {
                         type="text"
                         danger
                         disabled={isDefault}
-                        title={isDefault ? t('quickCommandSetting.defaultCategoryTip') : undefined}
                         icon={<MinusOutlined />}
                         onClick={() => remove(name)}
                       >

@@ -554,14 +554,12 @@ const ChatContent: React.FC = () => {
                 ? {
                     key: 'copy',
                     icon: <CopyOutlined />,
-                    label: t('chat.messageCopy'),
                   }
                 : null,
               isLast && responseStatus === 'end'
                 ? {
                     key: 'retry',
                     icon: <SyncOutlined />,
-                    label: t('chat.regenerate'),
                   }
                 : null,
             ].filter((item) => item !== null);

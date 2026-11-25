@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react';
-import { Button, Flex, Modal, Tag, Tooltip, Typography } from 'antd';
+import { Button, Flex, Modal, Tag, Typography } from 'antd';
 import { CloseOutlined, EyeOutlined, GlobalOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -59,24 +59,20 @@ const PageRefCard: FC<Props> = ({ page, chips, contextLimit, disabled, onRemove,
             </Typography.Paragraph>
           ) : null}
         </Flex>
-        <Tooltip title={t('chat.page.preview')}>
-          <Button
-            type="text"
-            size="small"
-            aria-label={t('chat.page.preview')}
-            icon={<EyeOutlined />}
-            onClick={() => setPreviewOpen(true)}
-          />
-        </Tooltip>
-        <Tooltip title={t('chat.page.remove')}>
-          <Button
-            type="text"
-            size="small"
-            aria-label={t('chat.page.remove')}
-            icon={<CloseOutlined />}
-            onClick={onRemove}
-          />
-        </Tooltip>
+        <Button
+          type="text"
+          size="small"
+          aria-label={t('chat.page.preview')}
+          icon={<EyeOutlined />}
+          onClick={() => setPreviewOpen(true)}
+        />
+        <Button
+          type="text"
+          size="small"
+          aria-label={t('chat.page.remove')}
+          icon={<CloseOutlined />}
+          onClick={onRemove}
+        />
       </Flex>
 
       <Flex wrap gap="small" align="center">

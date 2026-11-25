@@ -242,33 +242,27 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
           justify="space-between"
         >
           <div>
-            <Tooltip title={t('chat.openSettingPanel')}>
-              <Button
-                variant="text"
-                color="default"
-                aria-label={t('chat.openSettingPanel')}
-                icon={<SettingOutlined />}
-                onClick={() => getChatHost().openSettings()}
-              />
-            </Tooltip>
-            <Tooltip title={t('chat.toggleTheme')}>
-              <Button
-                variant="text"
-                color="default"
-                aria-label={t('chat.toggleTheme')}
-                onClick={() => dispatch(toggleTheme())}
-                icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-              />
-            </Tooltip>
-            <Tooltip title={t('chat.toggleLang')}>
-              <Button
-                variant="text"
-                color="default"
-                aria-label={t('chat.toggleLang')}
-                icon={<TranslationOutlined />}
-                onClick={() => changeLanguage()}
-              />
-            </Tooltip>
+            <Button
+              variant="text"
+              color="default"
+              aria-label={t('chat.openSettingPanel')}
+              icon={<SettingOutlined />}
+              onClick={() => getChatHost().openSettings()}
+            />
+            <Button
+              variant="text"
+              color="default"
+              aria-label={t('chat.toggleTheme')}
+              onClick={() => dispatch(toggleTheme())}
+              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            />
+            <Button
+              variant="text"
+              color="default"
+              aria-label={t('chat.toggleLang')}
+              icon={<TranslationOutlined />}
+              onClick={() => changeLanguage()}
+            />
           </div>
           <div>
             <Upload
@@ -286,30 +280,26 @@ const HistoryPanel: React.FC<{ setAppMode: SetAppMode; docked?: boolean }> = ({
               accept=".json"
               showUploadList={false}
             >
-              <Tooltip title={t('chat.uploadConversation')}>
-                <Button
-                  color="default"
-                  variant="text"
-                  aria-label={t('chat.uploadConversation')}
-                  icon={<UploadOutlined />}
-                />
-              </Tooltip>
-            </Upload>
-            <Tooltip title={t('chat.exportConversation')}>
               <Button
                 color="default"
                 variant="text"
-                aria-label={t('chat.exportConversation')}
-                icon={<DownloadOutlined />}
-                onClick={() => {
-                  exportJsonArrayToFile(
-                    conversations,
-                    `ddrl_history_${dayjs().format('YYYY_MM_DD')}.json`
-                  );
-                  antdMessage.success(t('chat.exportSuccess'));
-                }}
+                aria-label={t('chat.uploadConversation')}
+                icon={<UploadOutlined />}
               />
-            </Tooltip>
+            </Upload>
+            <Button
+              color="default"
+              variant="text"
+              aria-label={t('chat.exportConversation')}
+              icon={<DownloadOutlined />}
+              onClick={() => {
+                exportJsonArrayToFile(
+                  conversations,
+                  `ddrl_history_${dayjs().format('YYYY_MM_DD')}.json`
+                );
+                antdMessage.success(t('chat.exportSuccess'));
+              }}
+            />
           </div>
         </Flex>
       </section>

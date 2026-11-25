@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { Sender, Suggestion } from '@ant-design/x';
-import { App as AntdApp, Flex, Alert, Button, Tooltip } from 'antd';
+import { App as AntdApp, Flex, Alert, Button } from 'antd';
 import {
   ArrowUpOutlined,
   CloseOutlined,
@@ -288,34 +288,30 @@ const ChatSender: FC = () => {
         // 输入框上方的功能区，后续的输入辅助功能都放这里。
         <Flex wrap gap="small" align="center" className={Styles.composerToolbar}>
           {showAttach ? (
-            <Tooltip title={attachTitle}>
-              <span className={Styles.composerTool}>
-                <Button
-                  size="small"
-                  variant="text"
-                  color="default"
-                  aria-label={attachTitle}
-                  icon={<PictureOutlined />}
-                  disabled={!visionEnabled || imageLimitReached || turnBusy}
-                  onClick={() => fileInputRef.current?.click()}
-                />
-              </span>
-            </Tooltip>
+            <span className={Styles.composerTool}>
+              <Button
+                size="small"
+                variant="text"
+                color="default"
+                aria-label={attachTitle}
+                icon={<PictureOutlined />}
+                disabled={!visionEnabled || imageLimitReached || turnBusy}
+                onClick={() => fileInputRef.current?.click()}
+              />
+            </span>
           ) : null}
           {canCapturePage ? (
-            <Tooltip title={t('chat.page.attach')}>
-              <span className={Styles.composerTool}>
-                <Button
-                  size="small"
-                  variant="text"
-                  color="default"
-                  aria-label={t('chat.page.attach')}
-                  icon={<FileTextOutlined />}
-                  loading={page.status === 'loading'}
-                  onClick={() => void loadPageRef(dispatch)}
-                />
-              </span>
-            </Tooltip>
+            <span className={Styles.composerTool}>
+              <Button
+                size="small"
+                variant="text"
+                color="default"
+                aria-label={t('chat.page.attach')}
+                icon={<FileTextOutlined />}
+                loading={page.status === 'loading'}
+                onClick={() => void loadPageRef(dispatch)}
+              />
+            </span>
           ) : null}
         </Flex>
       ) : null}
