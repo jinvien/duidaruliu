@@ -10,6 +10,7 @@ import rehypeRaw from 'rehype-raw';
 import { useTranslation } from 'react-i18next';
 
 import { hostnameOf } from './PageRefCard';
+import UsageInfo from './UsageInfo';
 
 // import hooks
 import { useAppSelector, useAppDispatch } from '../../../hooks/useStore';
@@ -571,20 +572,28 @@ const ChatContent: React.FC = () => {
                 loadingRender: () => <Badge status="processing" className="loadingDot" />,
                 loading: waiting && !hasVisibleText && !pendingTool,
                 header: renderHeader('assistant', block.model || selectedModel),
-                footer: actions.length ? (
-                  <Actions
-                    fadeIn={false}
-                    fadeInLeft={false}
-                    items={actions}
-                    onClick={({ key }) => {
-                      if (key === 'copy') {
-                        copyToClipboard(block.copyText);
-                        antdMessage.success(t('chat.messageCopy'));
-                      }
-                      if (key === 'retry') void reGenerator();
-                    }}
-                  />
-                ) : null,
+                footer:
+                  actions.length || block.usages.length ? (
+                    <Flex align="center" gap="small" wrap>
+                      {actions.length ? (
+                        <Actions
+                          fadeIn={false}
+                          fadeInLeft={false}
+                          items={actions}
+                          onClick={({ key }) => {
+                            if (key === 'copy') {
+                              copyToClipboard(block.copyText);
+                              antdMessage.success(t('chat.messageCopy'));
+                            }
+                            if (key === 'retry') void reGenerator();
+                          }}
+                        />
+                      ) : null}
+                      {block.usages.length ? (
+                        <UsageInfo usages={block.usages} createdAt={block.createdAt} />
+                      ) : null}
+                    </Flex>
+                  ) : null,
               },
             ];
           }

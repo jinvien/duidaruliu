@@ -9,6 +9,8 @@ import {
   updateLastMessage,
 } from '../store/chatSlice';
 import { imageDataUrlToBase64 } from '../utils/chatImage';
+import { usageFromAssistant } from '../utils/usage';
+import { selectContextLimit } from '../page/contextLimit';
 import { formatPageForModel } from '../page/format';
 import { shouldExposeTools } from '../mcp/toolGate';
 import { modelHasTools, modelHasVision } from '../utils/modelCapability';
@@ -418,7 +420,15 @@ agent.subscribe((event) => {
     // 换会话时 run 已经失效，这里也不会把这次取消写进下一通。
     const failed = message.stopReason === 'aborted' || message.stopReason === 'error';
     if (!(failed && text.length === 0)) store.dispatch(updateLastMessage(text));
-    store.dispatch(patchLastAssistant({ ...(thinking ? { thinking } : {}), toolCalls }));
+    // 没有任何 token 统计（失败、中止、服务不返回）时 usage 为空，界面不显示。
+    const usage = usageFromAssistant(message.usage, selectContextLimit(store.getState()));
+    store.dispatch(
+      patchLastAssistant({
+        ...(thinking ? { thinking } : {}),
+        toolCalls,
+        ...(usage ? { usage } : {}),
+      })
+    );
     return;
   }
 

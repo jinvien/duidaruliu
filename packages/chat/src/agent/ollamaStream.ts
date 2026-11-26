@@ -61,6 +61,9 @@ type OllamaChunk = {
   };
   done?: boolean;
   done_reason?: unknown;
+  /** 最后一个片段带的 token 统计。 */
+  prompt_eval_count?: unknown;
+  eval_count?: unknown;
   error?: unknown;
 };
 
@@ -71,6 +74,12 @@ export function foldAssistantText(thinking: string, content: string): string {
   if (!thinking) return content;
   if (content.includes('<think>')) return content;
   return `<think>${thinking}</think>${content}`;
+}
+
+function countField(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.round(value)
+    : undefined;
 }
 
 function isAbortError(error: unknown): boolean {
@@ -411,6 +420,18 @@ export function streamOllamaChat(
       trackedCalls.forEach(closeToolCall);
       const reason = stopReason(chunk.done_reason);
       partial.stopReason = reason;
+      const input = countField(chunk.prompt_eval_count);
+      const output = countField(chunk.eval_count);
+      if (input !== undefined || output !== undefined) {
+        partial.usage = {
+          input: input ?? 0,
+          output: output ?? 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          totalTokens: (input ?? 0) + (output ?? 0),
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        };
+      }
       finish({ type: 'done', reason, message: partial });
     }
   };

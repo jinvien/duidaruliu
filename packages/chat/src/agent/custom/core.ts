@@ -22,6 +22,24 @@ const EMPTY_USAGE: AssistantMessage['usage'] = {
 
 export type FinishReason = Extract<StopReason, 'stop' | 'length' | 'toolUse'>;
 
+/**
+ * 协议适配器上报的用量。字段缺省表示这次事件里没有，保留之前已知的值。
+ * input 是输入总量，已经包含命中缓存的部分。
+ */
+export type UsageReport = {
+  input?: number;
+  output?: number;
+  cached?: number;
+  total?: number;
+};
+
+/** 非负有限整数才算有效用量，其余一律当作没给。 */
+export function usageNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.round(value)
+    : undefined;
+}
+
 /** 协议适配器往里喂的增量。核心负责拼成 pi 的事件流。 */
 export type ChunkSink = {
   text(delta: string): void;
@@ -34,6 +52,7 @@ export type ChunkSink = {
   toolArgsFull(key: string, args: unknown): void;
   toolEnd(key: string): void;
   stopReason(reason: FinishReason): void;
+  usage(report: UsageReport): void;
   finish(): void;
   fail(error: unknown): void;
 };
@@ -88,6 +107,22 @@ export function createStreamCore(
   let reason: FinishReason = 'stop';
   const calls = new Map<string, TrackedCall>();
   let callSeq = 0;
+  const known: Required<UsageReport> = { input: 0, output: 0, cached: 0, total: 0 };
+  let usageSeen = false;
+
+  /** pi 的 input 不含缓存，缓存读取单独放 cacheRead。 */
+  const currentUsage = (): AssistantMessage['usage'] => {
+    if (!usageSeen) return EMPTY_USAGE;
+    const cached = Math.min(known.cached, known.input);
+    return {
+      input: known.input - cached,
+      output: known.output,
+      cacheRead: cached,
+      cacheWrite: 0,
+      totalTokens: known.total || known.input + known.output,
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+    };
+  };
 
   const push = (event: Parameters<AssistantMessageEventStream['push']>[0]) => {
     if (finished) return;
@@ -233,10 +268,21 @@ export function createStreamCore(
       reason = next;
     },
 
+    usage(report) {
+      if (finished) return;
+      if (report.input !== undefined) known.input = report.input;
+      if (report.output !== undefined) known.output = report.output;
+      if (report.cached !== undefined) known.cached = report.cached;
+      // 上游没给 total 时，每次都按最新的输入输出重算。
+      known.total = report.total ?? 0;
+      usageSeen = true;
+    },
+
     finish() {
       if (finished) return;
       ensureStarted();
       closeBlocks();
+      partial.usage = currentUsage();
       const final: FinishReason = calls.size > 0 ? 'toolUse' : reason;
       partial.stopReason = final;
       finished = true;
@@ -265,7 +311,7 @@ export function createStreamCore(
         api: piModel.api,
         provider: piModel.provider,
         model: displayModel,
-        usage: EMPTY_USAGE,
+        usage: currentUsage(),
         stopReason: aborted ? 'aborted' : 'error',
         errorMessage: errorText(error),
         timestamp: Date.now(),

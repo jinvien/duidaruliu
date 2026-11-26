@@ -5,7 +5,14 @@ import {
   type NeutralMessage,
   type NeutralTool,
 } from './neutral';
-import { obj, parseEventData, str, type ChunkSink, type FinishReason } from './core';
+import {
+  obj,
+  parseEventData,
+  str,
+  usageNumber,
+  type ChunkSink,
+  type FinishReason,
+} from './core';
 
 import type { SseEvent } from '../../utils/sseFetch';
 
@@ -130,6 +137,20 @@ function stopReason(value: unknown): FinishReason {
   return 'stop';
 }
 
+/** Claude 协议的 input_tokens 不含缓存，输入总量要把缓存读取和写入加回来。 */
+function reportUsage(raw: unknown, sink: ChunkSink) {
+  const usage = obj(raw);
+  if (!usage) return;
+  const fresh = usageNumber(usage.input_tokens);
+  const read = usageNumber(usage.cache_read_input_tokens);
+  const write = usageNumber(usage.cache_creation_input_tokens);
+  sink.usage({
+    input: fresh === undefined ? undefined : fresh + (read ?? 0) + (write ?? 0),
+    output: usageNumber(usage.output_tokens),
+    cached: read,
+  });
+}
+
 export function handleMessagesEvent(event: SseEvent, sink: ChunkSink): void {
   const data = parseEventData(event);
   if (!data) return;
@@ -137,6 +158,9 @@ export function handleMessagesEvent(event: SseEvent, sink: ChunkSink): void {
   const key = `b${typeof data.index === 'number' ? data.index : 0}`;
 
   switch (type) {
+    case 'message_start':
+      reportUsage(obj(data.message)?.usage, sink);
+      return;
     case 'content_block_start': {
       const block = obj(data.content_block);
       if (block?.type === 'tool_use') {
@@ -177,6 +201,7 @@ export function handleMessagesEvent(event: SseEvent, sink: ChunkSink): void {
     case 'message_delta': {
       const reason = obj(data.delta)?.stop_reason;
       if (reason) sink.stopReason(stopReason(reason));
+      reportUsage(data.usage, sink);
       return;
     }
     case 'message_stop':
