@@ -15,6 +15,18 @@
     "settingsTitle": "Settings",
     "thinkDone": "Thinking",
     "regenerate": "Regenerate",
+    "usage": {
+      "label": "Usage",
+      "unit": "tok",
+      "detail": "Usage of this reply",
+      "input": "Input",
+      "cached": "Cache hit",
+      "hitRate": "Cache hit rate",
+      "output": "Output",
+      "total": "Total",
+      "context": "Context",
+      "calls": "Model calls"
+    },
     "newChat": "New chat",
     "openSideMenu": "Open side menu",
     "openSettingPanel": "Open settings panel",

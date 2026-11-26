@@ -6,7 +6,14 @@ import {
   type NeutralMessage,
   type NeutralTool,
 } from './neutral';
-import { obj, parseEventData, str, type ChunkSink, type FinishReason } from './core';
+import {
+  obj,
+  parseEventData,
+  str,
+  usageNumber,
+  type ChunkSink,
+  type FinishReason,
+} from './core';
 
 import type { SseEvent } from '../../utils/sseFetch';
 
@@ -60,6 +67,8 @@ export function buildChatCompletionsBody(
     model: model.model,
     messages: messages.map((message) => wireMessage(message, request)),
     stream: true,
+    // 不要求的话流式响应不带 token 统计。
+    stream_options: { include_usage: true },
   };
   if (request.temperature !== undefined) body.temperature = request.temperature;
   if (model.maxOutputTokens) {
@@ -108,6 +117,17 @@ export function handleChatCompletionsEvent(event: SseEvent, sink: ChunkSink): vo
   if (failure && !Array.isArray(chunk.choices)) {
     sink.fail(new Error(failure));
     return;
+  }
+
+  // 用量在最后一个 choices 为空的 chunk 里，要先于 choice 判断读取。
+  const usage = obj(chunk.usage);
+  if (usage) {
+    sink.usage({
+      input: usageNumber(usage.prompt_tokens),
+      output: usageNumber(usage.completion_tokens),
+      cached: usageNumber(obj(usage.prompt_tokens_details)?.cached_tokens),
+      total: usageNumber(usage.total_tokens),
+    });
   }
 
   const choices = Array.isArray(chunk.choices) ? chunk.choices : [];

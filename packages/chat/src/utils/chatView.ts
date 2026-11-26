@@ -1,4 +1,4 @@
-import type { Message } from '../store/chatSlice';
+import type { Message, MessageUsage } from '../store/chatSlice';
 
 export type AssistantSegment =
   | { type: 'text'; text: string; thinking?: string }
@@ -12,6 +12,10 @@ export type ChatBlock =
       segments: AssistantSegment[];
       copyText: string;
       lastIndex: number;
+      /** 这一块里每次模型调用的用量，按调用顺序。 */
+      usages: MessageUsage[];
+      /** 这一块第一条助手消息的时间，即回答开始的时间。 */
+      createdAt: number;
     };
 
 /** Pi 默认模型 id 是 unknown。它不是 Ollama 模型，历史标签和重新打开会话都要跳过。 */
@@ -99,8 +103,11 @@ function toAssistantBlock(
   );
   const segments: AssistantSegment[] = [];
   const answers: string[] = [];
+  const usages: MessageUsage[] = [];
+  const createdAt = messages[0]?.createdAt ?? 0;
   for (const message of messages) {
     if (message.role === 'assistant') {
+      if (message.usage) usages.push(message.usage);
       if (!message.content.trim() && !message.thinking?.trim()) continue;
       segments.push({
         type: 'text',
@@ -117,5 +124,13 @@ function toAssistantBlock(
       ...(message.isError ? { isError: true } : {}),
     });
   }
-  return { kind: 'assistant', model, segments, copyText: answers.join('\n\n'), lastIndex };
+  return {
+    kind: 'assistant',
+    model,
+    segments,
+    copyText: answers.join('\n\n'),
+    lastIndex,
+    usages,
+    createdAt,
+  };
 }

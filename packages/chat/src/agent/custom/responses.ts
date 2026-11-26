@@ -7,7 +7,7 @@ import {
   type NeutralMessage,
   type NeutralTool,
 } from './neutral';
-import { obj, parseEventData, str, type ChunkSink } from './core';
+import { obj, parseEventData, str, usageNumber, type ChunkSink } from './core';
 
 import type { SseEvent } from '../../utils/sseFetch';
 
@@ -99,6 +99,17 @@ function failureMessage(data: Record<string, unknown>): string {
   );
 }
 
+function reportUsage(data: Record<string, unknown>, sink: ChunkSink) {
+  const usage = obj(obj(data.response)?.usage);
+  if (!usage) return;
+  sink.usage({
+    input: usageNumber(usage.input_tokens),
+    output: usageNumber(usage.output_tokens),
+    cached: usageNumber(obj(usage.input_tokens_details)?.cached_tokens),
+    total: usageNumber(usage.total_tokens),
+  });
+}
+
 export function handleResponsesEvent(event: SseEvent, sink: ChunkSink): void {
   if (event.data.trim() === '[DONE]') {
     sink.finish();
@@ -152,11 +163,13 @@ export function handleResponsesEvent(event: SseEvent, sink: ChunkSink): void {
     case 'response.incomplete': {
       const reason = str(obj(obj(data.response)?.incomplete_details)?.reason);
       sink.stopReason(reason === 'max_output_tokens' ? 'length' : 'stop');
+      reportUsage(data, sink);
       sink.finish();
       return;
     }
     case 'response.completed':
       sink.stopReason('stop');
+      reportUsage(data, sink);
       sink.finish();
       return;
     case 'response.failed':

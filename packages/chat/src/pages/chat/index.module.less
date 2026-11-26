@@ -555,3 +555,45 @@
   font-size: var(--ant-font-size-sm);
   color: var(--ant-color-text-secondary);
 }
+
+// 助手回答下方紧跟在复制、重试按钮后面的用量和时间。
+.usageInfo {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ant-margin-xs) var(--ant-margin-sm);
+  min-width: 0;
+  color: var(--ant-color-text-tertiary);
+  font-size: var(--ant-font-size-sm);
+  line-height: 1;
+  white-space: nowrap;
+
+  .usageTrigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+
+    &:hover {
+      color: var(--ant-color-text-secondary);
+    }
+  }
+}
+
+.usageDetail {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px var(--ant-margin-lg);
+  margin: 0;
+  font-size: var(--ant-font-size-sm);
+
+  dt {
+    color: var(--ant-color-text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+}

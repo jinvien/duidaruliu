@@ -1,4 +1,4 @@
-import type { Message, RoleType, ToolCallRecord } from '../store/chatSlice';
+import type { Message, MessageUsage, RoleType, ToolCallRecord } from '../store/chatSlice';
 
 export const MAX_CHAT_IMAGES = 4;
 
@@ -76,7 +76,28 @@ export function normalizeStoredMessage(raw: unknown): Message | null {
     message.toolDisplayName = value.toolDisplayName;
   }
   if (typeof value.isError === 'boolean') message.isError = value.isError;
+  const usage = normalizeUsage(value.usage);
+  if (usage) message.usage = usage;
   return message;
+}
+
+function normalizeUsage(raw: unknown): MessageUsage | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const value = raw as Record<string, unknown>;
+  const count = (field: unknown) =>
+    typeof field === 'number' && Number.isFinite(field) && field >= 0 ? field : undefined;
+  const input = count(value.input);
+  const output = count(value.output);
+  if (input === undefined || output === undefined) return undefined;
+  const cached = Math.min(count(value.cached) ?? 0, input);
+  const limit = count(value.contextLimit);
+  return {
+    input,
+    output,
+    cached,
+    total: count(value.total) ?? input + output,
+    ...(limit ? { contextLimit: limit } : {}),
+  };
 }
 
 function normalizeToolCalls(raw: unknown): ToolCallRecord[] | undefined {

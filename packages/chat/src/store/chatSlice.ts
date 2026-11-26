@@ -18,6 +18,16 @@ export type ChatImage = {
   dataUrl: string;
 };
 
+/** 一次模型调用的 token 用量。input 是输入总量，已包含命中缓存的 cached。 */
+export type MessageUsage = {
+  input: number;
+  output: number;
+  cached: number;
+  total: number;
+  /** 调用时模型的上下文窗口，没声明时没有这个字段。 */
+  contextLimit?: number;
+};
+
 // 消息类型。content 保持字符串，旧历史没有 images 也能读。
 export type Message = {
   role: RoleType;
@@ -29,6 +39,8 @@ export type Message = {
   page?: PageRef;
   thinking?: string;
   toolCalls?: ToolCallRecord[];
+  /** 助手消息的 token 用量。旧历史和不返回统计的服务没有这个字段。 */
+  usage?: MessageUsage;
   toolCallId?: string;
   toolName?: string;
   /** 气泡上的名字。回放仍用 toolName。 */
@@ -83,12 +95,17 @@ const chatSlice = createSlice({
     },
     patchLastAssistant: (
       state,
-      action: PayloadAction<{ thinking?: string; toolCalls?: ToolCallRecord[] }>
+      action: PayloadAction<{
+        thinking?: string;
+        toolCalls?: ToolCallRecord[];
+        usage?: MessageUsage;
+      }>
     ) => {
       const last = state.messages[state.messages.length - 1];
       if (!last || last.role !== 'assistant') return;
       if (action.payload.thinking) last.thinking = action.payload.thinking;
       if (action.payload.toolCalls?.length) last.toolCalls = action.payload.toolCalls;
+      if (action.payload.usage) last.usage = action.payload.usage;
     },
     setPendingTool: (state, action: PayloadAction<PendingTool | null>) => {
       state.pendingTool = action.payload;
